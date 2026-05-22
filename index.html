@@ -267,7 +267,8 @@
 
         .player-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate; /* required for position:sticky to render borders */
+            border-spacing: 0;
             margin-top: 8px;
         }
 
@@ -281,7 +282,14 @@
             color: var(--text-muted);
             font-size: 12px;
             font-weight: 500;
-            background-color: var(--row-stripe);
+            background-color: var(--bg-secondary); /* solid so rows scrolling underneath aren't visible */
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            /* Bottom border via box-shadow because sticky cells lose their border on
+               some browsers when the table is scrolled. Shadow stays attached. */
+            box-shadow: inset 0 -1px 0 var(--border-color);
+            border-bottom: none;
         }
 
         .player-table tr:hover {
@@ -293,6 +301,40 @@
             gap: 4px;
             margin-bottom: 12px;
             overflow-x: auto;
+        }
+
+        /* Search box sits between filter tabs and the table. The clear (×) button
+           overlays the right edge of the input when there's content to clear. */
+        .player-search {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .player-search input[type="search"] {
+            padding-right: 28px; /* room for the clear button */
+        }
+        /* Hide the browser's native clear button — we use our own for consistent styling */
+        .player-search input[type="search"]::-webkit-search-cancel-button { display: none; }
+        .player-search-clear {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .player-search-clear:hover {
+            color: var(--text-main);
+            background: var(--bg-tertiary);
+        }
+        .player-search-clear:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 1px;
         }
 
         .tab {
@@ -726,7 +768,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Click filter tabs to narrow by position. The ★ next to a name toggles it on your Watch List — favorited players show up in the Watch List panel below 'My Active Team Construction' for fast access.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="filter-tabs">
                     <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL</button>
                     <button type="button" class="tab" onclick="filterPosition('QB', this)">QB</button>
@@ -734,6 +776,10 @@
                     <button type="button" class="tab" onclick="filterPosition('WR', this)">WR</button>
                     <button type="button" class="tab" onclick="filterPosition('TE', this)">TE</button>
                     <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF</button>
+                </div>
+                <div class="player-search">
+                    <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name…" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
+                    <button type="button" id="playerSearchClear" class="player-search-clear" onclick="clearPlayerSearch()" aria-label="Clear search" style="display:none;">×</button>
                 </div>
                 <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
                     <table class="player-table" id="playerTable">
@@ -980,6 +1026,9 @@
 
         let currentPick = 1;
         let selectedPositionFilter = "ALL";
+        // Search query for the Available Player Matrix — case-insensitive substring
+        // match against player.name. Empty string = no search filter.
+        let playerSearchQuery = "";
         let teamRosters = {};
         let draftHistory = [];
         // League mate names indexed by team number (1-based). Defaults populated on demand.
@@ -2646,6 +2695,23 @@
             renderPlayerPool();
         }
 
+        function onPlayerSearchInput(value) {
+            playerSearchQuery = (value || "").trim();
+            const clearBtn = document.getElementById("playerSearchClear");
+            if (clearBtn) clearBtn.style.display = playerSearchQuery ? "" : "none";
+            renderPlayerPool();
+        }
+
+        function clearPlayerSearch() {
+            const input = document.getElementById("playerSearchInput");
+            if (input) input.value = "";
+            playerSearchQuery = "";
+            const clearBtn = document.getElementById("playerSearchClear");
+            if (clearBtn) clearBtn.style.display = "none";
+            renderPlayerPool();
+            if (input) input.focus();
+        }
+
         function renderPlayerPool() {
             const body = document.getElementById("playerTableBody");
             body.innerHTML = "";
@@ -2653,10 +2719,35 @@
             let displayList = activePlayers.filter(p => !p.drafted);
             if (selectedPositionFilter !== "ALL") { displayList = displayList.filter(p => p.pos === selectedPositionFilter); }
 
+            // Search filter composes with position filter — case-insensitive substring on name.
+            if (playerSearchQuery) {
+                const q = playerSearchQuery.toLowerCase();
+                displayList = displayList.filter(p => p.name && p.name.toLowerCase().includes(q));
+            }
+
             displayList.sort((a, b) => {
                 if (a.tier !== b.tier) return a.tier - b.tier;
                 return b.vob - a.vob;
             });
+
+            // Empty-state hint: useful when a search returns nothing so it doesn't
+            // look like the engine is broken.
+            if (displayList.length === 0) {
+                const tr = document.createElement("tr");
+                const td = document.createElement("td");
+                td.colSpan = 11;
+                td.style.cssText = "text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;";
+                if (playerSearchQuery) {
+                    td.innerText = `No players match "${playerSearchQuery}"` +
+                        (selectedPositionFilter !== "ALL" ? ` at position ${selectedPositionFilter}.` : ".") +
+                        " Try a different search or clear it.";
+                } else {
+                    td.innerText = "No undrafted players to show. Import a rankings CSV or reset the draft.";
+                }
+                tr.appendChild(td);
+                body.appendChild(tr);
+                return;
+            }
 
             displayList.forEach(p => {
                 let tr = document.createElement("tr");
