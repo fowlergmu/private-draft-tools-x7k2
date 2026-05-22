@@ -526,6 +526,60 @@
             color: var(--text-muted);
         }
 
+        /* Draft Board variant — designed for wide horizontal layouts with up to
+           ~14+ slot columns (1 QB + 2 RB + 2 WR + 1 TE + 1 FX + 1 DF + 6 BN in
+           a typical 12-team half PPR). Cells are tight, single-player, with the
+           team name column sticky so it stays visible while scrolling sideways. */
+        .matrix-table.draft-board-table {
+            font-size: 11px;
+            border-collapse: separate; /* required for position:sticky to render borders */
+            border-spacing: 0;
+        }
+        .matrix-table.draft-board-table th,
+        .matrix-table.draft-board-table td {
+            padding: 5px 6px;
+            min-width: 80px;
+            max-width: 110px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .matrix-table.draft-board-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background-color: var(--bg-secondary);
+            box-shadow: inset 0 -1px 0 var(--border-color);
+        }
+        /* Team name column stays visible during horizontal scroll. The sticky-left
+           cell needs an explicit background so cells scrolling under it don't show
+           through. min-width prevents short team names from collapsing too narrow. */
+        .matrix-table.draft-board-table .team-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background-color: var(--bg-secondary);
+            min-width: 95px;
+            max-width: 130px;
+            text-align: left;
+            box-shadow: inset -1px 0 0 var(--border-color);
+        }
+        .matrix-table.draft-board-table thead .team-col {
+            z-index: 3; /* above both row-sticky and column-sticky cells at the corner */
+        }
+        .matrix-table.draft-board-table .slot-empty {
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+        .matrix-table.draft-board-table .slot-filled {
+            font-weight: 500;
+        }
+        /* Current-team row needs its sticky team-col to also pick up the highlight,
+           otherwise the team name cell looks visually disconnected from the row. */
+        .matrix-table.draft-board-table .current-team-row .team-col {
+            background-color: var(--current-team-tint);
+        }
+
         .current-team-row {
             background-color: var(--current-team-tint);
             border: 2px solid var(--accent-blue);
@@ -679,7 +733,7 @@
             </div>
 
             <div class="panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Next Turn Analysis & Imminent Positional Runs<span class="help-tip" tabindex="0" data-tip="Run Risk per position — the chance an elite player at this position will get drafted before your next pick. Computed from (a) how many teams pick between now and your next turn, (b) how many of those teams still need this position, and (c) how many elite-tier players remain. Color-coded: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). High run risk in a position you also need is a strong reach signal.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) teams picking between now and your next turn, (b) those teams' positional needs, (c) elite-tier players remaining. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The 'Xn / Ye' line means X teams still need this position and Y elite-tier players remain.">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
             </div>
 
@@ -779,34 +833,6 @@
         <!-- RIGHT: LIVE MATRIX TRACKER -->
         <div class="right-column">
             <div class="panel">
-                <div class="panel-title">
-                    <span>Draft Board & Team Roster Matrix<span class="help-tip tip-right" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. Columns map to roster slots: QB, RB, WR, TE, FX (Flex), DF (Defense), BN (Bench). The Undo button reverses the last pick — handy for misclicks. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
-                    <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
-                </div>
-                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="undoLastPick()">↶ Undo Last Pick</button>
-                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
-                </div>
-                <div style="overflow-y: auto; max-height: 420px;">
-                    <table class="matrix-table" id="matrixTable">
-                        <thead>
-                            <tr>
-                                <th>Team</th>
-                                <th>QB</th>
-                                <th>RB</th>
-                                <th>WR</th>
-                                <th>TE</th>
-                                <th>FX</th>
-                                <th>DF</th>
-                                <th>BN</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matrixTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="panel">
                 <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
                 <div class="roster-grid" id="myRosterGrid"></div>
             </div>
@@ -821,6 +847,29 @@
         </div>
 
     </div>
+
+        <!-- Full-width Draft Board sits below the dashboard grid so it can stretch
+             across the entire Draft tab width. With one column per roster slot
+             (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...BN6 for a typical 12-team
+             half PPR), a 12-team draft needs ~14 columns of player-name cells —
+             far more than the old right-column slot allowed. -->
+        <div class="panel draft-board-panel">
+            <div class="panel-title">
+                <span>Draft Board & Team Roster Matrix<span class="help-tip" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. One column per roster slot (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...). Slot columns are generated dynamically from your Roster Requirements settings. Scroll horizontally if the board exceeds your screen width. The Undo button reverses the last pick. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
+                <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="undoLastPick()">↶ Undo Last Pick</button>
+                <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
+            </div>
+            <div style="overflow-x: auto; overflow-y: auto; max-height: 520px;">
+                <table class="matrix-table draft-board-table" id="matrixTable">
+                    <thead id="matrixTableHead"></thead>
+                    <tbody id="matrixTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>  <!-- end Draft tab panel -->
 
     <div id="tabPanel-settings" class="tab-panel" role="tabpanel" aria-labelledby="mainTab-settings">
@@ -2811,16 +2860,18 @@
                 if (blendedRisk > 75) { colorClass = "var(--accent-rose)"; riskLabel = "high"; }
 
                 let div = document.createElement("div");
-                div.className = "form-group";
                 div.setAttribute("role", "group");
                 div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${gapDemand} teams need ${pos}, ${eliteRemaining} elite remaining.`);
+                div.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:6px 4px; border-radius:4px; background-color:var(--row-stripe);";
                 div.innerHTML = `
-                    <div style="font-weight: 600; font-size:12px;">${pos} Run Risk</div>
-                    <strong style="color: ${colorClass}; font-size: 16px;">${blendedRisk}%</strong>
-                    <div style="font-size: 10px; color: var(--text-muted);">${gapDemand} need / ${eliteRemaining} elite</div>
-                    <div class="risk-bar-container" role="progressbar" aria-valuenow="${blendedRisk}" aria-valuemin="0" aria-valuemax="100" aria-label="${pos} run risk ${blendedRisk} percent">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; gap:6px;">
+                        <span style="font-weight:600; font-size:11px;">${pos}</span>
+                        <strong style="color: ${colorClass}; font-size: 13px;">${blendedRisk}%</strong>
+                    </div>
+                    <div class="risk-bar-container" role="progressbar" aria-valuenow="${blendedRisk}" aria-valuemin="0" aria-valuemax="100" aria-label="${pos} run risk ${blendedRisk} percent" style="height:4px;">
                         <div class="risk-bar" style="width: ${blendedRisk}%; background-color: ${colorClass};"></div>
                     </div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-align:center;">${gapDemand}n / ${eliteRemaining}e</div>
                 `;
                 runContainer.appendChild(div);
 
@@ -3122,21 +3173,16 @@
                     ? entry.reasons.join(" · ")
                     : "best raw value remaining";
                 return `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; ${idx < top.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
-                        <div style="flex:1; min-width:0;">
-                            <div style="display:flex; gap:8px; align-items:center; margin-bottom:2px;">
-                                ${ribbon}
-                                <strong style="font-size:14px;">${escapeHtml(p.name)}</strong>
-                                <span style="color:var(--text-muted); font-size:11px;">${p.pos} · Tier ${p.tier}</span>
-                            </div>
-                            <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(reasonText)}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; gap:8px; ${idx < top.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
+                        <div style="display:flex; gap:6px; align-items:baseline; min-width:0; flex:1;">
+                            ${ribbon}
+                            <strong style="font-size:13px; white-space:nowrap;">${escapeHtml(p.name)}</strong>
+                            <span style="color:var(--text-muted); font-size:10px; white-space:nowrap;">${p.pos} T${p.tier}</span>
+                            <span style="color:var(--text-muted); font-size:10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</span>
                         </div>
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <div style="text-align:right;">
-                                <div style="font-size:10px; color:var(--text-muted);">Score</div>
-                                <div style="font-weight:700; color:var(--accent-green);">${entry.composite.toFixed(1)}</div>
-                            </div>
-                            <button class="btn" style="padding:5px 10px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})">Draft</button>
+                        <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+                            <span style="font-weight:700; color:var(--accent-green); font-size:13px;" title="Composite score">${entry.composite.toFixed(1)}</span>
+                            <button class="btn" style="padding:3px 8px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})">Draft</button>
                         </div>
                     </div>
                 `;
@@ -3310,26 +3356,57 @@
         function renderRosterMatrix(cfg) {
             cfg = cfg || readConfig();
             const activeTeam = getActivePickingTeam(currentPick, cfg.size);
+            const head = document.getElementById("matrixTableHead");
             const body = document.getElementById("matrixTableBody");
+            if (!head || !body) return;
+
+            // Build the slot column spec dynamically from roster requirements so
+            // a 12-team half PPR (1 QB, 2 RB, 2 WR, 1 TE, 1 FX, 1 DF, 6 BN) gets
+            // 14 slot columns instead of jamming all 6 bench players into one cell.
+            // Headers: starters get numbered when there's more than one (RB1, RB2),
+            // singletons stay bare (QB, TE, FX, DF).
+            const slotSpec = [
+                { key: "QB", label: "QB", count: cfg.req.QB },
+                { key: "RB", label: "RB", count: cfg.req.RB },
+                { key: "WR", label: "WR", count: cfg.req.WR },
+                { key: "TE", label: "TE", count: cfg.req.TE },
+                { key: "FX", label: "FX", count: cfg.req.Flex },
+                { key: "DF", label: "DF", count: cfg.req.DEF },
+                { key: "BN", label: "BN", count: cfg.req.Bench }
+            ];
+
+            // Build header row
+            const headerCells = ['<th class="team-col">Team</th>'];
+            slotSpec.forEach(s => {
+                for (let i = 0; i < s.count; i++) {
+                    const label = s.count > 1 ? `${s.label}${i + 1}` : s.label;
+                    headerCells.push(`<th>${label}</th>`);
+                }
+            });
+            head.innerHTML = `<tr>${headerCells.join("")}</tr>`;
+
+            // Build body rows
             body.innerHTML = "";
+            for (let teamNum = 1; teamNum <= cfg.size; teamNum++) {
+                const tr = document.createElement("tr");
+                if (teamNum === activeTeam) tr.className = "current-team-row";
+                const nameClass = teamNum === cfg.userPos ? "user-team-row" : "";
+                const r = teamRosters[teamNum];
+                const teamLabel = escapeHtml(getTeamLabel(teamNum));
 
-            for (let i = 1; i <= cfg.size; i++) {
-                let tr = document.createElement("tr");
-                if (i === activeTeam) tr.className = "current-team-row";
-
-                let nameClass = i === cfg.userPos ? "class='user-team-row'" : "";
-                let r = teamRosters[i];
-                const teamLabel = escapeHtml(getTeamLabel(i));
-                tr.innerHTML = `
-                    <td ${nameClass}><strong>${teamLabel}</strong></td>
-                    <td>${r.QB.join(', ') || '-'}</td>
-                    <td>${r.RB.join(', ') || '-'}</td>
-                    <td>${r.WR.join(', ') || '-'}</td>
-                    <td>${r.TE.join(', ') || '-'}</td>
-                    <td>${r.FX.join(', ') || '-'}</td>
-                    <td>${r.DF.join(', ') || '-'}</td>
-                    <td>${(r.BN || []).join(', ') || '-'}</td>
-                `;
+                const cells = [`<td class="team-col ${nameClass}"><strong>${teamLabel}</strong></td>`];
+                slotSpec.forEach(s => {
+                    const filled = r[s.key] || [];
+                    for (let i = 0; i < s.count; i++) {
+                        const name = filled[i];
+                        if (name) {
+                            cells.push(`<td class="slot-filled" title="${escapeHtml(name)}">${escapeHtml(name)}</td>`);
+                        } else {
+                            cells.push(`<td class="slot-empty">—</td>`);
+                        }
+                    }
+                });
+                tr.innerHTML = cells.join("");
                 body.appendChild(tr);
             }
         }
