@@ -221,6 +221,50 @@
         .badge-med { background-color: var(--badge-amber-bg); color: var(--accent-amber); }
         .badge-high { background-color: var(--badge-rose-bg); color: var(--accent-rose); }
 
+        /* Watch-list star toggle in the player matrix. Empty star ☆ when not
+           favorited (muted color, no fill); filled star ★ when favorited (amber).
+           Button reset so it looks like a plain icon. */
+        .favorite-toggle {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 0 2px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            vertical-align: middle;
+            transition: color 0.1s, transform 0.1s;
+        }
+        .favorite-toggle:hover {
+            color: var(--accent-amber);
+            transform: scale(1.15);
+        }
+        .favorite-toggle.is-favorite {
+            color: var(--accent-amber);
+        }
+        .favorite-toggle:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 1px;
+            border-radius: 2px;
+        }
+
+        /* Drafted favorites in the watch list — grayed out with a strikethrough. */
+        .watch-row-drafted {
+            opacity: 0.55;
+            text-decoration: line-through;
+            text-decoration-color: var(--text-muted);
+        }
+        .watch-row-drafted-by {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-style: italic;
+            text-decoration: none;
+            display: block;
+            margin-top: 2px;
+        }
+
         .player-table {
             width: 100%;
             border-collapse: collapse;
@@ -682,7 +726,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Click filter tabs to narrow by position. The R checkbox marks rookies (engine then applies the Rookie Boost to their EV).">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Click filter tabs to narrow by position. The ★ next to a name toggles it on your Watch List — favorited players show up in the Watch List panel below 'My Active Team Construction' for fast access.">?</span></div>
                 <div class="filter-tabs">
                     <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL</button>
                     <button type="button" class="tab" onclick="filterPosition('QB', this)">QB</button>
@@ -804,6 +848,14 @@
                 <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
                 <div class="roster-grid" id="myRosterGrid"></div>
             </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span style="color: var(--accent-amber);">★ Watch List<span class="help-tip tip-right" tabindex="0" data-tip="Players you've starred in the Available Player Matrix. Grouped by position. Drafted favorites are grayed out with a note showing who drafted them — useful for tracking who took 'your guys'. The list persists across sessions with your draft state.">?</span></span>
+                    <span id="watchListCount" style="font-size: 11px; color: var(--text-muted); font-weight: normal;"></span>
+                </div>
+                <div id="watchListContent"></div>
+            </div>
         </div>
 
     </div>
@@ -919,7 +971,9 @@
 
         // Rookie flag must be data-driven, not guessed. Users can extend this list, or
         // future versions can pull it from a maintained source. Names lowercased for matching.
-        // Empty by default — users mark rookies manually (see toggle in player row) or maintain this list.
+        // Empty by default — rookies are now marked via the Rookies CSV import in the
+        // Player Data Import panel (the per-row R checkbox was removed in favor of a
+        // ★ favorite/watchlist toggle).
         const KNOWN_ROOKIES = new Set([
             // Add lowercase names here, e.g. "marvin harrison jr."
         ]);
@@ -958,9 +1012,9 @@
         const DEFAULT_GITHUB_URLS = {
             // After you create your repo and add the CSVs, paste your raw URLs here.
             // Example: "https://raw.githubusercontent.com/yourname/yourrepo/main/data/rankings.csv"
-            rankings: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv",
-            injury: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv",
-            rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv"
+            rankings: "",
+            injury: "",
+            rookies: ""
         };
 
         // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
@@ -2495,6 +2549,7 @@
             renderRosterMatrix(cfg);
             renderMyTeamGrid(cfg);
             renderBestAvailable(cfg);
+            renderWatchList(cfg);
 
             // Update header pick indicator
             const indicator = document.getElementById("currentPickIndicator");
@@ -2648,9 +2703,11 @@
                 tr.innerHTML = `
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>${rookieBadge}
-                        <label style="display:inline-block; margin-left:6px; font-size:10px; color:var(--text-muted); cursor:pointer;" title="Mark as rookie">
-                            <input type="checkbox" ${p.rookie ? 'checked' : ''} onchange="toggleRookie(${p.id}, this.checked)" style="vertical-align:middle;"> R
-                        </label>
+                        <button type="button"
+                            class="favorite-toggle ${p.favorite ? 'is-favorite' : ''}"
+                            onclick="toggleFavorite(${p.id})"
+                            aria-label="${p.favorite ? 'Remove ' + escapeHtml(p.name) + ' from watch list' : 'Add ' + escapeHtml(p.name) + ' to watch list'}"
+                            title="${p.favorite ? 'Remove from watch list' : 'Add to watch list'}">${p.favorite ? '★' : '☆'}</button>
                     </td>
                     <td>${p.pos}</td>
                     <td><div style="text-align:center; font-weight:bold; color:var(--accent-amber);">${p.tier}</div></td>
@@ -2818,10 +2875,10 @@
             return div.innerHTML;
         }
 
-        function toggleRookie(id, checked) {
+        function toggleFavorite(id) {
             const p = activePlayers.find(x => x.id === id);
             if (!p) return;
-            p.rookie = checked;
+            p.favorite = !p.favorite;
             recalculateEngine();
             saveState();
         }
@@ -3000,6 +3057,89 @@
                     container.appendChild(cell);
                 }
             });
+        }
+
+        // ─── Watch List ─────────────────────────────────────────────────────
+        // Renders favorited players grouped by position. Drafted favorites stay
+        // visible but get a strikethrough and a "drafted by [team]" note — useful
+        // for tracking who took your guys without cluttering with player counts.
+        function renderWatchList(cfg) {
+            cfg = cfg || readConfig();
+            const container = document.getElementById("watchListContent");
+            const countEl = document.getElementById("watchListCount");
+            if (!container) return;
+
+            const favorites = activePlayers.filter(p => p.favorite);
+            if (countEl) {
+                if (favorites.length === 0) {
+                    countEl.innerText = "";
+                } else {
+                    const undrafted = favorites.filter(p => !p.drafted).length;
+                    countEl.innerText = `${undrafted} available / ${favorites.length} total`;
+                }
+            }
+
+            if (favorites.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 12px; margin: 4px 0;">No favorites yet. Click the ☆ next to a player in the Available Player Matrix to add them.</p>`;
+                return;
+            }
+
+            // Group by position; order positions in standard fantasy importance.
+            const positionOrder = ["QB", "RB", "WR", "TE", "DEF"];
+            const byPos = {};
+            favorites.forEach(p => {
+                const k = p.pos || "OTHER";
+                (byPos[k] = byPos[k] || []).push(p);
+            });
+
+            // Within each position: undrafted first (sorted by tier then VOB), then drafted at the bottom.
+            Object.keys(byPos).forEach(pos => {
+                byPos[pos].sort((a, b) => {
+                    if (a.drafted !== b.drafted) return a.drafted ? 1 : -1;
+                    if (a.tier !== b.tier) return a.tier - b.tier;
+                    return (b.vob || 0) - (a.vob || 0);
+                });
+            });
+
+            const sections = positionOrder
+                .filter(pos => byPos[pos] && byPos[pos].length > 0)
+                .map(pos => {
+                    const rows = byPos[pos].map(p => {
+                        if (p.drafted) {
+                            const drafterLabel = p.draftedByTeam ? getTeamLabel(p.draftedByTeam) : "?";
+                            const isUser = p.draftedByTeam === cfg.userPos;
+                            const drafterColor = isUser ? "var(--accent-green)" : "var(--text-muted)";
+                            return `
+                                <div class="watch-row-drafted" style="padding: 4px 0; border-bottom: 1px solid var(--border-color); font-size: 12px;">
+                                    <strong>${escapeHtml(p.name)}</strong>
+                                    <span style="color: var(--text-muted); font-size: 11px;"> · T${p.tier}</span>
+                                    <span class="watch-row-drafted-by" style="color: ${drafterColor};">Drafted by ${escapeHtml(drafterLabel)}${isUser ? ' (you)' : ''} at pick ${p.draftPick || '?'}</span>
+                                </div>
+                            `;
+                        }
+                        const adpDisplay = (p.adp !== undefined && p.adp !== null) ? Number(p.adp).toFixed(0) : "—";
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border-color); font-size: 12px; gap: 8px;">
+                                <div style="flex: 1; min-width: 0;">
+                                    <strong>${escapeHtml(p.name)}</strong>
+                                    <span style="color: var(--text-muted); font-size: 11px;"> · T${p.tier} · ADP ${adpDisplay}</span>
+                                </div>
+                                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                                    <button type="button" class="favorite-toggle is-favorite" onclick="toggleFavorite(${p.id})" title="Remove from watch list" aria-label="Remove ${escapeHtml(p.name)} from watch list">★</button>
+                                    <button class="btn" style="padding: 2px 6px; font-size: 10px;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join("");
+                    return `
+                        <div style="margin-top: 8px;">
+                            <div style="font-size: 11px; font-weight: 600; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 2px;">${pos}</div>
+                            ${rows}
+                        </div>
+                    `;
+                });
+
+            container.innerHTML = sections.join("");
         }
     </script>
 </body>
