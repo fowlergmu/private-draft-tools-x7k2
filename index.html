@@ -1268,6 +1268,14 @@
                     pick: h.pick, team: h.team, slot: h.slot,
                     playerObj: activePlayers.find(p => p.id === h.playerId) || { id: h.playerId, name: "?" }
                 }));
+                // Re-apply cached injury and rookie data on top of restored players.
+                // Without this, any change to bucket mapping (e.g. introducing the
+                // Yikes tier) wouldn't affect existing saved state — old "High"
+                // values would persist forever until the user manually re-merged.
+                // This keeps player.injury in sync with the current merge logic on
+                // every page load, with zero user action required.
+                reapplyCachedInjuryData();
+                reapplyCachedRookiesData();
                 return true;
             } catch (e) {
                 console.warn("Could not load draft state:", e);
@@ -1740,7 +1748,7 @@
                     adp: p.adp !== undefined ? parseFloat(p.adp) : id,
                     floor: Math.max(2.0, floorScore),
                     ceiling: Math.max(5.0, ceilingScore),
-                    injury: ["Low", "Medium", "High"].includes(p.injury) ? p.injury : "Low",
+                    injury: ["Low", "Medium", "High", "Yikes"].includes(p.injury) ? p.injury : "Low",
                     rookie: !!p.rookie || KNOWN_ROOKIES.has(p.name.toLowerCase())
                 });
             });
