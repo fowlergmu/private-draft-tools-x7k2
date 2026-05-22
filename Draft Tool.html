@@ -1,0 +1,3006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Fantasy Football Draft Engine (FantasyPros Edition)</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #fbbf24;
+            --accent-rose: #f43f5e;
+            --border-color: #475569;
+            /* Overlay tints — vary by theme so striping/hover stay visible */
+            --row-stripe: rgba(0, 0, 0, 0.1);
+            --row-hover: rgba(255, 255, 255, 0.04);
+            --th-tint: rgba(0, 0, 0, 0.2);
+            --shadow: rgba(0, 0, 0, 0.4);
+            --current-team-tint: rgba(56, 189, 248, 0.1);
+            --badge-blue-bg: rgba(56, 189, 248, 0.2);
+            --badge-green-bg: rgba(74, 222, 128, 0.2);
+            --badge-amber-bg: rgba(251, 191, 36, 0.2);
+            --badge-rose-bg: rgba(244, 63, 94, 0.2);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f1f5f9;
+            --bg-tertiary: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            /* Accents shifted darker for contrast on light backgrounds */
+            --accent-blue: #0284c7;
+            --accent-green: #16a34a;
+            --accent-amber: #d97706;
+            --accent-rose: #e11d48;
+            --border-color: #cbd5e1;
+            --row-stripe: rgba(0, 0, 0, 0.03);
+            --row-hover: rgba(0, 0, 0, 0.05);
+            --th-tint: rgba(0, 0, 0, 0.04);
+            --shadow: rgba(0, 0, 0, 0.15);
+            --current-team-tint: rgba(2, 132, 199, 0.08);
+            --badge-blue-bg: rgba(2, 132, 199, 0.12);
+            --badge-green-bg: rgba(22, 163, 74, 0.12);
+            --badge-amber-bg: rgba(217, 119, 6, 0.12);
+            --badge-rose-bg: rgba(225, 29, 72, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .theme-toggle {
+            background-color: var(--bg-secondary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.15s, border-color 0.15s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .theme-toggle:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr 380px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--accent-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-main);
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: opacity 0.2s;
+            font-size: 13px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-sync {
+            background-color: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-rookie { background-color: var(--badge-blue-bg); color: var(--accent-blue); }
+        .badge-low { background-color: var(--badge-green-bg); color: var(--accent-green); }
+        .badge-med { background-color: var(--badge-amber-bg); color: var(--accent-amber); }
+        .badge-high { background-color: var(--badge-rose-bg); color: var(--accent-rose); }
+
+        .player-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .player-table th, .player-table td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .player-table th {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            background-color: var(--row-stripe);
+        }
+
+        .player-table tr:hover {
+            background-color: var(--row-hover);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            background-color: var(--bg-tertiary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            font-family: inherit;
+        }
+
+        .tab:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .tab.active {
+            background-color: var(--accent-blue);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .roster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .roster-cell {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .roster-cell .pos-label {
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 10px;
+            display: block;
+        }
+
+        .roster-cell .player-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .matrix-table th, .matrix-table td {
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .matrix-table th {
+            background-color: var(--th-tint);
+            color: var(--text-muted);
+        }
+
+        .current-team-row {
+            background-color: var(--current-team-tint);
+            border: 2px solid var(--accent-blue);
+        }
+
+        .user-team-row {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .risk-bar-container {
+            background-color: var(--bg-primary);
+            border-radius: 4px;
+            height: 6px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .risk-bar {
+            height: 100%;
+            background-color: var(--accent-green);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input {
+            flex: 1;
+        }
+
+        /* Tooltip system: small "?" icon next to panel titles. Hover or focus
+           shows a positioned bubble. Keyboard-accessible via tabindex. */
+        .help-tip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            margin-left: 6px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            cursor: help;
+            position: relative;
+            border: 1px solid var(--border-color);
+            user-select: none;
+            vertical-align: middle;
+        }
+
+        .help-tip:hover, .help-tip:focus {
+            background-color: var(--accent-blue);
+            color: var(--bg-primary);
+            outline: none;
+        }
+
+        .help-tip[data-tip]:hover::after,
+        .help-tip[data-tip]:focus::after {
+            content: attr(data-tip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            min-width: 240px;
+            max-width: 320px;
+            padding: 8px 10px;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            border: 1px solid var(--accent-blue);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 400;
+            line-height: 1.5;
+            text-transform: none;
+            white-space: normal;
+            text-align: left;
+            z-index: 1000;
+            box-shadow: 0 4px 12px var(--shadow);
+            pointer-events: none;
+        }
+
+        /* When the tooltip would overflow the right edge, anchor it to the right */
+        .help-tip.tip-right[data-tip]:hover::after,
+        .help-tip.tip-right[data-tip]:focus::after {
+            left: auto;
+            right: 0;
+        }
+    </style>
+    <script>
+        // Apply saved theme before the body renders to avoid a flash.
+        // This runs synchronously in <head> so styles are correct on first paint.
+        (function () {
+            let theme = "dark"; // default
+            try {
+                const saved = localStorage.getItem("fantasyDraftEngine_theme");
+                if (saved === "light" || saved === "dark") {
+                    theme = saved;
+                } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    theme = "light";
+                }
+            } catch (e) {
+                // localStorage may be blocked in private mode; use default.
+            }
+            if (theme === "light") {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+            // Set the button's initial label/icon to match before DOMContentLoaded.
+            // We watch for the button element to exist (parser hasn't reached it yet
+            // since this is in <head>), then update once it does.
+            document.addEventListener("DOMContentLoaded", function () {
+                const icon = document.getElementById("themeToggleIcon");
+                const label = document.getElementById("themeToggleLabel");
+                if (icon) icon.innerText = theme === "light" ? "☾" : "☀";
+                if (label) label.innerText = theme === "light" ? "Dark" : "Light";
+            });
+        })();
+    </script>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Predictive Fantasy Football Draft Engine</h1>
+            <p>FantasyPros Consensus Tier Matrix & Dynamic VOB Engine</p>
+        </div>
+        <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light or dark theme">
+            <span id="themeToggleIcon">☀</span>
+            <span id="themeToggleLabel">Light</span>
+        </button>
+    </header>
+
+    <div class="dashboard-grid">
+        
+        <!-- LEFT: INPUTS & AUTOMATION -->
+        <div class="left-column">
+            <div class="panel">
+                <div class="panel-title" style="color: var(--accent-amber);">Player Data Import<span class="help-tip tip-right" tabindex="0" data-tip="Imports the pool of draftable players. Five tabs: CSV (rankings; auto-detects engine native vs FantasyPros export), Pasted Text (FantasyPros cheat sheet heuristic), JSON (script your own source), Injury (merges Draft Sharks injury data by name), and Rookies (merges FantasyPros rookies export by name). The Injury and Rookies caches auto-apply to your pool whenever you re-import rankings; the rankings cache can be reloaded explicitly. Players need at minimum a name, position, and tier; everything else is optional.">?</span></div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+                    FantasyPros's API requires a paid partner key, so direct auto-sync isn't possible from a standalone page. CSV is the most reliable for rankings; use the Injury tab to merge a separate injury-data CSV on top of your imported pool.
+                </p>
+
+                <div class="filter-tabs" style="margin-bottom: 10px;">
+                    <button type="button" class="tab active" onclick="switchImportTab('csv', this)">CSV</button>
+                    <button type="button" class="tab" onclick="switchImportTab('text', this)">Pasted Text</button>
+                    <button type="button" class="tab" onclick="switchImportTab('json', this)">JSON</button>
+                    <button type="button" class="tab" onclick="switchImportTab('injury', this)">Injury</button>
+                    <button type="button" class="tab" onclick="switchImportTab('rookies', this)">Rookies</button>
+                </div>
+
+                <div id="importTab-csv" class="import-tab-pane">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                        Two CSV formats supported, auto-detected: the engine's native format (<code>name, pos, tier, adp</code>, rookie/injury optional) or <strong>FantasyPros draft rankings export</strong> as-is (<code>RK, TIERS, PLAYER NAME, POS, ECR VS. ADP, ...</code>). Kickers and any unrecognized positions are skipped.
+                    </p>
+                    <div style="background:var(--bg-tertiary); border-radius:4px; padding:6px 8px; margin-bottom:8px; font-size:11px; display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span id="rankingsCacheStatus"><span style="color:var(--text-muted);">○</span> No rankings saved</span>
+                        <div style="display:flex; gap:4px;">
+                            <button type="button" id="rankingsCacheReloadBtn" class="btn btn-secondary" style="display:none; font-size:10px; padding:3px 8px; width:auto;" onclick="reloadCachedRankingsCsv()">Reload Saved</button>
+                            <button type="button" id="rankingsCacheClearBtn" class="btn btn-secondary" style="display:none; font-size:10px; padding:3px 8px; width:auto;" onclick="clearCachedRankingsCsv()">Clear</button>
+                        </div>
+                    </div>
+                    <input type="file" id="csvFileInput" accept=".csv,text/csv" class="form-control" style="padding: 4px;" onchange="handleCsvFile(this.files[0])">
+                    <textarea id="csvPasteArea" class="form-control" rows="5" placeholder="...or paste CSV text here. First row should be headers." style="margin-top: 6px; font-family: monospace; font-size: 11px;"></textarea>
+                    <button class="btn btn-sync" style="margin-top: 6px;" onclick="parseCsvText(document.getElementById('csvPasteArea').value)">Import CSV Data</button>
+                    <button class="btn btn-secondary" style="margin-top: 6px; font-size: 11px; padding: 4px;" onclick="downloadCsvTemplate()">Download Template</button>
+                </div>
+
+                <div id="importTab-text" class="import-tab-pane" style="display:none;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                        Open the FantasyPros cheat sheet, Select All (<kbd>Ctrl+A</kbd>), copy, paste below. Heuristic parser — check the debug log for skipped lines.
+                    </p>
+                    <a href="https://www.fantasypros.com/nfl/rankings/ppr-cheatsheets.php" target="_blank" class="btn btn-secondary" style="display:block; margin-bottom:6px; text-decoration:none; font-size: 11px;">Open FantasyPros Cheat Sheet ↗</a>
+                    <textarea id="fpPasteArea" class="form-control" rows="5" placeholder="Paste full raw copied text string from the FantasyPros page here..."></textarea>
+                    <button class="btn btn-sync" style="margin-top: 6px;" onclick="parseFantasyProsText()">Parse Pasted Text</button>
+                    <div id="parseLogContainer" style="margin-top: 6px; display: none;">
+                        <label style="font-size: 11px; color: var(--text-muted);">Unparsed Lines (for debugging)</label>
+                        <textarea id="parseLog" class="form-control" rows="3" readonly style="font-size: 11px; font-family: monospace;"></textarea>
+                    </div>
+                </div>
+
+                <div id="importTab-json" class="import-tab-pane" style="display:none;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                        Paste a JSON array of player objects. Each needs <code>name, pos, tier</code>; optional: <code>adp, floor, ceiling, rookie, injury</code>.
+                    </p>
+                    <textarea id="jsonPasteArea" class="form-control" rows="6" placeholder='[{"name":"Christian McCaffrey","pos":"RB","tier":1,"adp":1.2}, ...]' style="font-family: monospace; font-size: 11px;"></textarea>
+                    <button class="btn btn-sync" style="margin-top: 6px;" onclick="parseJsonImport()">Import JSON Data</button>
+                </div>
+
+                <div id="importTab-injury" class="import-tab-pane" style="display:none;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                        Injury risk overrides — <strong>merges into the existing player pool by name</strong>. Import your main rankings first, then this. Supports the Draft Sharks injury predictor export (<code>Player, Injury Risk, ...</code> columns) and a generic <code>name, injury</code> two-column format. Names are matched case-insensitively with fuzzy suffix handling.
+                    </p>
+                    <div style="background:var(--bg-tertiary); border-radius:4px; padding:6px 8px; margin-bottom:8px; font-size:11px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span id="injuryCacheStatus"><span style="color:var(--text-muted);">○</span> No injury data saved</span>
+                        <button type="button" id="injuryCacheClearBtn" class="btn btn-secondary" style="display:none; font-size:10px; padding:3px 8px; width:auto;" onclick="clearCachedInjuryCsv()">Clear Saved</button>
+                    </div>
+                    <input type="file" id="injuryFileInput" accept=".csv,text/csv" class="form-control" style="padding: 4px;" onchange="handleInjuryCsvFile(this.files[0])">
+                    <textarea id="injuryPasteArea" class="form-control" rows="5" placeholder="...or paste CSV here. Headers in row 1." style="margin-top: 6px; font-family: monospace; font-size: 11px;"></textarea>
+                    <button class="btn btn-sync" style="margin-top: 6px;" onclick="parseInjuryCsvText(document.getElementById('injuryPasteArea').value)">Merge Injury Data</button>
+                    <div id="injuryMergeLog" style="margin-top: 8px; display: none;">
+                        <label style="font-size: 11px; color: var(--text-muted);">Merge Log</label>
+                        <textarea class="form-control" rows="4" readonly id="injuryMergeLogText" style="font-size: 11px; font-family: monospace;"></textarea>
+                    </div>
+                </div>
+
+                <div id="importTab-rookies" class="import-tab-pane" style="display:none;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
+                        Rookie flags — <strong>merges into existing pool by name</strong>. Import rankings first. Supports the FantasyPros rookies export (<code>RK, TIERS, PLAYER NAME, POS, ...</code>) — every player listed gets <code>rookie = true</code>. Also accepts a generic <code>name, rookie</code> two-column format for hand overrides.
+                    </p>
+                    <div style="background:var(--bg-tertiary); border-radius:4px; padding:6px 8px; margin-bottom:8px; font-size:11px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span id="rookiesCacheStatus"><span style="color:var(--text-muted);">○</span> No rookie data saved</span>
+                        <button type="button" id="rookiesCacheClearBtn" class="btn btn-secondary" style="display:none; font-size:10px; padding:3px 8px; width:auto;" onclick="clearCachedRookiesCsv()">Clear Saved</button>
+                    </div>
+                    <input type="file" id="rookiesFileInput" accept=".csv,text/csv" class="form-control" style="padding: 4px;" onchange="handleRookiesCsvFile(this.files[0])">
+                    <textarea id="rookiesPasteArea" class="form-control" rows="5" placeholder="...or paste CSV here. Headers in row 1." style="margin-top: 6px; font-family: monospace; font-size: 11px;"></textarea>
+                    <button class="btn btn-sync" style="margin-top: 6px;" onclick="parseRookiesCsvText(document.getElementById('rookiesPasteArea').value)">Merge Rookies Data</button>
+                    <div id="rookiesMergeLog" style="margin-top: 8px; display: none;">
+                        <label style="font-size: 11px; color: var(--text-muted);">Merge Log</label>
+                        <textarea class="form-control" rows="4" readonly id="rookiesMergeLogText" style="font-size: 11px; font-family: monospace;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">GitHub Sync<span class="help-tip tip-right" tabindex="0" data-tip="Fetches CSVs from raw.githubusercontent.com URLs. URLs are embedded in this HTML file as DEFAULT_GITHUB_URLS, so they travel with the app across every device. Edit them in the HTML and re-push to update all devices. Any URL you change here saves as a device-specific override; Reset clears overrides and falls back to the embedded defaults.">?</span></div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+                    URLs are pre-filled from defaults embedded in this app's HTML. Edits below save as <em>device-specific overrides</em>; <strong>Reset</strong> falls back to the embedded defaults. To change defaults for all devices, edit <code>DEFAULT_GITHUB_URLS</code> in the HTML and push to GitHub.
+                </p>
+                <div class="form-group">
+                    <label for="ghUrlRankings">Rankings CSV URL</label>
+                    <input type="url" id="ghUrlRankings" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
+                </div>
+                <div class="form-group">
+                    <label for="ghUrlInjury">Injury CSV URL</label>
+                    <input type="url" id="ghUrlInjury" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
+                </div>
+                <div class="form-group">
+                    <label for="ghUrlRookies">Rookies CSV URL</label>
+                    <input type="url" id="ghUrlRookies" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-sync" style="flex: 1;" onclick="syncFromGithub()">Sync from GitHub</button>
+                    <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; width: auto;" onclick="resetGithubUrls()">Reset</button>
+                </div>
+                <div id="ghSyncStatus" style="margin-top: 8px; font-size: 11px; color: var(--text-muted); display: none;"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Profile Configuration<span class="help-tip tip-right" tabindex="0" data-tip="League-level settings: number of teams, your draft slot (1-indexed from left), scoring format (Standard / Half PPR / Full PPR), and the two engine-wide knobs. Rookie Late-Season Boost increases EV for rookies as a hedge against early-season uncertainty. ADP Market Adherence Weight controls how confident the engine is that other teams will draft near their ADP — lower = more uncertainty in run-risk forecasts.">?</span></div>
+                <div class="form-group">
+                    <label for="presetSelect">Active League Profile</label>
+                    <select id="presetSelect" class="form-control" onchange="loadPreset()">
+                        <option value="profile1">Primary Flex (12-Team Half PPR)</option>
+                        <option value="profile2">Superflex Deep (10-Team Full PPR)</option>
+                    </select>
+                </div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label for="leagueSize">League Size</label>
+                        <input type="number" id="leagueSize" class="form-control" value="12" min="4" max="20" onchange="recalculateEngine(); renderTeamNameInputs();">
+                    </div>
+                    <div class="form-group">
+                        <label for="draftOrder">Your Draft Pick</label>
+                        <input type="number" id="draftOrder" class="form-control" value="3" min="1" max="20" onchange="recalculateEngine(); renderTeamNameInputs();">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="scoringFormat">Scoring Format</label>
+                    <select id="scoringFormat" class="form-control" onchange="recalculateEngine()">
+                        <option value="Standard">Standard (0.0 PPR)</option>
+                        <option value="Half PPR" selected>Half PPR (0.5 PPR)</option>
+                        <option value="Full PPR">Full PPR (1.0 PPR)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rookieBoost">Rookie Late-Season Boost %</label>
+                    <div class="slider-container">
+                        <input type="range" id="rookieBoost" min="0" max="30" value="15" oninput="document.getElementById('rookieBoostVal').innerText = this.value + '%'; recalculateEngine();">
+                        <span id="rookieBoostVal" style="width: 40px; text-align: right;">15%</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="adpVariance">ADP Market Adherence Weight</label>
+                    <div class="slider-container">
+                        <input type="range" id="adpVariance" min="0" max="100" value="75" oninput="document.getElementById('adpVarianceVal').innerText = (this.value/100).toFixed(2); recalculateEngine();">
+                        <span id="adpVarianceVal" style="width: 40px; text-align: right;">0.75</span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="clearSavedState()">Clear Saved Draft Data</button>
+                <p style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">Draft state saves automatically to this browser.</p>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Roster Requirements<span class="help-tip tip-right" tabindex="0" data-tip="Starter and bench slot counts per team. The engine uses these to compute the VOB baseline (replacement-level player) at each position. Bench Slots affects whether overflow picks have room — a pick that doesn't fit starter, flex, or bench will be rejected. Flex RB% is the assumed share of league-wide flex slots filled by RBs; bump up for RB-heavy leagues, down for PPR leagues that favor WR flexes.">?</span></div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label for="reqQB">QB Starters</label>
+                        <input type="number" id="reqQB" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                    </div>
+                    <div class="form-group">
+                        <label for="reqRB">RB Starters</label>
+                        <input type="number" id="reqRB" class="form-control" value="2" min="0" onchange="recalculateEngine()">
+                    </div>
+                </div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label for="reqWR">WR Starters</label>
+                        <input type="number" id="reqWR" class="form-control" value="2" min="0" onchange="recalculateEngine()">
+                    </div>
+                    <div class="form-group">
+                        <label for="reqTE">TE Starters</label>
+                        <input type="number" id="reqTE" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                    </div>
+                </div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label for="reqFlex">Flex Starters</label>
+                        <input type="number" id="reqFlex" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                    </div>
+                    <div class="form-group">
+                        <label for="reqDEF">DEF Starters</label>
+                        <input type="number" id="reqDEF" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                    </div>
+                </div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label for="reqBench">Bench Slots</label>
+                        <input type="number" id="reqBench" class="form-control" value="6" min="0" max="15" onchange="recalculateEngine()">
+                    </div>
+                    <div class="form-group">
+                        <label for="flexAlloc" title="Assumed share of flex slots that get filled by RBs across the league. Affects baseline calculation for VOB. Higher = engine assumes more RB-heavy flex usage. Default 40% is reasonable for most leagues. Lower it for PPR leagues that favor WR flexes.">Flex RB% <span style="color:var(--text-muted); font-size:10px;">ⓘ</span></label>
+                        <input type="number" id="flexAlloc" class="form-control" value="40" min="0" max="100" onchange="recalculateEngine()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span>League Mate Names<span class="help-tip" tabindex="0" data-tip="Optional names for your league mates. Names show up in the draft board and the current-pick indicator instead of 'Team 1', 'Team 2', etc. Your own team is highlighted in green based on the draft slot you set in Profile Configuration. Leave blank to keep numeric labels.">?</span></span>
+                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTeamNames()">Reset to Defaults</button>
+                </div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Names appear in the draft board and roster matrix. Click your pick number in Profile Configuration to set which team is yours.</p>
+                <div id="teamNamesContainer"></div>
+            </div>
+        </div>
+
+        <!-- CENTER: LIVE BOARD & SCARCITY POOL -->
+        <div class="center-column">
+            <div class="panel" style="margin-bottom: 15px; border-color: var(--accent-green); border-width: 2px;">
+                <div class="panel-title" style="color: var(--accent-green);">Best Available For Your Roster<span class="help-tip" tabindex="0" data-tip="Top 3 draft recommendations for your team, ranked by a composite score combining tier, positional need, run risk, and value vs ADP. The composite formula and how strongly each factor weighs in is controlled by the Recommendation Tuning panel below. When it's not your turn, this still shows you the best picks for your NEXT turn — useful for planning around what other teams might take.">?</span></div>
+                <div id="bestAvailableContainer"></div>
+            </div>
+
+            <div class="panel" style="margin-bottom: 15px;">
+                <div class="panel-title" style="color: var(--accent-amber);">Next Turn Analysis & Imminent Positional Runs<span class="help-tip" tabindex="0" data-tip="Run Risk per position — the chance an elite player at this position will get drafted before your next pick. Computed from (a) how many teams pick between now and your next turn, (b) how many of those teams still need this position, and (c) how many elite-tier players remain. Color-coded: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). High run risk in a position you also need is a strong reach signal.">?</span></div>
+                <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Click filter tabs to narrow by position. The R checkbox marks rookies (engine then applies the Rookie Boost to their EV).">?</span></div>
+                <div class="filter-tabs">
+                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL</button>
+                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB</button>
+                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB</button>
+                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR</button>
+                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE</button>
+                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF</button>
+                </div>
+                <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
+                    <table class="player-table" id="playerTable">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Pos</th>
+                                <th>Tier</th>
+                                <th title="Average Draft Position">ADP</th>
+                                <th title="Pick value vs ADP. Negative = reaching, positive = value">vs ADP</th>
+                                <th>VOB</th>
+                                <th>Floor</th>
+                                <th>Ceiling</th>
+                                <th>Risk</th>
+                                <th>Run Risk</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playerTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Recommendation Tuning<span class="help-tip" tabindex="0" data-tip="Controls how the Best Available panel weighs different factors. Pick a Preset Strategy for a one-click setup, or fine-tune the five caps below. Each individual slider has its own hover tooltip explaining what it does. Moving any slider flips the preset to 'Custom'. Settings persist across reloads.">?</span></span>
+                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTuningDefaults()">Reset</button>
+                </div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Controls how the Best Available panel weighs tier vs. need vs. scarcity. Pick a preset or fine-tune below.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="tuningPreset">Preset Strategy</label>
+                        <select id="tuningPreset" class="form-control" onchange="applyTuningPreset(this.value)">
+                            <option value="balanced">Balanced (default)</option>
+                            <option value="bpa">BPA — Best Player Available</option>
+                            <option value="need">Need — Fill Roster Holes</option>
+                            <option value="pure">Pure Rankings (no VOB)</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tierWeight" title="How heavily tier affects the recommendation. Each tier step costs this many points of composite score. Higher = stronger preference for higher-tier players. Lower = need and scarcity matter more.">Tier Weight: <span id="tierWeightVal">10</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="tierWeight" min="3" max="20" value="10" step="1" oninput="document.getElementById('tierWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="needWeight" title="Maximum points the need adjustment can shift a player by. At default 3, a player filling an open starter slot gets a -3 boost to composite score (a fraction of a tier). Higher values let need adjustments override tier more.">Need Cap: <span id="needWeightVal">3</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="needWeight" min="0" max="8" value="3" step="1" oninput="document.getElementById('needWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scarcityWeight" title="Maximum points scarcity (positional run risk) can shift a player by. Higher = run risk is treated as a more urgent draft signal.">Scarcity Cap: <span id="scarcityWeightVal">2</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="scarcityWeight" min="0" max="6" value="2" step="1" oninput="document.getElementById('scarcityWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adpValueWeight" title="Maximum points the 'available past ADP' bonus can shift a player by. Higher = the engine values draft-board steals more.">ADP Value Cap: <span id="adpValueWeightVal">1.5</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="adpValueWeight" min="0" max="50" value="15" step="1" oninput="document.getElementById('adpValueWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="vobWeight" title="How much within-tier value (VOB) matters as a tiebreaker. Default 0.5 means VOB rarely jumps a player across tiers but breaks ties within one. Set to 0 to ignore VOB entirely (pure tier ordering).">VOB Tiebreaker Weight: <span id="vobWeightVal">0.5</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="vobWeight" min="0" max="20" value="5" step="1" oninput="document.getElementById('vobWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: LIVE MATRIX TRACKER -->
+        <div class="right-column">
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Draft Board & Team Roster Matrix<span class="help-tip tip-right" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. Columns map to roster slots: QB, RB, WR, TE, FX (Flex), DF (Defense), BN (Bench). The Undo button reverses the last pick — handy for misclicks. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
+                    <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
+                </div>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="undoLastPick()">↶ Undo Last Pick</button>
+                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
+                </div>
+                <div style="overflow-y: auto; max-height: 420px;">
+                    <table class="matrix-table" id="matrixTable">
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>QB</th>
+                                <th>RB</th>
+                                <th>WR</th>
+                                <th>TE</th>
+                                <th>FX</th>
+                                <th>DF</th>
+                                <th>BN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
+                <div class="roster-grid" id="myRosterGrid"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <div class="panel-title" style="cursor: pointer;" onclick="toggleGlossary()">
+            <span>Glossary & Acronym Reference</span>
+            <span id="glossaryToggle" style="font-size: 12px; color: var(--text-muted); font-weight: normal;">▼ Show</span>
+        </div>
+        <div id="glossaryContent" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 12px;">
+
+                <div>
+                    <h3 style="font-size: 13px; color: var(--accent-blue); margin-bottom: 8px; font-weight: 600;">Draft Strategy Acronyms</h3>
+                    <dl style="font-size: 12px;">
+                        <dt style="font-weight: 600; margin-top: 8px;">BPA — Best Player Available</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Strategy of always drafting the highest-ranked player on the board, regardless of which positions you've already filled. Tends to win earlier rounds; conflicts with need-filling late.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">ADP — Average Draft Position</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">The pick number at which a player is typically drafted across many drafts. Helpful for spotting "reaches" (drafting before ADP) and "values" (player still available past ADP).</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">VOB — Value Over Baseline</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">How much a player's projected points exceed the replacement-level player at the same position. Used as a within-position value signal — cross-position comparison is unreliable since each position has its own baseline. Closely related to VORP/VBD.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">ECR — Expert Consensus Ranking</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">An aggregated ranking pooled from many fantasy experts (FantasyPros pioneered this format). Smoother than any single expert's list because it averages out idiosyncratic opinions.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">VORP / VBD</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Value Over Replacement Player / Value-Based Drafting. The general family of approaches VOB belongs to.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">EV — Expected Value</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Internal score this engine assigns to each player, computed as the average of adjusted floor and ceiling. The basis for VOB.</dd>
+                    </dl>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 13px; color: var(--accent-blue); margin-bottom: 8px; font-weight: 600;">Roster Positions</h3>
+                    <dl style="font-size: 12px;">
+                        <dt style="font-weight: 600; margin-top: 8px;">QB — Quarterback</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Usually 1 starter per team; 2 in superflex leagues.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">RB — Running Back</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Typically 2 starters. Premium scarce position in standard formats.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">WR — Wide Receiver</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Typically 2–3 starters. The deepest position in most leagues.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">TE — Tight End</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Usually 1 starter. Thin position — the top 3–5 tight ends have a big gap to the rest.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">FLEX (FX)</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">A starter slot that accepts RB, WR, or TE. Sometimes "WR/RB" or "WR/RB/TE" depending on league rules.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">DEF / DST / D/ST</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Team Defense / Special Teams. You draft a whole team's defensive unit, not individual defenders. Three different abbreviations for the same thing.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">BN (Bench)</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Non-starting roster slots. Players here don't score but can be moved into starting slots week-to-week.</dd>
+                    </dl>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 13px; color: var(--accent-blue); margin-bottom: 8px; font-weight: 600;">Scoring Formats</h3>
+                    <dl style="font-size: 12px;">
+                        <dt style="font-weight: 600; margin-top: 8px;">PPR — Points Per Reception</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Format that awards 1 fantasy point per catch, on top of yardage and TD scoring. Boosts WR and pass-catching RB value.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Half PPR (0.5 PPR)</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">0.5 points per reception. The most common modern format. Sits between standard and full PPR in reception-heavy player value.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Standard (Non-PPR)</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">No bonus for receptions. Yardage and TDs only. Increasingly rare — favors workhorse RBs.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Superflex</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Format with a second flex slot that also accepts QBs. Massively boosts QB value — you'll see QBs go in round 1.</dd>
+                    </dl>
+
+                    <h3 style="font-size: 13px; color: var(--accent-blue); margin-bottom: 8px; font-weight: 600; margin-top: 16px;">Engine Concepts</h3>
+                    <dl style="font-size: 12px;">
+                        <dt style="font-weight: 600; margin-top: 8px;">Tier</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">A group of players considered roughly equivalent in expected value. Tier breaks reflect real talent gaps — you'd rather have any tier 2 RB than the best tier 3 RB.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Run Risk</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate of the chance a positional "run" happens before your next pick — i.e. how likely the elite players at this position get drafted away. Computed from team needs around the snake and remaining elite supply.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Snake Draft</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Draft order reverses each round. If you pick 3rd in round 1, you pick 10th in round 2 (in a 12-team league), then 3rd again in round 3. Equalizes value across draft positions.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Flex RB%</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Assumed share of flex slots league-wide that get filled by RBs. Affects the VOB baseline calculation. Default 40 is reasonable for most leagues.</dd>
+                    </dl>
+                </div>
+
+            </div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                Sources used in this app: <strong>Sleeper API</strong> for player data (free, no auth required). <strong>FantasyPros</strong> reference for ECR methodology (their format is the basis for this engine's tier-based approach). Player data import also supports CSV and JSON for any source you prefer.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Baseline seeding data structure used before manual copy-paste action is initiated
+        let activePlayers = [
+            { id: 1, name: "Christian McCaffrey", pos: "RB", tier: 1, floor: 16.5, ceiling: 24.0, injury: "High", rookie: false, adp: 2.1 },
+            { id: 2, name: "CeeDee Lamb", pos: "WR", tier: 1, floor: 15.8, ceiling: 23.5, injury: "Low", rookie: false, adp: 1.8 },
+            { id: 3, name: "Tyreek Hill", pos: "WR", tier: 1, floor: 15.2, ceiling: 23.8, injury: "Low", rookie: false, adp: 3.4 },
+            { id: 4, name: "Breece Hall", pos: "RB", tier: 1, floor: 14.5, ceiling: 22.0, injury: "Medium", rookie: false, adp: 4.2 },
+            { id: 5, name: "Bijan Robinson", pos: "RB", tier: 1, floor: 14.2, ceiling: 22.5, injury: "Low", rookie: false, adp: 5.0 },
+            { id: 6, name: "Justin Jefferson", pos: "WR", tier: 1, floor: 14.6, ceiling: 22.4, injury: "Low", rookie: false, adp: 6.1 },
+            { id: 7, name: "Josh Allen", pos: "QB", tier: 1, floor: 18.2, ceiling: 25.8, injury: "Low", rookie: false, adp: 28.5 },
+            { id: 8, name: "Travis Kelce", pos: "TE", tier: 1, floor: 11.0, ceiling: 17.2, injury: "Low", rookie: false, adp: 32.7 }
+        ];
+
+        // Rookie flag must be data-driven, not guessed. Users can extend this list, or
+        // future versions can pull it from a maintained source. Names lowercased for matching.
+        // Empty by default — users mark rookies manually (see toggle in player row) or maintain this list.
+        const KNOWN_ROOKIES = new Set([
+            // Add lowercase names here, e.g. "marvin harrison jr."
+        ]);
+
+        let currentPick = 1;
+        let selectedPositionFilter = "ALL";
+        let teamRosters = {};
+        let draftHistory = [];
+        // League mate names indexed by team number (1-based). Defaults populated on demand.
+        let leagueNames = {};
+        // Cached raw injury CSV text. When present, re-applied automatically after
+        // any rankings re-import so users don't have to remerge by hand. Stored
+        // under its own localStorage key (separate from draft state) so clearing
+        // one doesn't affect the other — different concerns, different keys.
+        let cachedInjuryCsv = null;
+        // Cached raw rankings CSV (FantasyPros or generic format). Saved on import,
+        // exposed via a "Reload Saved" button in the CSV tab — NOT auto-applied on
+        // page load because doing so could silently wipe an in-progress draft. The
+        // user always explicitly chooses to reload.
+        let cachedRankingsCsv = null;
+        // Cached raw rookies CSV. Same auto-remerge pattern as injuries: applied
+        // after every rankings import (and on demand via the rookies tab button).
+        let cachedRookiesCsv = null;
+
+        // ─── GitHub Sync URL configuration ─────────────────────────────────
+        //
+        // DEFAULT_GITHUB_URLS travel with the app: editing them here in the HTML
+        // and pushing to GitHub propagates to every device on the next page load.
+        // Set these once after you push the repo, and any new device that visits
+        // your GitHub Pages URL works immediately — no per-device setup required.
+        //
+        // localStorage values override these defaults if set. That gives users
+        // the ability to point a single device at a different data source for
+        // testing without affecting the canonical config. The "Reset to Defaults"
+        // button in the GitHub Sync panel clears the override.
+        const DEFAULT_GITHUB_URLS = {
+            // After you create your repo and add the CSVs, paste your raw URLs here.
+            // Example: "https://raw.githubusercontent.com/yourname/yourrepo/main/data/rankings.csv"
+            rankings: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/data/Tiers.csv",
+            injury: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/data/Injury%20Risk.csv",
+            rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/data/Rookie%20Tiers.csv"
+        };
+
+        // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
+        // localStorage has device-specific overrides.
+        let githubUrls = { rankings: "", injury: "", rookies: "" };
+        // Tracks whether we've already attempted an auto-fetch on this page load.
+        // Prevents double-fetching if the user navigates state changes that re-run init.
+        let autoFetchAttempted = false;
+
+        const STORAGE_KEY = "fantasyDraftEngine_v3";
+        const INJURY_CACHE_KEY = "fantasyDraftEngine_injuryCache";
+        const RANKINGS_CACHE_KEY = "fantasyDraftEngine_rankingsCache";
+        const GITHUB_URLS_KEY = "fantasyDraftEngine_githubUrls";
+        const ROOKIES_CACHE_KEY = "fantasyDraftEngine_rookiesCache";
+
+        function saveState() {
+            try {
+                const settingIds = ["presetSelect", "leagueSize", "draftOrder", "scoringFormat",
+                    "rookieBoost", "adpVariance", "reqQB", "reqRB", "reqWR", "reqTE",
+                    "reqFlex", "reqDEF", "reqBench", "flexAlloc",
+                    "tuningPreset", "tierWeight", "needWeight", "scarcityWeight", "adpValueWeight", "vobWeight"];
+                const settings = {};
+                settingIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) settings[id] = el.value;
+                });
+                const payload = {
+                    version: 3,
+                    activePlayers,
+                    currentPick,
+                    teamRosters,
+                    leagueNames,
+                    draftHistory: draftHistory.map(h => ({ pick: h.pick, team: h.team, slot: h.slot, playerId: h.playerObj.id })),
+                    settings
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                // Storage may be unavailable (private browsing, quota). Silently skip.
+                console.warn("Could not save draft state:", e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const payload = JSON.parse(raw);
+                if (payload.version !== 3 || !payload.activePlayers) return false;
+
+                // Restore settings first so they're in place before recalc
+                if (payload.settings) {
+                    Object.entries(payload.settings).forEach(([id, val]) => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = val;
+                    });
+                    // Also sync the slider readouts
+                    const rb = document.getElementById("rookieBoost");
+                    const rbVal = document.getElementById("rookieBoostVal");
+                    if (rb && rbVal) rbVal.innerText = rb.value + '%';
+                    const adp = document.getElementById("adpVariance");
+                    const adpVal = document.getElementById("adpVarianceVal");
+                    if (adp && adpVal) adpVal.innerText = (adp.value / 100).toFixed(2);
+                    // Tuning slider readouts — use the central TUNING_READOUTS map so
+                    // formatting stays in one place.
+                    Object.entries(TUNING_READOUTS).forEach(([id, fmt]) => {
+                        const el = document.getElementById(id);
+                        const v = document.getElementById(id + "Val");
+                        if (el && v) v.innerText = fmt(el.value);
+                    });
+                }
+
+                activePlayers = payload.activePlayers;
+                currentPick = payload.currentPick;
+                teamRosters = payload.teamRosters;
+                leagueNames = payload.leagueNames || {};
+                draftHistory = (payload.draftHistory || []).map(h => ({
+                    pick: h.pick, team: h.team, slot: h.slot,
+                    playerObj: activePlayers.find(p => p.id === h.playerId) || { id: h.playerId, name: "?" }
+                }));
+                return true;
+            } catch (e) {
+                console.warn("Could not load draft state:", e);
+                return false;
+            }
+        }
+
+        function clearSavedState() {
+            if (confirm("Clear all saved draft data and start fresh? This cannot be undone.")) {
+                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                location.reload();
+            }
+        }
+
+        window.onload = function() {
+            // Load all cached CSVs BEFORE applying state so status indicators are
+            // correct immediately. Injury and rookie caches will auto-apply during
+            // subsequent rankings imports; the rankings cache is exposed via an
+            // explicit "Reload Saved" button (not auto-applied).
+            loadCachedInjuryCsv();
+            loadCachedRookiesCsv();
+            loadCachedRankingsCsv();
+            loadGithubUrls();
+            if (loadState()) {
+                recalculateEngine();
+            } else {
+                loadPreset();
+            }
+            renderTeamNameInputs();
+            // After all sync state is restored, attempt the auto-fetch.
+            // Will be a no-op unless the user has configured a rankings URL AND
+            // doesn't already have cached data on this device.
+            maybeAutoFetch();
+        };
+
+        // Custom High-Pass Parsing Matrix Engine tailored explicitly for FantasyPros Copy/Paste formats
+        function parseFantasyProsText() {
+            const rawText = document.getElementById("fpPasteArea").value;
+            if (!rawText.trim()) {
+                alert("The window parsing block is empty. Paste data rows into the interface box first.");
+                return;
+            }
+
+            const lines = rawText.split('\n');
+            let parsedPool = [];
+            let unparsedLines = [];
+            let currentTier = 1;
+            let globalIdCounter = 1;
+
+            const regexTier = /Tier\s+(\d+)/i;
+            // Catch pattern variations like: "1. Christian McCaffrey (SF - RB)" or "Christian McCaffrey SF"
+            const regexPositionMatch = /\b(QB|RB|WR|TE|DST|DEF)\b/i;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.length === 0) return;
+
+                const checkTier = line.match(regexTier);
+                if (checkTier) {
+                    currentTier = parseInt(checkTier[1]);
+                    return;
+                }
+
+                // Look for strings that match common player table structures
+                if (trimmed.length > 5 && regexPositionMatch.test(line)) {
+                    let cleanedRow = line.replace(/^\d+[\s\.\t]+/, '').trim(); // Strip rank index
+
+                    // Discard line items that contain specific layout meta words
+                    const lowerRow = cleanedRow.toLowerCase();
+                    if (lowerRow.includes("rank") || lowerRow.startsWith("bye") || lowerRow.includes("cheatsheet")) return;
+
+                    let tokens = cleanedRow.split(/[\t\s]+/);
+                    if (tokens.length < 2) {
+                        unparsedLines.push(trimmed);
+                        return;
+                    }
+
+                    // Reconstruct position parameters
+                    let extractedPos = null;
+
+                    for (let i = 0; i < tokens.length; i++) {
+                        let tokenClean = tokens[i].replace(/[^a-zA-Z]/g, '').toUpperCase();
+                        if (["QB", "RB", "WR", "TE", "DST", "DEF"].includes(tokenClean)) {
+                            extractedPos = tokenClean === "DST" ? "DEF" : tokenClean;
+                            break;
+                        }
+                    }
+
+                    if (!extractedPos) {
+                        unparsedLines.push(trimmed);
+                        return;
+                    }
+
+                    // Extract name from the leading string variables (stop at team abbrev or position token)
+                    let nameArray = [];
+                    for (let i = 0; i < tokens.length; i++) {
+                        let tokenClean = tokens[i].replace(/[^a-zA-Z]/g, '').toUpperCase();
+                        if (tokens[i].includes("(") || ["QB", "RB", "WR", "TE", "DST", "DEF"].includes(tokenClean)) break;
+                        if (/^[A-Z]{2,3}$/.test(tokens[i]) && i > 0) break;
+                        nameArray.push(tokens[i]);
+                    }
+
+                    let finalName = nameArray.join(" ").replace(/[^a-zA-Z\s\.\'\-]/g, '').trim();
+                    if (finalName.length < 4) {
+                        unparsedLines.push(trimmed);
+                        return;
+                    }
+
+                    // Map structural floor/ceiling points matching the parsed tier depths
+                    let floorScore = 14.5 - (currentTier * 1.1);
+                    let ceilingScore = 21.5 - (currentTier * 1.4);
+
+                    if (extractedPos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
+                    if (extractedPos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (extractedPos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
+
+                    parsedPool.push({
+                        id: globalIdCounter++,
+                        name: finalName,
+                        pos: extractedPos,
+                        tier: currentTier,
+                        floor: Math.max(2.0, floorScore),
+                        ceiling: Math.max(5.0, ceilingScore),
+                        injury: "Low", // Default; user can edit. No random assignment.
+                        rookie: KNOWN_ROOKIES.has(finalName.toLowerCase()),
+                        adp: globalIdCounter - 1 // Use rank order as ADP fallback when text-pasted (no ADP data in cheat sheet text)
+                    });
+                } else if (trimmed.length > 5 && !checkTier) {
+                    unparsedLines.push(trimmed);
+                }
+            });
+
+            // Surface unparsed lines for debugging
+            const logEl = document.getElementById("parseLog");
+            const logContainer = document.getElementById("parseLogContainer");
+            if (unparsedLines.length > 0) {
+                logEl.value = unparsedLines.slice(0, 50).join("\n") +
+                    (unparsedLines.length > 50 ? `\n... (${unparsedLines.length - 50} more)` : "");
+                logContainer.style.display = "block";
+            } else {
+                logEl.value = "";
+                logContainer.style.display = "none";
+            }
+
+            if (parsedPool.length > 0) {
+                // Remove duplicates by position name parameters
+                let uniqueMap = {};
+                parsedPool.forEach(item => {
+                    uniqueMap[item.name + "_" + item.pos] = item;
+                });
+                activePlayers = Object.values(uniqueMap);
+                reapplyCachedInjuryData();
+                reapplyCachedRookiesData();
+
+                alert(`Parsed ${activePlayers.length} unique players. ${unparsedLines.length} lines skipped — see debug log if any look like real players.`);
+                document.getElementById("fpPasteArea").value = "";
+                resetDraftState();
+                saveState();
+            } else {
+                alert("Parse failed — no players matched. Check the debug log for what was skipped.");
+            }
+        }
+
+        // ─── CSV import ────────────────────────────────────────────────────
+        // RFC 4180-aware-ish CSV parser. Handles quoted fields with embedded commas.
+        function parseCsvLine(line) {
+            const out = [];
+            let cur = "";
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (inQuotes) {
+                    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                    else if (c === '"') { inQuotes = false; }
+                    else { cur += c; }
+                } else {
+                    if (c === '"') { inQuotes = true; }
+                    else if (c === ',') { out.push(cur); cur = ""; }
+                    else { cur += c; }
+                }
+            }
+            out.push(cur);
+            return out.map(s => s.trim());
+        }
+
+        function handleCsvFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById("csvPasteArea").value = e.target.result;
+                parseCsvText(e.target.result);
+            };
+            reader.onerror = () => alert("Could not read the file.");
+            reader.readAsText(file);
+        }
+
+        function parseCsvText(text) {
+            if (!text || !text.trim()) {
+                alert("No CSV data provided.");
+                return;
+            }
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                alert("CSV needs at least a header row and one data row.");
+                return;
+            }
+
+            const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
+
+            // Format detection: FantasyPros draft rankings export has these distinctive columns.
+            // Their POS field combines position and positional rank (e.g. "WR1", "RB18"), they
+            // include a TIERS column, and "ECR VS. ADP" gives the rank-vs-ADP difference.
+            const isFantasyPros = headers.includes("rk") &&
+                headers.includes("tiers") &&
+                headers.includes("player name");
+
+            if (isFantasyPros) {
+                return parseFantasyProsCsv(lines, headers, text);
+            }
+            return parseGenericCsv(lines, headers, text);
+        }
+
+        // Parser for the FantasyPros draft rankings CSV export format.
+        // Columns: RK, TIERS, PLAYER NAME, TEAM, POS, BYE WEEK, UPSIDE, BUST, SOS SEASON, ECR VS. ADP
+        function parseFantasyProsCsv(lines, headers, rawText) {
+            const idx = name => headers.indexOf(name);
+            const rkIdx = idx("rk");
+            const tierIdx = idx("tiers");
+            const nameIdx = idx("player name");
+            const posIdx = idx("pos");
+            const teamIdx = idx("team");
+
+            const pool = [];
+            const errors = [];
+            const skippedKickers = [];
+            let id = 1;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const name = (cells[nameIdx] || "").trim();
+                const posRaw = (cells[posIdx] || "").toUpperCase().trim();
+
+                if (!name || !posRaw) {
+                    errors.push(`Row ${i + 1}: ${lines[i].slice(0, 60)}`);
+                    continue;
+                }
+
+                // Strip the positional rank suffix: "WR1" → "WR", "DST12" → "DST", "RB18" → "RB"
+                const posMatch = posRaw.match(/^([A-Z]+)/);
+                let pos = posMatch ? posMatch[1] : posRaw;
+                if (pos === "DST") pos = "DEF";
+
+                // Engine doesn't handle kickers — skip silently but track for reporting
+                if (pos === "K") {
+                    skippedKickers.push(name);
+                    continue;
+                }
+
+                if (!["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                    errors.push(`Row ${i + 1}: unknown position "${posRaw}"`);
+                    continue;
+                }
+
+                // RK is the overall ECR (Expert Consensus Rank), which we use directly
+                // as the player's ADP for engine purposes. The "ECR VS. ADP" column in
+                // FantasyPros exports is a *delta* between ECR and the market ADP, useful
+                // as info but not something we transform RK by. (Earlier versions tried
+                // to compute a "true ADP" from RK ± delta; the convention was inverted
+                // and produced negative ADPs for top players. Simpler is better here.)
+                const rk = parseInt(cells[rkIdx]) || i;
+                const adp = rk;
+
+                const tier = parseInt(cells[tierIdx]) || 10;
+
+                // Floor/ceiling derived from tier with positional adjustments — same model
+                // as the text parser. FantasyPros doesn't publish projections in this export.
+                let floorScore = 14.5 - tier * 1.1;
+                let ceilingScore = 21.5 - tier * 1.4;
+                if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
+                if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
+
+                pool.push({
+                    id: id++, name, pos, tier, adp,
+                    floor: Math.max(2.0, floorScore),
+                    ceiling: Math.max(5.0, ceilingScore),
+                    injury: "Low",
+                    rookie: KNOWN_ROOKIES.has(name.toLowerCase())
+                });
+            }
+
+            if (pool.length === 0) {
+                alert("No valid players found in FantasyPros CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
+                return;
+            }
+
+            activePlayers = pool;
+            reapplyCachedInjuryData();
+            reapplyCachedRookiesData();
+            cacheRankingsCsv(rawText);
+            const parts = [`Imported ${pool.length} players from FantasyPros CSV.`];
+            if (skippedKickers.length > 0) parts.push(`Skipped ${skippedKickers.length} kicker(s) — engine doesn't support K position.`);
+            if (errors.length > 0) parts.push(`${errors.length} row(s) had errors and were skipped.`);
+            alert(parts.join("\n"));
+            document.getElementById("csvPasteArea").value = "";
+            document.getElementById("csvFileInput").value = "";
+            resetDraftState();
+            saveState();
+        }
+
+        // Original generic CSV parser — for the engine's own format (name, pos, tier, adp, ...)
+        function parseGenericCsv(lines, headers, rawText) {
+            const idx = name => headers.indexOf(name);
+            const nameIdx = idx("name") !== -1 ? idx("name") : idx("player");
+            const posIdx = idx("pos") !== -1 ? idx("pos") : idx("position");
+            const tierIdx = idx("tier");
+            const adpIdx = idx("adp");
+            const floorIdx = idx("floor");
+            const ceilingIdx = idx("ceiling");
+            const rookieIdx = idx("rookie");
+            const injuryIdx = idx("injury");
+
+            if (nameIdx === -1 || posIdx === -1) {
+                alert(`CSV must include "name" and "pos" columns. Found: ${headers.join(", ")}\n\nNote: For FantasyPros exports, the parser auto-detects their format (RK, TIERS, PLAYER NAME, POS columns).`);
+                return;
+            }
+
+            const pool = [];
+            const errors = [];
+            let id = 1;
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const name = cells[nameIdx];
+                let pos = (cells[posIdx] || "").toUpperCase().trim();
+                if (pos === "DST") pos = "DEF";
+                if (!name || !["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                    errors.push(`Row ${i + 1}: ${lines[i].slice(0, 60)}`);
+                    continue;
+                }
+                const tier = tierIdx !== -1 ? parseInt(cells[tierIdx]) || 5 : 5;
+                const adp = adpIdx !== -1 ? parseFloat(cells[adpIdx]) || (i) : i;
+                let floorScore = floorIdx !== -1 ? parseFloat(cells[floorIdx]) : (14.5 - tier * 1.1);
+                let ceilingScore = ceilingIdx !== -1 ? parseFloat(cells[ceilingIdx]) : (21.5 - tier * 1.4);
+                if (floorIdx === -1) {
+                    if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
+                    if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
+                }
+                const rookieRaw = rookieIdx !== -1 ? (cells[rookieIdx] || "").toLowerCase() : "";
+                const rookie = ["true", "1", "yes", "y"].includes(rookieRaw) || KNOWN_ROOKIES.has(name.toLowerCase());
+                const injury = injuryIdx !== -1 && ["Low", "Medium", "High"].includes(cells[injuryIdx]) ? cells[injuryIdx] : "Low";
+
+                pool.push({
+                    id: id++, name, pos, tier, adp,
+                    floor: Math.max(2.0, floorScore),
+                    ceiling: Math.max(5.0, ceilingScore),
+                    injury, rookie
+                });
+            }
+
+            if (pool.length === 0) {
+                alert("No valid players found in CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
+                return;
+            }
+
+            activePlayers = pool;
+            reapplyCachedInjuryData();
+            reapplyCachedRookiesData();
+            cacheRankingsCsv(rawText);
+            const errMsg = errors.length > 0 ? `\n\n${errors.length} row(s) skipped.` : "";
+            alert(`Imported ${pool.length} players from CSV.${errMsg}`);
+            document.getElementById("csvPasteArea").value = "";
+            document.getElementById("csvFileInput").value = "";
+            resetDraftState();
+            saveState();
+        }
+
+        function downloadCsvTemplate() {
+            const template = "name,pos,tier,adp,floor,ceiling,rookie,injury\n" +
+                "Christian McCaffrey,RB,1,2.1,16.5,24.0,false,High\n" +
+                "CeeDee Lamb,WR,1,1.8,15.8,23.5,false,Low\n" +
+                "Josh Allen,QB,1,28.5,18.2,25.8,false,Low\n";
+            const blob = new Blob([template], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "draft-engine-template.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ─── JSON import ───────────────────────────────────────────────────
+        function parseJsonImport() {
+            const text = document.getElementById("jsonPasteArea").value;
+            if (!text.trim()) {
+                alert("No JSON provided.");
+                return;
+            }
+            let parsed;
+            try {
+                parsed = JSON.parse(text);
+            } catch (e) {
+                alert("Invalid JSON: " + e.message);
+                return;
+            }
+            if (!Array.isArray(parsed)) {
+                alert("JSON must be an array of player objects.");
+                return;
+            }
+            const pool = [];
+            const errors = [];
+            let id = 1;
+            parsed.forEach((p, i) => {
+                let pos = (p.pos || p.position || "").toUpperCase();
+                if (pos === "DST") pos = "DEF";
+                if (!p.name || !["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                    errors.push(`Item ${i}: missing name or invalid position`);
+                    return;
+                }
+                const tier = parseInt(p.tier) || 5;
+                let floorScore = p.floor !== undefined ? parseFloat(p.floor) : (14.5 - tier * 1.1);
+                let ceilingScore = p.ceiling !== undefined ? parseFloat(p.ceiling) : (21.5 - tier * 1.4);
+                if (p.floor === undefined) {
+                    if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
+                    if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
+                }
+                pool.push({
+                    id: id++,
+                    name: p.name,
+                    pos,
+                    tier,
+                    adp: p.adp !== undefined ? parseFloat(p.adp) : id,
+                    floor: Math.max(2.0, floorScore),
+                    ceiling: Math.max(5.0, ceilingScore),
+                    injury: ["Low", "Medium", "High"].includes(p.injury) ? p.injury : "Low",
+                    rookie: !!p.rookie || KNOWN_ROOKIES.has(p.name.toLowerCase())
+                });
+            });
+            if (pool.length === 0) {
+                alert("No valid players found in JSON.\n" + errors.slice(0, 5).join("\n"));
+                return;
+            }
+            activePlayers = pool;
+            reapplyCachedInjuryData();
+            reapplyCachedRookiesData();
+            alert(`Imported ${pool.length} players from JSON.${errors.length ? `\n${errors.length} item(s) skipped.` : ""}`);
+            document.getElementById("jsonPasteArea").value = "";
+            resetDraftState();
+            saveState();
+        }
+
+        function switchImportTab(tab, btnEl) {
+            document.querySelectorAll(".import-tab-pane").forEach(el => { el.style.display = "none"; });
+            const target = document.getElementById("importTab-" + tab);
+            if (target) target.style.display = "";
+            // Update active button visual within just the import panel
+            const importPanel = btnEl.closest(".panel");
+            if (importPanel) {
+                importPanel.querySelectorAll(".filter-tabs .tab").forEach(t => t.classList.remove("active"));
+                btnEl.classList.add("active");
+            }
+        }
+
+        // ─── Injury CSV import & merge ─────────────────────────────────────
+        //
+        // Auto-detects two formats:
+        //   1. Draft Sharks: blank-header column 0 (team), "Player" column with
+        //      "<Name> <TEAM> <POS> <PosRank>" inside it, and an "Injury Risk"
+        //      column with 5 buckets (Very Low / Low / Medium / High / Very High).
+        //   2. Generic: a "name" column and an "injury" column. Useful for
+        //      hand-curated overrides.
+        //
+        // Merges into existing activePlayers by fuzzy name match. Does NOT replace
+        // the player pool — only updates the injury field (and stores extra Draft
+        // Sharks metadata like projected games missed for richer display).
+
+        // Draft Sharks's 5-bucket scale collapses to the engine's 3-bucket internal
+        // scale. We keep the original label too for display.
+        const DS_RISK_MAP = {
+            "very low risk": "Low",
+            "low risk":      "Low",
+            "medium risk":   "Medium",
+            "high risk":     "High",
+            "very high risk": "High"
+        };
+
+        // Normalize a player name for matching. Lowercase, strip punctuation,
+        // strip common suffixes that vary between sources (Jr., Sr., II, III, IV).
+        function normalizeNameForMatch(name) {
+            return String(name || "")
+                .toLowerCase()
+                .replace(/[.,'']/g, "")
+                .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        // Parse the Draft Sharks "Player" cell.
+        // Format: "<Name with spaces> <TEAM> <POS> <PosRank>"
+        // Walk from the right: numeric rank, then position token, then team token,
+        // then everything before that is the name. Returns null on bad shape.
+        const DS_OFFENSIVE_POS = new Set(["QB", "RB", "WR", "TE", "DST", "DEF"]);
+        const DS_IDP_POS = new Set(["DE", "DT", "LB", "CB", "S", "OLB", "ILB", "SS", "FS", "NT", "EDGE"]);
+        function parseDraftSharksPlayerCell(cell) {
+            const tokens = String(cell || "").trim().split(/\s+/);
+            if (tokens.length < 4) return null;
+            if (!/^\d+$/.test(tokens[tokens.length - 1])) return null;
+            const pos = tokens[tokens.length - 2].toUpperCase();
+            const team = tokens[tokens.length - 3];
+            if (!/^[A-Z]{2,3}$/.test(team)) return null;
+            const isOffensive = DS_OFFENSIVE_POS.has(pos);
+            const isIdp = DS_IDP_POS.has(pos);
+            if (!isOffensive && !isIdp) return null;
+            const name = tokens.slice(0, tokens.length - 3).join(" ");
+            return { name, team, pos, isIdp };
+        }
+
+        function handleInjuryCsvFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById("injuryPasteArea").value = e.target.result;
+                parseInjuryCsvText(e.target.result);
+            };
+            reader.onerror = () => alert("Could not read the injury file.");
+            reader.readAsText(file);
+        }
+
+        function parseInjuryCsvText(text, options) {
+            options = options || {};
+            const silent = !!options.silent;
+            const skipCache = !!options.skipCache;
+
+            if (!text || !text.trim()) {
+                if (!silent) alert("No injury CSV data provided.");
+                return { matched: 0, unmatched: [] };
+            }
+            if (!activePlayers || activePlayers.length === 0) {
+                if (!silent) alert("Import a player pool first (Rankings CSV / Text / JSON tab), then come back to merge injury data.");
+                return { matched: 0, unmatched: [] };
+            }
+
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                if (!silent) alert("Injury CSV needs a header row and at least one data row.");
+                return { matched: 0, unmatched: [] };
+            }
+
+            const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
+
+            // Format detection: Draft Sharks has both "player" and "injury risk".
+            // Generic format has "name" + "injury".
+            const playerIdx = headers.indexOf("player");
+            const riskIdx = headers.indexOf("injury risk");
+            const gamesMissedIdx = headers.indexOf("projected games missed");
+            const durabilityIdx = headers.indexOf("durability");
+            const isDraftSharks = playerIdx !== -1 && riskIdx !== -1;
+
+            const nameIdx = headers.indexOf("name");
+            const injuryIdx = headers.indexOf("injury");
+            const isGeneric = nameIdx !== -1 && injuryIdx !== -1;
+
+            if (!isDraftSharks && !isGeneric) {
+                if (!silent) alert(`Injury CSV format not recognized. Expected either:\n  • Draft Sharks: columns include "Player" and "Injury Risk"\n  • Generic: columns include "name" and "injury"\n\nFound headers: ${headers.join(", ")}`);
+                return { matched: 0, unmatched: [] };
+            }
+
+            // Build a lookup map from the existing player pool: normalized name → player obj.
+            // Multiple players could theoretically share a normalized name; we keep the first
+            // and warn on collisions.
+            const playerByName = new Map();
+            const collisions = [];
+            activePlayers.forEach(p => {
+                const key = normalizeNameForMatch(p.name);
+                if (playerByName.has(key)) {
+                    collisions.push(p.name);
+                } else {
+                    playerByName.set(key, p);
+                }
+            });
+
+            let matched = 0;
+            let unmatched = [];
+            let idpSkipped = 0;
+            let invalidRisk = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                let rawName, rawRisk, isIdp = false;
+                let extras = {};
+
+                if (isDraftSharks) {
+                    const parsed = parseDraftSharksPlayerCell(cells[playerIdx] || "");
+                    if (!parsed) continue;
+                    if (parsed.isIdp) { idpSkipped++; continue; }
+                    rawName = parsed.name;
+                    rawRisk = (cells[riskIdx] || "").trim();
+                    if (gamesMissedIdx !== -1) {
+                        const gm = parseFloat(cells[gamesMissedIdx]);
+                        if (Number.isFinite(gm)) extras.projectedGamesMissed = gm;
+                    }
+                    if (durabilityIdx !== -1) {
+                        const d = parseFloat(cells[durabilityIdx]);
+                        if (Number.isFinite(d)) extras.durability = d;
+                    }
+                } else {
+                    rawName = (cells[nameIdx] || "").trim();
+                    rawRisk = (cells[injuryIdx] || "").trim();
+                }
+
+                if (!rawName) continue;
+
+                // Resolve the risk bucket. For Draft Sharks: lowercase match against
+                // the 5-bucket map. For generic: accept any of "Low"/"Medium"/"High"
+                // case-insensitively, plus the Draft Sharks long forms.
+                const riskLower = rawRisk.toLowerCase();
+                let injury = null;
+                if (DS_RISK_MAP[riskLower]) {
+                    injury = DS_RISK_MAP[riskLower];
+                } else if (["low", "medium", "high"].includes(riskLower)) {
+                    injury = riskLower.charAt(0).toUpperCase() + riskLower.slice(1);
+                }
+                if (!injury) {
+                    if (rawRisk) invalidRisk++; // Empty risk is fine (rookies), but unrecognized strings count
+                    continue;
+                }
+
+                // Match against pool. Try normalized exact first; that handles 99%
+                // of cases including Jr./Sr./III variations.
+                const key = normalizeNameForMatch(rawName);
+                const player = playerByName.get(key);
+                if (player) {
+                    player.injury = injury;
+                    player.injuryRaw = rawRisk; // preserve original label for hover/tooltip
+                    if (extras.projectedGamesMissed !== undefined) player.projectedGamesMissed = extras.projectedGamesMissed;
+                    if (extras.durability !== undefined) player.durability = extras.durability;
+                    matched++;
+                } else {
+                    unmatched.push(rawName);
+                }
+            }
+
+            // Surface results
+            const log = [];
+            log.push(`Merged injury data into ${matched} player(s).`);
+            if (idpSkipped > 0) log.push(`Skipped ${idpSkipped} IDP/defender row(s) (engine doesn't support IDP positions).`);
+            if (invalidRisk > 0) log.push(`${invalidRisk} row(s) had unrecognized injury risk values.`);
+            if (collisions.length > 0) log.push(`Warning: ${collisions.length} player name collision(s) in pool (kept first).`);
+            if (unmatched.length > 0) {
+                log.push(``);
+                log.push(`Players in injury CSV not found in your player pool (${unmatched.length}):`);
+                unmatched.slice(0, 30).forEach(n => log.push(`  • ${n}`));
+                if (unmatched.length > 30) log.push(`  ... and ${unmatched.length - 30} more`);
+            }
+
+            const logEl = document.getElementById("injuryMergeLogText");
+            const logContainer = document.getElementById("injuryMergeLog");
+            if (logEl && logContainer) {
+                logEl.value = log.join("\n");
+                logContainer.style.display = "block";
+            }
+
+            // Cache the raw CSV so future rankings imports can auto-remerge.
+            // skipCache=true is used when we're calling from the auto-remerge path
+            // to avoid pointlessly re-writing the same bytes to storage.
+            if (!skipCache && (matched > 0 || isDraftSharks || isGeneric)) {
+                try {
+                    cachedInjuryCsv = text;
+                    localStorage.setItem(INJURY_CACHE_KEY, text);
+                } catch (e) {
+                    console.warn("Could not cache injury CSV:", e);
+                }
+                updateInjuryCacheStatus();
+            }
+
+            if (!silent) {
+                alert(`Injury merge complete: ${matched} player(s) updated.${unmatched.length > 0 ? `\n${unmatched.length} name(s) not matched — see merge log for details.` : ""}\n\nInjury data has been saved to this browser and will auto-apply after future rankings imports.`);
+                document.getElementById("injuryPasteArea").value = "";
+                const fileInput = document.getElementById("injuryFileInput");
+                if (fileInput) fileInput.value = "";
+                recalculateEngine();
+                saveState();
+            }
+            return { matched, unmatched };
+        }
+
+        // Auto-remerge: called after every rankings import. Silently re-applies
+        // the cached injury CSV (if any) to the freshly imported pool.
+        function reapplyCachedInjuryData() {
+            if (!cachedInjuryCsv) return;
+            const result = parseInjuryCsvText(cachedInjuryCsv, { silent: true, skipCache: true });
+            if (result && result.matched > 0) {
+                console.log(`[Auto-remerge] Re-applied cached injury data to ${result.matched} player(s).`);
+            }
+        }
+
+        function loadCachedInjuryCsv() {
+            try {
+                const cached = localStorage.getItem(INJURY_CACHE_KEY);
+                if (cached) cachedInjuryCsv = cached;
+            } catch (e) {
+                // Storage blocked — ignore.
+            }
+            updateInjuryCacheStatus();
+        }
+
+        function clearCachedInjuryCsv() {
+            if (!confirm("Clear saved injury data? You'll need to re-import the injury CSV to get it back.")) return;
+            cachedInjuryCsv = null;
+            try { localStorage.removeItem(INJURY_CACHE_KEY); } catch (e) {}
+            // Reset any injury overrides on the current pool back to "Low" so the
+            // visual state reflects that we've cleared the data.
+            activePlayers.forEach(p => {
+                delete p.injuryRaw;
+                delete p.projectedGamesMissed;
+                delete p.durability;
+                p.injury = "Low";
+            });
+            updateInjuryCacheStatus();
+            recalculateEngine();
+            saveState();
+            alert("Saved injury data cleared. Player injury risks reset to default (Low).");
+        }
+
+        function updateInjuryCacheStatus() {
+            const statusEl = document.getElementById("injuryCacheStatus");
+            const clearBtn = document.getElementById("injuryCacheClearBtn");
+            if (!statusEl) return;
+            if (cachedInjuryCsv) {
+                const sizeKb = (cachedInjuryCsv.length / 1024).toFixed(1);
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB) — auto-applies after rankings imports`;
+                if (clearBtn) clearBtn.style.display = "";
+            } else {
+                statusEl.innerHTML = `<span style="color:var(--text-muted);">○</span> No injury data saved`;
+                if (clearBtn) clearBtn.style.display = "none";
+            }
+        }
+
+        // ─── Rankings CSV cache ────────────────────────────────────────────
+        //
+        // Unlike injury/rookies caches which auto-merge on top of an existing pool,
+        // the rankings cache is exposed via an explicit "Reload Saved" button. We
+        // don't silently auto-apply because doing so would risk wiping an in-progress
+        // draft, and replacing 400 players is a destructive operation the user
+        // should always confirm.
+        function cacheRankingsCsv(text) {
+            if (!text) return;
+            try {
+                cachedRankingsCsv = text;
+                localStorage.setItem(RANKINGS_CACHE_KEY, text);
+            } catch (e) {
+                console.warn("Could not cache rankings CSV:", e);
+            }
+            updateRankingsCacheStatus();
+        }
+
+        function loadCachedRankingsCsv() {
+            try {
+                const cached = localStorage.getItem(RANKINGS_CACHE_KEY);
+                if (cached) cachedRankingsCsv = cached;
+            } catch (e) { /* ignore */ }
+            updateRankingsCacheStatus();
+        }
+
+        function reloadCachedRankingsCsv() {
+            if (!cachedRankingsCsv) {
+                alert("No saved rankings to reload.");
+                return;
+            }
+            // Reloading replaces the entire player pool. If there's an in-progress
+            // draft (any picks made), confirm before clobbering it.
+            const hasDraftInProgress = draftHistory && draftHistory.length > 0;
+            const confirmMsg = hasDraftInProgress
+                ? `Reload saved rankings? This will replace your current player pool and reset your draft (${draftHistory.length} pick(s) made will be cleared).`
+                : "Reload saved rankings? This will replace your current player pool.";
+            if (!confirm(confirmMsg)) return;
+            parseCsvText(cachedRankingsCsv);
+        }
+
+        function clearCachedRankingsCsv() {
+            if (!confirm("Clear saved rankings data? You'll need to re-import the CSV to get it back.")) return;
+            cachedRankingsCsv = null;
+            try { localStorage.removeItem(RANKINGS_CACHE_KEY); } catch (e) {}
+            updateRankingsCacheStatus();
+            alert("Saved rankings cleared.");
+        }
+
+        function updateRankingsCacheStatus() {
+            const statusEl = document.getElementById("rankingsCacheStatus");
+            const reloadBtn = document.getElementById("rankingsCacheReloadBtn");
+            const clearBtn = document.getElementById("rankingsCacheClearBtn");
+            if (!statusEl) return;
+            if (cachedRankingsCsv) {
+                const sizeKb = (cachedRankingsCsv.length / 1024).toFixed(1);
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB)`;
+                if (reloadBtn) reloadBtn.style.display = "";
+                if (clearBtn) clearBtn.style.display = "";
+            } else {
+                statusEl.innerHTML = `<span style="color:var(--text-muted);">○</span> No rankings saved`;
+                if (reloadBtn) reloadBtn.style.display = "none";
+                if (clearBtn) clearBtn.style.display = "none";
+            }
+        }
+
+        // ─── Rookies CSV import & merge ────────────────────────────────────
+        //
+        // Format: FantasyPros rookies export uses the same shape as their main
+        // rankings export but the PLAYER NAME column has just the name (no embedded
+        // team/pos). Columns include RK, TIERS, PLAYER NAME, TEAM, POS, AGE.
+        // Also supports a generic two-column "name, rookie" format for hand overrides.
+        //
+        // Merges by fuzzy name match (same normalizer used for injury merge).
+        // Sets player.rookie = true for matched players. Does NOT clear the rookie
+        // flag for players NOT in the CSV — that would conflict with the KNOWN_ROOKIES
+        // set and manual checkbox toggles. Purely additive.
+
+        function handleRookiesCsvFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById("rookiesPasteArea").value = e.target.result;
+                parseRookiesCsvText(e.target.result);
+            };
+            reader.onerror = () => alert("Could not read the rookies file.");
+            reader.readAsText(file);
+        }
+
+        function parseRookiesCsvText(text, options) {
+            options = options || {};
+            const silent = !!options.silent;
+            const skipCache = !!options.skipCache;
+
+            if (!text || !text.trim()) {
+                if (!silent) alert("No rookies CSV data provided.");
+                return { matched: 0, unmatched: [] };
+            }
+            if (!activePlayers || activePlayers.length === 0) {
+                if (!silent) alert("Import a player pool first (Rankings CSV / Text / JSON tab), then come back to merge rookie data.");
+                return { matched: 0, unmatched: [] };
+            }
+
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) {
+                if (!silent) alert("Rookies CSV needs a header row and at least one data row.");
+                return { matched: 0, unmatched: [] };
+            }
+
+            const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
+
+            // Format detection: FantasyPros rookies export has "rk" + "player name".
+            // Generic format has "name" (and optionally "rookie" for explicit true/false).
+            const fpNameIdx = headers.indexOf("player name");
+            const fpRkIdx = headers.indexOf("rk");
+            const isFp = fpNameIdx !== -1 && fpRkIdx !== -1;
+            const genericNameIdx = headers.indexOf("name");
+            const genericRookieIdx = headers.indexOf("rookie");
+            const isGeneric = genericNameIdx !== -1;
+
+            if (!isFp && !isGeneric) {
+                if (!silent) alert(`Rookies CSV format not recognized. Expected either:\n  • FantasyPros rookies: columns include "RK" and "PLAYER NAME"\n  • Generic: a "name" column (with optional "rookie" true/false)\n\nFound headers: ${headers.join(", ")}`);
+                return { matched: 0, unmatched: [] };
+            }
+
+            // Build name lookup map from current pool
+            const playerByName = new Map();
+            activePlayers.forEach(p => {
+                const key = normalizeNameForMatch(p.name);
+                if (!playerByName.has(key)) playerByName.set(key, p);
+            });
+
+            let matched = 0;
+            const unmatched = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                let rawName;
+                let shouldFlag = true; // FP rookies file = anyone listed is a rookie
+
+                if (isFp) {
+                    rawName = (cells[fpNameIdx] || "").trim();
+                } else {
+                    rawName = (cells[genericNameIdx] || "").trim();
+                    if (genericRookieIdx !== -1) {
+                        const v = (cells[genericRookieIdx] || "").toLowerCase().trim();
+                        shouldFlag = ["true", "1", "yes", "y"].includes(v);
+                    }
+                }
+
+                if (!rawName) continue;
+
+                const player = playerByName.get(normalizeNameForMatch(rawName));
+                if (player) {
+                    if (shouldFlag) player.rookie = true;
+                    matched++;
+                } else {
+                    unmatched.push(rawName);
+                }
+            }
+
+            // Surface in log
+            const log = [];
+            log.push(`Marked ${matched} player(s) as rookies.`);
+            if (unmatched.length > 0) {
+                log.push(``);
+                log.push(`Rookies in CSV not found in your player pool (${unmatched.length}):`);
+                unmatched.slice(0, 30).forEach(n => log.push(`  • ${n}`));
+                if (unmatched.length > 30) log.push(`  ... and ${unmatched.length - 30} more`);
+            }
+            const logEl = document.getElementById("rookiesMergeLogText");
+            const logContainer = document.getElementById("rookiesMergeLog");
+            if (logEl && logContainer) {
+                logEl.value = log.join("\n");
+                logContainer.style.display = "block";
+            }
+
+            if (!skipCache) {
+                try {
+                    cachedRookiesCsv = text;
+                    localStorage.setItem(ROOKIES_CACHE_KEY, text);
+                } catch (e) {
+                    console.warn("Could not cache rookies CSV:", e);
+                }
+                updateRookiesCacheStatus();
+            }
+
+            if (!silent) {
+                alert(`Rookie merge complete: ${matched} player(s) flagged.${unmatched.length > 0 ? `\n${unmatched.length} name(s) not matched — see merge log for details.` : ""}\n\nRookie data has been saved to this browser and will auto-apply after future rankings imports.`);
+                document.getElementById("rookiesPasteArea").value = "";
+                const fileInput = document.getElementById("rookiesFileInput");
+                if (fileInput) fileInput.value = "";
+                recalculateEngine();
+                saveState();
+            }
+            return { matched, unmatched };
+        }
+
+        function reapplyCachedRookiesData() {
+            if (!cachedRookiesCsv) return;
+            const result = parseRookiesCsvText(cachedRookiesCsv, { silent: true, skipCache: true });
+            if (result && result.matched > 0) {
+                console.log(`[Auto-remerge] Re-applied cached rookie data to ${result.matched} player(s).`);
+            }
+        }
+
+        function loadCachedRookiesCsv() {
+            try {
+                const cached = localStorage.getItem(ROOKIES_CACHE_KEY);
+                if (cached) cachedRookiesCsv = cached;
+            } catch (e) { /* ignore */ }
+            updateRookiesCacheStatus();
+        }
+
+        function clearCachedRookiesCsv() {
+            if (!confirm("Clear saved rookie data? You'll need to re-import the rookies CSV to get it back.")) return;
+            cachedRookiesCsv = null;
+            try { localStorage.removeItem(ROOKIES_CACHE_KEY); } catch (e) {}
+            // Also clear rookie flags from current pool. Players in KNOWN_ROOKIES will
+            // get re-flagged on next recalc, and manual toggle state is per-player so
+            // it survives if the user explicitly checks the R box again later.
+            activePlayers.forEach(p => {
+                p.rookie = KNOWN_ROOKIES.has(p.name.toLowerCase());
+            });
+            updateRookiesCacheStatus();
+            recalculateEngine();
+            saveState();
+            alert("Saved rookie data cleared. Rookie flags reset.");
+        }
+
+        function updateRookiesCacheStatus() {
+            const statusEl = document.getElementById("rookiesCacheStatus");
+            const clearBtn = document.getElementById("rookiesCacheClearBtn");
+            if (!statusEl) return;
+            if (cachedRookiesCsv) {
+                const sizeKb = (cachedRookiesCsv.length / 1024).toFixed(1);
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB) — auto-applies after rankings imports`;
+                if (clearBtn) clearBtn.style.display = "";
+            } else {
+                statusEl.innerHTML = `<span style="color:var(--text-muted);">○</span> No rookie data saved`;
+                if (clearBtn) clearBtn.style.display = "none";
+            }
+        }
+
+        // ─── GitHub Sync ───────────────────────────────────────────────────
+        //
+        // Fetches the three CSVs from configured raw.githubusercontent.com URLs.
+        // Designed for a personal-use public repo: URLs are saved separately from
+        // cached CSV data so they survive cache clears and can be edited without
+        // re-uploading files.
+        //
+        // First-load behavior: if there's no cached rankings on the device AND at
+        // least the rankings URL is configured, auto-fetch all configured URLs.
+        // Otherwise, the user has to click "Sync from GitHub" manually.
+        //
+        // Security note: the URLs themselves are stored in localStorage. They go
+        // to GitHub's CDN over HTTPS. No auth is involved — these are public-repo
+        // raw URLs, and that's the intended use case.
+
+        function loadGithubUrls() {
+            // Start from defaults embedded in the HTML
+            githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "";
+            githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "";
+            githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "";
+            // Then layer any localStorage overrides on top. Per-field, so a user can
+            // override just one URL while keeping defaults for the others.
+            try {
+                const raw = localStorage.getItem(GITHUB_URLS_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === "object") {
+                        if (typeof parsed.rankings === "string") githubUrls.rankings = parsed.rankings;
+                        if (typeof parsed.injury === "string") githubUrls.injury = parsed.injury;
+                        if (typeof parsed.rookies === "string") githubUrls.rookies = parsed.rookies;
+                    }
+                }
+            } catch (e) {
+                // Corrupt or unavailable — keep the defaults.
+            }
+            // Reflect into inputs
+            const r = document.getElementById("ghUrlRankings");
+            const i = document.getElementById("ghUrlInjury");
+            const k = document.getElementById("ghUrlRookies");
+            if (r) r.value = githubUrls.rankings;
+            if (i) i.value = githubUrls.injury;
+            if (k) k.value = githubUrls.rookies;
+        }
+
+        function saveGithubUrls() {
+            const r = document.getElementById("ghUrlRankings");
+            const i = document.getElementById("ghUrlInjury");
+            const k = document.getElementById("ghUrlRookies");
+            // Trim to handle accidental whitespace from paste
+            githubUrls.rankings = r ? r.value.trim() : "";
+            githubUrls.injury = i ? i.value.trim() : "";
+            githubUrls.rookies = k ? k.value.trim() : "";
+            // Only persist to localStorage if values differ from the embedded
+            // defaults. This keeps a "Reset to defaults" semantically clean: clearing
+            // localStorage falls back to the HTML defaults automatically.
+            const overrides = {};
+            if (githubUrls.rankings !== (DEFAULT_GITHUB_URLS.rankings || "")) overrides.rankings = githubUrls.rankings;
+            if (githubUrls.injury !== (DEFAULT_GITHUB_URLS.injury || "")) overrides.injury = githubUrls.injury;
+            if (githubUrls.rookies !== (DEFAULT_GITHUB_URLS.rookies || "")) overrides.rookies = githubUrls.rookies;
+            try {
+                if (Object.keys(overrides).length === 0) {
+                    localStorage.removeItem(GITHUB_URLS_KEY);
+                } else {
+                    localStorage.setItem(GITHUB_URLS_KEY, JSON.stringify(overrides));
+                }
+            } catch (e) {
+                console.warn("Could not save GitHub URLs:", e);
+            }
+        }
+
+        function resetGithubUrls() {
+            const hasDefaults = !!(DEFAULT_GITHUB_URLS.rankings || DEFAULT_GITHUB_URLS.injury || DEFAULT_GITHUB_URLS.rookies);
+            const msg = hasDefaults
+                ? "Reset URLs to the defaults embedded in this app (from GitHub)? Any device-specific overrides will be cleared."
+                : "No default URLs are configured in this build. Clear the URLs on this device anyway?";
+            if (!confirm(msg)) return;
+            try { localStorage.removeItem(GITHUB_URLS_KEY); } catch (e) {}
+            // Reload from defaults
+            githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "";
+            githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "";
+            githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "";
+            const r = document.getElementById("ghUrlRankings");
+            const i = document.getElementById("ghUrlInjury");
+            const k = document.getElementById("ghUrlRookies");
+            if (r) r.value = githubUrls.rankings;
+            if (i) i.value = githubUrls.injury;
+            if (k) k.value = githubUrls.rookies;
+            setGhSyncStatus("");
+        }
+
+        function setGhSyncStatus(msg, kind) {
+            const el = document.getElementById("ghSyncStatus");
+            if (!el) return;
+            if (!msg) {
+                el.style.display = "none";
+                el.innerHTML = "";
+                return;
+            }
+            el.style.display = "block";
+            const color = kind === "error" ? "var(--accent-rose)" :
+                          kind === "success" ? "var(--accent-green)" :
+                          kind === "loading" ? "var(--accent-amber)" :
+                          "var(--text-muted)";
+            el.innerHTML = `<span style="color:${color};">${msg}</span>`;
+        }
+
+        // Fetch a CSV from a URL with sensible error handling. Resolves to the
+        // text on success, throws on any failure (bad URL, non-200, network error).
+        async function fetchCsvFromUrl(url) {
+            // Light validation — has to look like a URL
+            if (!/^https?:\/\//.test(url)) {
+                throw new Error("Not a valid URL");
+            }
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            }
+            const text = await response.text();
+            if (!text || text.length < 20) {
+                throw new Error("Response too small to be a valid CSV");
+            }
+            // Sanity check: doesn't look like an HTML error page (e.g. GitHub 404 page)
+            if (text.trim().toLowerCase().startsWith("<!doctype html") ||
+                text.trim().toLowerCase().startsWith("<html")) {
+                throw new Error("Got HTML instead of CSV (URL may be wrong)");
+            }
+            return text;
+        }
+
+        // The main sync entry point. Fetches whichever of the three URLs are
+        // configured, sequentially (so rankings is applied first, then injury
+        // and rookies merge on top of the new pool). Reports per-file status.
+        async function syncFromGithub(options) {
+            options = options || {};
+            const silent = !!options.silent;
+            saveGithubUrls(); // Make sure latest input values are persisted before we use them
+
+            const configured = {
+                rankings: !!githubUrls.rankings,
+                injury: !!githubUrls.injury,
+                rookies: !!githubUrls.rookies
+            };
+            const anyConfigured = configured.rankings || configured.injury || configured.rookies;
+            if (!anyConfigured) {
+                if (!silent) alert("No GitHub URLs configured. Paste at least one raw.githubusercontent.com URL above.");
+                return { rankings: false, injury: false, rookies: false };
+            }
+
+            setGhSyncStatus("Fetching from GitHub...", "loading");
+
+            const result = { rankings: false, injury: false, rookies: false };
+            const errors = [];
+
+            // Rankings first — applying it later would overwrite injury/rookies merges.
+            if (configured.rankings) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.rankings);
+                    parseCsvText(text); // This will also auto-remerge cached injury/rookies if any
+                    result.rankings = true;
+                } catch (e) {
+                    errors.push(`Rankings: ${e.message}`);
+                }
+            }
+
+            if (configured.injury) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.injury);
+                    parseInjuryCsvText(text, { silent: true });
+                    result.injury = true;
+                } catch (e) {
+                    errors.push(`Injury: ${e.message}`);
+                }
+            }
+
+            if (configured.rookies) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.rookies);
+                    parseRookiesCsvText(text, { silent: true });
+                    result.rookies = true;
+                } catch (e) {
+                    errors.push(`Rookies: ${e.message}`);
+                }
+            }
+
+            // After silent injury/rookies merges, recalc to reflect changes
+            recalculateEngine();
+            saveState();
+
+            // Report
+            const successCount = [result.rankings, result.injury, result.rookies].filter(Boolean).length;
+            const successLabels = [];
+            if (result.rankings) successLabels.push("rankings");
+            if (result.injury) successLabels.push("injury");
+            if (result.rookies) successLabels.push("rookies");
+
+            if (errors.length === 0) {
+                setGhSyncStatus(`● Synced ${successCount} file(s): ${successLabels.join(", ")}`, "success");
+                if (!silent) alert(`GitHub sync complete: ${successCount} file(s) updated (${successLabels.join(", ")}).`);
+            } else if (successCount > 0) {
+                setGhSyncStatus(`Partial sync — ${successCount} OK, ${errors.length} failed`, "error");
+                if (!silent) alert(`Partial sync:\n  ✓ ${successLabels.join(", ") || "(none)"}\n\nFailures:\n  ${errors.join("\n  ")}`);
+            } else {
+                setGhSyncStatus(`Sync failed — ${errors.length} error(s)`, "error");
+                if (!silent) alert(`GitHub sync failed:\n\n${errors.join("\n")}`);
+            }
+
+            return result;
+        }
+
+        // Auto-fetch on first load: triggers when (a) at least the rankings URL
+        // is configured, (b) we haven't already attempted this load, and (c) the
+        // user has no cached rankings yet (so it's their first-ever visit, or
+        // they explicitly cleared the cache). Avoids clobbering existing drafts.
+        async function maybeAutoFetch() {
+            if (autoFetchAttempted) return;
+            autoFetchAttempted = true;
+
+            // Need at least the rankings URL — fetching injury/rookies alone with
+            // no player pool would be pointless.
+            if (!githubUrls.rankings) return;
+
+            // Don't auto-fetch if the user already has rankings cached. They've
+            // either imported once and are returning, or they explicitly want
+            // local data. Manual sync button is still available.
+            if (cachedRankingsCsv) return;
+
+            setGhSyncStatus("First visit — fetching CSVs from GitHub...", "loading");
+            await syncFromGithub({ silent: true });
+        }
+
+        // ─── League mate names ─────────────────────────────────────────────
+        function getTeamLabel(teamNum) {
+            return leagueNames[teamNum] && leagueNames[teamNum].trim()
+                ? leagueNames[teamNum].trim()
+                : "Team " + teamNum;
+        }
+
+        function setTeamName(teamNum, name) {
+            leagueNames[teamNum] = name;
+            renderRosterMatrix();
+            saveState();
+        }
+
+        function renderTeamNameInputs() {
+            const size = parseInt(document.getElementById("leagueSize").value);
+            const userPos = parseInt(document.getElementById("draftOrder").value);
+            const container = document.getElementById("teamNamesContainer");
+            if (!container) return;
+            container.innerHTML = "";
+            for (let i = 1; i <= size; i++) {
+                const wrap = document.createElement("div");
+                wrap.className = "form-group";
+                wrap.style.marginBottom = "4px";
+                const isUser = i === userPos ? " (You)" : "";
+                wrap.innerHTML = `
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <span style="width:24px; font-size:11px; color:var(--text-muted); text-align:right;">${i}.</span>
+                        <input type="text" class="form-control" style="font-size:12px; padding:4px 6px;"
+                            placeholder="Team ${i}${isUser}"
+                            value="${escapeHtml(leagueNames[i] || '')}"
+                            onchange="setTeamName(${i}, this.value)">
+                    </div>
+                `;
+                container.appendChild(wrap);
+            }
+        }
+
+        function resetTeamNames() {
+            if (confirm("Clear all league mate names?")) {
+                leagueNames = {};
+                renderTeamNameInputs();
+                renderRosterMatrix();
+                saveState();
+            }
+        }
+
+        // Tuning preset definitions. Each value maps directly to slider input value
+        // (so adpValueWeight=15 displays as 1.5, vobWeight=5 displays as 0.5).
+        const TUNING_PRESETS = {
+            balanced: { tierWeight: 10, needWeight: 3, scarcityWeight: 2, adpValueWeight: 15, vobWeight: 5 },
+            // BPA: high tier weight (stick close to rankings), low need, modest VOB tiebreak.
+            // Goal — pick the best player regardless of roster construction. Best early.
+            bpa:      { tierWeight: 14, needWeight: 1, scarcityWeight: 1, adpValueWeight: 20, vobWeight: 10 },
+            // Need: lower tier weight (rankings matter less), high need cap (roster holes
+            // can leap a tier), moderate scarcity. Best late in the draft.
+            need:     { tierWeight: 7,  needWeight: 7, scarcityWeight: 4, adpValueWeight: 10, vobWeight: 3 },
+            // Pure: maximum tier weight, no VOB at all. Engine ranks strictly by tier
+            // with need/scarcity as minor tiebreakers within a tier.
+            pure:     { tierWeight: 14, needWeight: 3, scarcityWeight: 2, adpValueWeight: 15, vobWeight: 0 }
+        };
+
+        const TUNING_READOUTS = {
+            tierWeight: v => v,
+            needWeight: v => v,
+            scarcityWeight: v => v,
+            adpValueWeight: v => (v / 10).toFixed(1),
+            vobWeight: v => (v / 10).toFixed(1)
+        };
+
+        function applyTuningPreset(name) {
+            if (name === "custom") return; // No-op — user is hand-tuning.
+            const preset = TUNING_PRESETS[name];
+            if (!preset) return;
+            Object.entries(preset).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+                const v = document.getElementById(id + "Val");
+                if (v) v.innerText = TUNING_READOUTS[id](val);
+            });
+            recalculateEngine();
+            saveState();
+        }
+
+        // When a user moves a slider individually, flip the preset selector to
+        // "Custom" so it accurately reflects the current state.
+        function markTuningCustom() {
+            const sel = document.getElementById("tuningPreset");
+            if (sel && sel.value !== "custom") sel.value = "custom";
+        }
+
+        function resetTuningDefaults() {
+            const sel = document.getElementById("tuningPreset");
+            if (sel) sel.value = "balanced";
+            applyTuningPreset("balanced");
+        }
+
+        function loadPreset() {
+            const pType = document.getElementById("presetSelect").value;
+            if (pType === "profile1") {
+                document.getElementById("leagueSize").value = 12;
+                document.getElementById("draftOrder").value = 3;
+                document.getElementById("scoringFormat").value = "Half PPR";
+                document.getElementById("reqQB").value = 1;
+                document.getElementById("reqRB").value = 2;
+                document.getElementById("reqWR").value = 2;
+                document.getElementById("reqTE").value = 1;
+                document.getElementById("reqFlex").value = 1;
+                document.getElementById("reqDEF").value = 1;
+                document.getElementById("reqBench").value = 6;
+                document.getElementById("flexAlloc").value = 40;
+            } else if (pType === "profile2") {
+                document.getElementById("leagueSize").value = 10;
+                document.getElementById("draftOrder").value = 7;
+                document.getElementById("scoringFormat").value = "Full PPR";
+                document.getElementById("reqQB").value = 2;
+                document.getElementById("reqRB").value = 2;
+                document.getElementById("reqWR").value = 3;
+                document.getElementById("reqTE").value = 1;
+                document.getElementById("reqFlex").value = 2;
+                document.getElementById("reqDEF").value = 1;
+                document.getElementById("reqBench").value = 7;
+                document.getElementById("flexAlloc").value = 35;
+            }
+            resetDraftState();
+        }
+
+        function resetDraftState() {
+            currentPick = 1;
+            draftHistory = [];
+            activePlayers.forEach(p => {
+                p.drafted = false;
+                delete p.draftPick;
+                delete p.draftedByTeam;
+            });
+
+            const size = parseInt(document.getElementById("leagueSize").value);
+            teamRosters = {};
+            for (let i = 1; i <= size; i++) {
+                teamRosters[i] = { QB: [], RB: [], WR: [], TE: [], FX: [], DF: [], BN: [] };
+            }
+            recalculateEngine();
+            saveState();
+        }
+
+        function getActivePickingTeam(pick, size) {
+            let round = Math.ceil(pick / size);
+            let match = pick % size;
+            if (match === 0) match = size;
+            return (round % 2 === 0) ? (size - match + 1) : match;
+        }
+
+        // Read all relevant config inputs once per recalc. Cheap, but keeps the engine functions readable.
+        function readConfig() {
+            return {
+                size: parseInt(document.getElementById("leagueSize").value),
+                userPos: parseInt(document.getElementById("draftOrder").value),
+                rBoost: parseInt(document.getElementById("rookieBoost").value) / 100,
+                scoring: document.getElementById("scoringFormat").value,
+                adpWeight: parseInt(document.getElementById("adpVariance").value) / 100,
+                req: {
+                    QB: parseInt(document.getElementById("reqQB").value),
+                    RB: parseInt(document.getElementById("reqRB").value),
+                    WR: parseInt(document.getElementById("reqWR").value),
+                    TE: parseInt(document.getElementById("reqTE").value),
+                    DEF: parseInt(document.getElementById("reqDEF").value),
+                    Flex: parseInt(document.getElementById("reqFlex").value),
+                    Bench: parseInt(document.getElementById("reqBench").value)
+                },
+                flexRBPct: parseInt(document.getElementById("flexAlloc").value) / 100,
+                // Best Available tuning knobs. Defaults match the previous hardcoded values.
+                // getNum is defensive — the tuning panel may not exist on first render if state load failed.
+                tuning: {
+                    tierWeight: getNum("tierWeight", 10),
+                    needCap: getNum("needWeight", 3),
+                    scarcityCap: getNum("scarcityWeight", 2),
+                    adpValueCap: getNum("adpValueWeight", 15) / 10,
+                    vobWeight: getNum("vobWeight", 5) / 10
+                }
+            };
+        }
+
+        function getNum(id, fallback) {
+            const el = document.getElementById(id);
+            if (!el) return fallback;
+            const n = parseFloat(el.value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function recalculateEngine() {
+            const cfg = readConfig();
+            // Flex allocation: configurable RB share, remainder split WR-heavy then TE.
+            // RB% comes from user; WR gets (1 - RB% - 0.2), TE gets 0.2.
+            const flexShare = { RB: cfg.flexRBPct, WR: Math.max(0, 1 - cfg.flexRBPct - 0.2), TE: 0.2 };
+
+            activePlayers.forEach(p => {
+                let adjustment = 0;
+                if (cfg.scoring === "Half PPR") {
+                    if (p.pos === "WR" || p.pos === "TE") adjustment = 2.5;
+                    if (p.pos === "RB") adjustment = 1.0;
+                } else if (cfg.scoring === "Full PPR") {
+                    if (p.pos === "WR" || p.pos === "TE") adjustment = 5.0;
+                    if (p.pos === "RB") adjustment = 2.0;
+                }
+
+                p.adjFloor = p.floor + adjustment;
+                p.adjCeiling = p.ceiling + adjustment;
+
+                if (p.rookie) {
+                    p.adjFloor *= (1 + cfg.rBoost);
+                    p.adjCeiling *= (1 + cfg.rBoost);
+                }
+                p.ev = (p.adjFloor + p.adjCeiling) / 2;
+            });
+
+            const positions = ["QB", "RB", "WR", "TE", "DEF"];
+            let baselines = {};
+
+            positions.forEach(pos => {
+                let numStarters = cfg.req[pos === "DEF" ? "DEF" : pos] || 0;
+                let flexAllocation = flexShare[pos] ? cfg.req.Flex * flexShare[pos] : 0;
+                const sizeForCalc = cfg.size > 0 ? cfg.size : 1;
+
+                let baselineRankIndex = Math.max(1, Math.round((numStarters + flexAllocation) * sizeForCalc));
+                let posGroup = activePlayers.filter(p => p.pos === pos).sort((a, b) => b.ev - a.ev);
+
+                if (posGroup.length > 0) {
+                    let index = Math.max(0, Math.min(baselineRankIndex, posGroup.length) - 1);
+                    baselines[pos] = posGroup[index] ? posGroup[index].ev : 0;
+                } else {
+                    baselines[pos] = 0;
+                }
+            });
+
+            activePlayers.forEach(p => { p.vob = p.ev - (baselines[p.pos] || 0); });
+
+            calculateSnakeRunProbabilities(cfg);
+            renderPlayerPool();
+            renderRosterMatrix(cfg);
+            renderMyTeamGrid(cfg);
+            renderBestAvailable(cfg);
+
+            // Update header pick indicator
+            const indicator = document.getElementById("currentPickIndicator");
+            if (indicator) {
+                const team = getActivePickingTeam(currentPick, cfg.size);
+                const round = Math.ceil(currentPick / cfg.size);
+                const youLabel = team === cfg.userPos ? " (YOU)" : "";
+                indicator.innerText = `Pick ${currentPick} • Round ${round} • ${getTeamLabel(team)}${youLabel}`;
+                indicator.style.color = team === cfg.userPos ? "var(--accent-green)" : "var(--text-muted)";
+            }
+        }
+
+        function calculateSnakeRunProbabilities(cfg) {
+            cfg = cfg || readConfig();
+
+            let interveningTeams = [];
+            let checkPick = currentPick;
+            let activeTeam = getActivePickingTeam(checkPick, cfg.size);
+
+            // Walk picks until we reach the user's next turn (capped at 50 to prevent runaway).
+            let loopLimit = 0;
+            while (activeTeam !== cfg.userPos && loopLimit < 50) {
+                if (checkPick >= currentPick) { interveningTeams.push(activeTeam); }
+                checkPick++;
+                activeTeam = getActivePickingTeam(checkPick, cfg.size);
+                loopLimit++;
+            }
+
+            const posList = ["QB", "RB", "WR", "TE", "DEF"];
+            let positionalGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
+
+            interveningTeams.forEach(tNum => {
+                posList.forEach(pos => {
+                    let maxReq = cfg.req[pos === "DEF" ? "DEF" : pos];
+                    let filled = teamRosters[tNum][pos] ? teamRosters[tNum][pos].length : 0;
+                    if (filled < maxReq) { positionalGapsCount[pos]++; }
+                });
+            });
+
+            const runContainer = document.getElementById("runAnalysisContainer");
+            runContainer.innerHTML = "";
+
+            posList.forEach(pos => {
+                // Scarcity: how many top-tier players remain vs. how many teams want this position.
+                // Top tier = lowest (best) tier among undrafted at this position; "elite remaining" = players in that tier.
+                let available = activePlayers.filter(p => p.pos === pos && !p.drafted);
+                let topTier = available.length > 0 ? Math.min(...available.map(p => p.tier)) : null;
+                let eliteRemaining = topTier !== null ? available.filter(p => p.tier === topTier).length : 0;
+
+                let gapDemand = positionalGapsCount[pos];
+
+                // Scarcity risk: 0-100. Demand exceeding supply at the elite tier drives this up.
+                let scarcityRisk = 0;
+                if (eliteRemaining > 0) {
+                    scarcityRisk = Math.min(100, Math.round((gapDemand / eliteRemaining) * 100));
+                } else if (gapDemand > 0) {
+                    scarcityRisk = 100; // No elite players left but teams still need them.
+                }
+
+                // ADP confidence modulates how literally we trust the gap count.
+                // Low ADP weight → other teams may deviate; high ADP weight → assume rational picks.
+                // We blend: at adpWeight=0, fall back to a flat 50% (max uncertainty).
+                // At adpWeight=1, use scarcityRisk directly.
+                let blendedRisk = Math.round(scarcityRisk * cfg.adpWeight + 50 * (1 - cfg.adpWeight) * (gapDemand > 0 ? 1 : 0));
+                blendedRisk = Math.min(100, Math.max(0, blendedRisk));
+
+                let colorClass = "var(--accent-green)";
+                let riskLabel = "low";
+                if (blendedRisk > 40) { colorClass = "var(--accent-amber)"; riskLabel = "medium"; }
+                if (blendedRisk > 75) { colorClass = "var(--accent-rose)"; riskLabel = "high"; }
+
+                let div = document.createElement("div");
+                div.className = "form-group";
+                div.setAttribute("role", "group");
+                div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${gapDemand} teams need ${pos}, ${eliteRemaining} elite remaining.`);
+                div.innerHTML = `
+                    <div style="font-weight: 600; font-size:12px;">${pos} Run Risk</div>
+                    <strong style="color: ${colorClass}; font-size: 16px;">${blendedRisk}%</strong>
+                    <div style="font-size: 10px; color: var(--text-muted);">${gapDemand} need / ${eliteRemaining} elite</div>
+                    <div class="risk-bar-container" role="progressbar" aria-valuenow="${blendedRisk}" aria-valuemin="0" aria-valuemax="100" aria-label="${pos} run risk ${blendedRisk} percent">
+                        <div class="risk-bar" style="width: ${blendedRisk}%; background-color: ${colorClass};"></div>
+                    </div>
+                `;
+                runContainer.appendChild(div);
+
+                activePlayers.forEach(p => { if (p.pos === pos) p.runRisk = blendedRisk; });
+            });
+        }
+
+        function filterPosition(pos, element) {
+            selectedPositionFilter = pos;
+            document.querySelectorAll(".filter-tabs .tab").forEach(t => t.classList.remove("active"));
+            element.classList.add("active");
+            renderPlayerPool();
+        }
+
+        function renderPlayerPool() {
+            const body = document.getElementById("playerTableBody");
+            body.innerHTML = "";
+
+            let displayList = activePlayers.filter(p => !p.drafted);
+            if (selectedPositionFilter !== "ALL") { displayList = displayList.filter(p => p.pos === selectedPositionFilter); }
+
+            displayList.sort((a, b) => {
+                if (a.tier !== b.tier) return a.tier - b.tier;
+                return b.vob - a.vob;
+            });
+
+            displayList.forEach(p => {
+                let tr = document.createElement("tr");
+
+                let riskLabel = p.injury === "Medium" ? "Med" : (p.injury === "High" ? "High" : "Low");
+                let riskClass = p.injury === "Medium" ? "badge-med" : (p.injury === "High" ? "badge-high" : "badge-low");
+                // Build a richer hover tooltip when Draft Sharks metadata is available.
+                // Falls back to the bare engine bucket for hand-set or rankings-default values.
+                let riskTip = `Injury risk: ${p.injury}`;
+                if (p.injuryRaw && p.injuryRaw.toLowerCase() !== p.injury.toLowerCase()) {
+                    riskTip = `${p.injuryRaw} (engine bucket: ${p.injury})`;
+                }
+                if (p.projectedGamesMissed !== undefined) {
+                    riskTip += ` — projected ${p.projectedGamesMissed} games missed`;
+                }
+                if (p.durability !== undefined) {
+                    riskTip += `, durability ${p.durability}/5`;
+                }
+                let riskBadge = `<span class="status-badge ${riskClass}" title="${escapeHtml(riskTip)}">${riskLabel}</span>`;
+
+                let rookieBadge = p.rookie ? ` <span class="status-badge badge-rookie" title="Rookie">Rook</span>` : "";
+
+                let runRiskColor = "var(--accent-green)";
+                if (p.runRisk > 40) runRiskColor = "var(--accent-amber)";
+                if (p.runRisk > 75) runRiskColor = "var(--accent-rose)";
+
+                let vobColor = p.vob >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)';
+                let vobSign = p.vob >= 0 ? '+' : '';
+
+                // vs ADP: how many picks ahead of/behind ADP this pick would be at currentPick.
+                // Negative = reaching (player is being drafted earlier than ADP suggests).
+                // Positive = value (player is still available later than ADP suggests).
+                const adpVal = (p.adp !== undefined && p.adp !== null) ? Number(p.adp) : null;
+                const vsAdp = adpVal !== null ? (currentPick - adpVal) : null;
+                let vsAdpDisplay = "—";
+                let vsAdpColor = "var(--text-muted)";
+                if (vsAdp !== null) {
+                    if (vsAdp > 0) { vsAdpColor = "var(--accent-green)"; vsAdpDisplay = `+${vsAdp.toFixed(1)}`; }
+                    else if (vsAdp < 0) { vsAdpColor = "var(--accent-rose)"; vsAdpDisplay = `${vsAdp.toFixed(1)}`; }
+                    else { vsAdpDisplay = "0.0"; }
+                }
+                const adpDisplay = adpVal !== null ? adpVal.toFixed(1) : "—";
+
+                tr.innerHTML = `
+                    <td>
+                        <strong>${escapeHtml(p.name)}</strong>${rookieBadge}
+                        <label style="display:inline-block; margin-left:6px; font-size:10px; color:var(--text-muted); cursor:pointer;" title="Mark as rookie">
+                            <input type="checkbox" ${p.rookie ? 'checked' : ''} onchange="toggleRookie(${p.id}, this.checked)" style="vertical-align:middle;"> R
+                        </label>
+                    </td>
+                    <td>${p.pos}</td>
+                    <td><div style="text-align:center; font-weight:bold; color:var(--accent-amber);">${p.tier}</div></td>
+                    <td class="text-muted">${adpDisplay}</td>
+                    <td><span style="color:${vsAdpColor}; font-weight:600;" title="${vsAdp !== null && vsAdp > 0 ? 'Player is past ADP — value pick' : (vsAdp !== null && vsAdp < 0 ? 'Player is before ADP — reach' : 'At ADP')}">${vsAdpDisplay}</span></td>
+                    <td><strong style="color:${vobColor};">${vobSign}${p.vob.toFixed(1)}</strong></td>
+                    <td class="text-muted">${p.adjFloor.toFixed(1)}</td>
+                    <td class="text-muted">${p.adjCeiling.toFixed(1)}</td>
+                    <td>${riskBadge}</td>
+                    <td><span style="color:${runRiskColor}; font-weight:600;" aria-label="Run risk ${p.runRisk} percent">${p.runRisk}%</span></td>
+                    <td><button class="btn" style="padding:3px 6px; font-size:11px;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // ─── Best Available recommendation ──────────────────────────────────
+        // Composite score that weights:
+        //   1. VOB (raw player value over baseline)
+        //   2. Roster need (positions where the user is short of starter requirements get a multiplier)
+        //   3. Scarcity urgency (positions with high run risk get bumped)
+        //   4. ADP value (player available later than ADP gets a small bonus)
+        // Then surfaces the top 3 picks with reasoning.
+        function renderBestAvailable(cfg) {
+            cfg = cfg || readConfig();
+            const container = document.getElementById("bestAvailableContainer");
+            if (!container) return;
+
+            const userRoster = teamRosters[cfg.userPos];
+            if (!userRoster) {
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:12px;">Set your draft position and pool first.</p>`;
+                return;
+            }
+
+            // Compute positional need: how many starters are still empty for the user
+            const needs = {
+                QB: Math.max(0, cfg.req.QB - userRoster.QB.length),
+                RB: Math.max(0, cfg.req.RB - userRoster.RB.length),
+                WR: Math.max(0, cfg.req.WR - userRoster.WR.length),
+                TE: Math.max(0, cfg.req.TE - userRoster.TE.length),
+                DEF: Math.max(0, cfg.req.DEF - userRoster.DF.length)
+            };
+            // Flex eligible counts toward RB/WR/TE need indirectly: if all starter slots are full
+            // for an RB-eligible position but flex is empty, treat that as half-need.
+            const flexOpen = Math.max(0, cfg.req.Flex - userRoster.FX.length);
+
+            const undrafted = activePlayers.filter(p => !p.drafted);
+            if (undrafted.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:12px;">No players available.</p>`;
+                return;
+            }
+
+            // Score each candidate.
+            //
+            // Earlier versions multiplied VOB by a need multiplier, which broke down
+            // across positions: VOB is computed against a positional baseline, so
+            // shallow positions (QB, TE) produce small VOBs for their elites while
+            // deep positions (RB, WR) produce inflated VOBs for mid-tier players.
+            // Multiplying that by a need bonus made the problem worse — a tier 2 RB
+            // would outrank a tier 1 QB because (low RB baseline → big VOB) × (2 RB
+            // starter slots needed → big multiplier) compounded.
+            //
+            // New approach: rank primarily by **tier** (cross-position-comparable),
+            // then by within-tier value. Need and scarcity become tiebreakers that
+            // shift a player up or down by a fraction of a tier, never enough to
+            // jump a clearly better player at a different position.
+            // Tuning weights come from the Recommendation Tuning panel — defaults
+            // match the original hardcoded values: tier=10, need=3, scarcity=2,
+            // adp=1.5, vobWeight=0.5.
+            const T = cfg.tuning;
+
+            const scored = undrafted.map(p => {
+                const positionNeed = needs[p.pos] || 0;
+                const flexEligible = (p.pos === "RB" || p.pos === "WR" || p.pos === "TE");
+
+                // Tier penalty grows with tier number (lower tier = higher penalty).
+                const tierPenalty = (p.tier || 5) * T.tierWeight;
+
+                // Need adjustment: capped additive bonus, scales with positional need.
+                // At needCap=3: 1 open slot = -1.5, 2+ open slots = -3 (the cap).
+                // Flex-only need is one-third of that.
+                let needAdj = 0;
+                if (positionNeed > 0) needAdj = -T.needCap * Math.min(positionNeed, 2) / 2;
+                else if (flexOpen > 0 && flexEligible) needAdj = -(T.needCap / 3) * Math.min(flexOpen / 2, 1);
+
+                // Saturation penalty when the position is fully saturated. Discourages
+                // drafting a 4th RB when starters and flex are full. Always 4 points
+                // regardless of tuning — it's structural, not a preference knob.
+                const positionSaturated = positionNeed === 0 &&
+                    (!flexEligible || flexOpen === 0) &&
+                    userRoster[p.pos === "DEF" ? "DF" : p.pos].length >= cfg.req[p.pos === "DEF" ? "DEF" : p.pos];
+                const saturationPenalty = positionSaturated ? 4 : 0;
+
+                // Scarcity: shift toward player if a run is imminent. Caps at scarcityCap.
+                const scarcityAdj = -Math.min(T.scarcityCap, (p.runRisk || 0) * T.scarcityCap / 100);
+
+                // ADP value: bonus when player has fallen past their ADP.
+                const adpVal = (p.adp !== undefined && p.adp !== null) ? Number(p.adp) : null;
+                const vsAdp = adpVal !== null ? currentPick - adpVal : 0;
+                const adpAdj = vsAdp > 0 ? -Math.min(T.adpValueCap, vsAdp * T.adpValueCap / 30) : 0;
+
+                // Composite: lower raw score is better. Negate so higher = better for
+                // display and sort.
+                const rawScore = tierPenalty + needAdj + saturationPenalty + scarcityAdj + adpAdj - (p.vob * T.vobWeight);
+                const composite = -rawScore;
+
+                // Build reasoning string
+                const reasons = [];
+                if (p.tier === 1) reasons.push(`tier 1`);
+                else reasons.push(`tier ${p.tier}`);
+                if (positionNeed > 0) reasons.push(`fills ${p.pos} starter need (${positionNeed} open)`);
+                else if (flexOpen > 0 && flexEligible) reasons.push(`flex-eligible`);
+                else if (positionSaturated) reasons.push(`${p.pos} slots already full`);
+                if (p.runRisk >= 60) reasons.push(`${p.pos} run risk ${p.runRisk}%`);
+                if (vsAdp >= 5) reasons.push(`value vs ADP (+${vsAdp.toFixed(0)})`);
+
+                return { player: p, composite, reasons, vsAdp, positionNeed };
+            });
+
+            scored.sort((a, b) => b.composite - a.composite);
+            const top = scored.slice(0, 3);
+
+            // Render: top pick highlighted, others as compact rows
+            const html = top.map((entry, idx) => {
+                const p = entry.player;
+                const ribbon = idx === 0
+                    ? `<span style="background:var(--accent-green); color:var(--bg-primary); padding:2px 6px; border-radius:3px; font-size:10px; font-weight:700;">TOP PICK</span>`
+                    : `<span style="color:var(--text-muted); font-size:11px;">#${idx + 1}</span>`;
+                const reasonText = entry.reasons.length > 0
+                    ? entry.reasons.join(" · ")
+                    : "best raw value remaining";
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; ${idx < top.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; gap:8px; align-items:center; margin-bottom:2px;">
+                                ${ribbon}
+                                <strong style="font-size:14px;">${escapeHtml(p.name)}</strong>
+                                <span style="color:var(--text-muted); font-size:11px;">${p.pos} · Tier ${p.tier}</span>
+                            </div>
+                            <div style="font-size:11px; color:var(--text-muted);">${escapeHtml(reasonText)}</div>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div style="text-align:right;">
+                                <div style="font-size:10px; color:var(--text-muted);">Score</div>
+                                <div style="font-weight:700; color:var(--accent-green);">${entry.composite.toFixed(1)}</div>
+                            </div>
+                            <button class="btn" style="padding:5px 10px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})">Draft</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // Show whose turn it is at the top
+            const activeTeam = getActivePickingTeam(currentPick, cfg.size);
+            const turnNote = activeTeam === cfg.userPos
+                ? `<div style="font-size:11px; color:var(--accent-green); margin-bottom:8px; font-weight:600;">It's your pick — recommendations below</div>`
+                : `<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${escapeHtml(getTeamLabel(activeTeam))} is picking. Recommendations are for your next turn.</div>`;
+
+            container.innerHTML = turnNote + html;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement("div");
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function toggleRookie(id, checked) {
+            const p = activePlayers.find(x => x.id === id);
+            if (!p) return;
+            p.rookie = checked;
+            recalculateEngine();
+            saveState();
+        }
+
+        function confirmResetDraft() {
+            if (confirm("Reset the entire draft? All picks will be cleared. Player pool and settings will be kept.")) {
+                resetDraftState();
+            }
+        }
+
+        function toggleGlossary() {
+            const content = document.getElementById("glossaryContent");
+            const toggle = document.getElementById("glossaryToggle");
+            if (!content || !toggle) return;
+            const willShow = content.style.display === "none";
+            content.style.display = willShow ? "block" : "none";
+            toggle.innerText = willShow ? "▲ Hide" : "▼ Show";
+        }
+
+        // Theme management. Stored separately from the engine's saved state under its
+        // own localStorage key so users can switch themes without disturbing draft data.
+        const THEME_KEY = "fantasyDraftEngine_theme";
+
+        function getCurrentTheme() {
+            return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+        }
+
+        function applyTheme(theme) {
+            if (theme === "light") {
+                document.documentElement.setAttribute("data-theme", "light");
+            } else {
+                document.documentElement.removeAttribute("data-theme");
+            }
+            updateThemeToggleUI(theme);
+            try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+        }
+
+        function toggleTheme() {
+            applyTheme(getCurrentTheme() === "light" ? "dark" : "light");
+        }
+
+        function updateThemeToggleUI(theme) {
+            // Show what you'll switch TO, not what you're currently in. Common UX
+            // pattern — the button is the action, not the status. Icon and label
+            // both describe the next state.
+            const icon = document.getElementById("themeToggleIcon");
+            const label = document.getElementById("themeToggleLabel");
+            if (icon) icon.innerText = theme === "light" ? "☾" : "☀";
+            if (label) label.innerText = theme === "light" ? "Dark" : "Light";
+        }
+
+        function executePlayerDraft(id) {
+            const cfg = readConfig();
+            const activeTeam = getActivePickingTeam(currentPick, cfg.size);
+
+            let player = activePlayers.find(p => p.id === id);
+            if (!player) return;
+
+            let roster = teamRosters[activeTeam];
+            const posMaxReq = cfg.req[player.pos === "DEF" ? "DEF" : player.pos];
+            const flexEligible = (player.pos === "RB" || player.pos === "WR" || player.pos === "TE");
+
+            // Placement priority: starter slot → flex (if eligible) → bench. Reject if all are full.
+            let placed = false;
+            let placedSlot = null;
+            if (roster[player.pos].length < posMaxReq) {
+                roster[player.pos].push(player.name);
+                placed = true;
+                placedSlot = player.pos;
+            } else if (flexEligible && roster.FX.length < cfg.req.Flex) {
+                roster.FX.push(player.name + ` (${player.pos})`);
+                placed = true;
+                placedSlot = "FX";
+            } else if (roster.BN.length < cfg.req.Bench) {
+                roster.BN.push(player.name + ` (${player.pos})`);
+                placed = true;
+                placedSlot = "BN";
+            }
+
+            if (!placed) {
+                alert(`Team ${activeTeam}'s roster is full at ${player.pos}, Flex, and Bench. Cannot draft ${player.name}. Increase bench size if you need more room.`);
+                return;
+            }
+
+            player.drafted = true;
+            player.draftPick = currentPick;
+            player.draftedByTeam = activeTeam;
+            player.placedSlot = placedSlot;
+
+            draftHistory.push({ pick: currentPick, playerObj: player, team: activeTeam, slot: placedSlot });
+            currentPick++;
+            recalculateEngine();
+            saveState();
+        }
+
+        function undoLastPick() {
+            if (draftHistory.length === 0) {
+                alert("Nothing to undo.");
+                return;
+            }
+            const last = draftHistory.pop();
+            const player = activePlayers.find(p => p.id === last.playerObj.id);
+            if (player) {
+                player.drafted = false;
+                delete player.draftPick;
+                delete player.draftedByTeam;
+                delete player.placedSlot;
+            }
+            // Remove the first matching entry from the slot. Entry is either bare name (starter)
+            // or "Name (POS)" (flex/bench placement).
+            const roster = teamRosters[last.team];
+            const slot = last.slot;
+            let removedOnce = false;
+            teamRosters[last.team][slot] = roster[slot].filter(entry => {
+                if (removedOnce) return true;
+                if (entry === last.playerObj.name || entry.startsWith(last.playerObj.name + " (")) {
+                    removedOnce = true;
+                    return false;
+                }
+                return true;
+            });
+            currentPick = Math.max(1, currentPick - 1);
+            recalculateEngine();
+            saveState();
+        }
+
+        function renderRosterMatrix(cfg) {
+            cfg = cfg || readConfig();
+            const activeTeam = getActivePickingTeam(currentPick, cfg.size);
+            const body = document.getElementById("matrixTableBody");
+            body.innerHTML = "";
+
+            for (let i = 1; i <= cfg.size; i++) {
+                let tr = document.createElement("tr");
+                if (i === activeTeam) tr.className = "current-team-row";
+
+                let nameClass = i === cfg.userPos ? "class='user-team-row'" : "";
+                let r = teamRosters[i];
+                const teamLabel = escapeHtml(getTeamLabel(i));
+                tr.innerHTML = `
+                    <td ${nameClass}><strong>${teamLabel}</strong></td>
+                    <td>${r.QB.join(', ') || '-'}</td>
+                    <td>${r.RB.join(', ') || '-'}</td>
+                    <td>${r.WR.join(', ') || '-'}</td>
+                    <td>${r.TE.join(', ') || '-'}</td>
+                    <td>${r.FX.join(', ') || '-'}</td>
+                    <td>${r.DF.join(', ') || '-'}</td>
+                    <td>${(r.BN || []).join(', ') || '-'}</td>
+                `;
+                body.appendChild(tr);
+            }
+        }
+
+        function renderMyTeamGrid(cfg) {
+            cfg = cfg || readConfig();
+            const container = document.getElementById("myRosterGrid");
+            container.innerHTML = "";
+
+            const slots = [
+                { key: "QB", label: "QB", max: cfg.req.QB },
+                { key: "RB", label: "RB", max: cfg.req.RB },
+                { key: "WR", label: "WR", max: cfg.req.WR },
+                { key: "TE", label: "TE", max: cfg.req.TE },
+                { key: "FX", label: "FLEX", max: cfg.req.Flex },
+                { key: "DF", label: "DEF", max: cfg.req.DEF },
+                { key: "BN", label: "BENCH", max: cfg.req.Bench }
+            ];
+
+            slots.forEach(slot => {
+                let filledItems = teamRosters[cfg.userPos][slot.key] || [];
+                for (let idx = 0; idx < slot.max; idx++) {
+                    let cell = document.createElement("div");
+                    cell.className = "roster-cell";
+                    let pName = filledItems[idx] || `<span style="color:var(--text-muted); font-style:italic;">Empty</span>`;
+                    cell.innerHTML = `<span class="pos-label">${slot.label}</span><div class="player-name">${pName}</div>`;
+                    container.appendChild(cell);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
