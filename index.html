@@ -15,6 +15,7 @@
             --accent-green: #4ade80;
             --accent-amber: #fbbf24;
             --accent-rose: #f43f5e;
+            --accent-magenta: #d946ef;
             --border-color: #475569;
             /* Overlay tints — vary by theme so striping/hover stay visible */
             --row-stripe: rgba(0, 0, 0, 0.1);
@@ -26,6 +27,7 @@
             --badge-green-bg: rgba(74, 222, 128, 0.2);
             --badge-amber-bg: rgba(251, 191, 36, 0.2);
             --badge-rose-bg: rgba(244, 63, 94, 0.2);
+            --badge-magenta-bg: rgba(217, 70, 239, 0.22);
         }
 
         [data-theme="light"] {
@@ -39,6 +41,7 @@
             --accent-green: #16a34a;
             --accent-amber: #d97706;
             --accent-rose: #e11d48;
+            --accent-magenta: #a21caf;
             --border-color: #cbd5e1;
             --row-stripe: rgba(0, 0, 0, 0.03);
             --row-hover: rgba(0, 0, 0, 0.05);
@@ -49,6 +52,7 @@
             --badge-green-bg: rgba(22, 163, 74, 0.12);
             --badge-amber-bg: rgba(217, 119, 6, 0.12);
             --badge-rose-bg: rgba(225, 29, 72, 0.12);
+            --badge-magenta-bg: rgba(162, 28, 175, 0.14);
         }
 
         * {
@@ -236,6 +240,16 @@
         .badge-low { background-color: var(--badge-green-bg); color: var(--accent-green); }
         .badge-med { background-color: var(--badge-amber-bg); color: var(--accent-amber); }
         .badge-high { background-color: var(--badge-rose-bg); color: var(--accent-rose); }
+        /* "Yikes" tier is reserved for Draft Sharks "Very High Risk" — players who
+           are practically guaranteed to miss multiple games. Visually louder than
+           the regular High badge: magenta instead of rose, slightly bolder font,
+           uppercase letter-spacing so it reads as the warning-warning-warning tier. */
+        .badge-yikes {
+            background-color: var(--badge-magenta-bg);
+            color: var(--accent-magenta);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
 
         /* Watch-list star toggle in the player matrix. Empty star ☆ when not
            favorited (muted color, no fill); filled star ★ when favorited (amber).
@@ -670,7 +684,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="filter-tabs">
                     <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
                     <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
@@ -1768,14 +1782,16 @@
         // the player pool — only updates the injury field (and stores extra Draft
         // Sharks metadata like projected games missed for richer display).
 
-        // Draft Sharks's 5-bucket scale collapses to the engine's 3-bucket internal
-        // scale. We keep the original label too for display.
+        // Draft Sharks's 5-bucket scale maps to the engine's 4-bucket internal
+        // scale. We keep the original label too for display. "Very High Risk"
+        // gets its own dedicated "Yikes" tier so it's visually distinct from
+        // regular "High Risk" in the player matrix.
         const DS_RISK_MAP = {
-            "very low risk": "Low",
-            "low risk":      "Low",
-            "medium risk":   "Medium",
-            "high risk":     "High",
-            "very high risk": "High"
+            "very low risk":  "Low",
+            "low risk":       "Low",
+            "medium risk":    "Medium",
+            "high risk":      "High",
+            "very high risk": "Yikes"
         };
 
         // Normalize a player name for matching. Lowercase, strip punctuation,
@@ -1911,7 +1927,7 @@
                 let injury = null;
                 if (DS_RISK_MAP[riskLower]) {
                     injury = DS_RISK_MAP[riskLower];
-                } else if (["low", "medium", "high"].includes(riskLower)) {
+                } else if (["low", "medium", "high", "yikes"].includes(riskLower)) {
                     injury = riskLower.charAt(0).toUpperCase() + riskLower.slice(1);
                 }
                 if (!injury) {
@@ -2905,8 +2921,19 @@
 
                 let tr = document.createElement("tr");
 
-                let riskLabel = p.injury === "Medium" ? "Med" : (p.injury === "High" ? "High" : "Low");
-                let riskClass = p.injury === "Medium" ? "badge-med" : (p.injury === "High" ? "badge-high" : "badge-low");
+                // 4-tier injury badge. "Yikes" is the magenta-themed tier reserved
+                // for Draft Sharks "Very High Risk" — visually distinct from the
+                // regular red High badge. Fall through to Low for any unrecognized
+                // value (defensive default).
+                const RISK_BADGE = {
+                    "Low":    { label: "Low",   cls: "badge-low" },
+                    "Medium": { label: "Med",   cls: "badge-med" },
+                    "High":   { label: "High",  cls: "badge-high" },
+                    "Yikes":  { label: "YIKES", cls: "badge-yikes" }
+                };
+                const badgeInfo = RISK_BADGE[p.injury] || RISK_BADGE.Low;
+                let riskLabel = badgeInfo.label;
+                let riskClass = badgeInfo.cls;
                 // Build a richer hover tooltip when Draft Sharks metadata is available.
                 // Falls back to the bare engine bucket for hand-set or rankings-default values.
                 let riskTip = `Injury risk: ${p.injury}`;
