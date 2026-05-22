@@ -119,8 +119,24 @@
             align-items: start;
         }
 
+        /* Draft tab uses a 2-column layout — left settings column is gone, so
+           the center (Best Available + matrix) gets the freed horizontal space. */
+        .dashboard-grid.draft-layout {
+            grid-template-columns: 1fr 380px;
+        }
+
+        /* Settings tab uses a roomier multi-column flow so the five settings
+           panels can sit side-by-side instead of stacking in a narrow column. */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+
         @media (max-width: 1200px) {
-            .dashboard-grid {
+            .dashboard-grid,
+            .dashboard-grid.draft-layout {
                 grid-template-columns: 1fr;
             }
         }
@@ -403,6 +419,52 @@
             font-weight: 600;
         }
 
+        /* Top-level tab navigation between Draft and Settings views. Visually
+           distinct from the inline .tab pill style — bigger touch targets,
+           underline-style active indicator instead of pill background, so it
+           reads as page navigation rather than a filter chip. */
+        .main-tabs {
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .main-tab {
+            background-color: transparent;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: inherit;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px; /* overlap the container border so active underline aligns */
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .main-tab:hover {
+            color: var(--text-main);
+        }
+        .main-tab:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: -2px;
+            border-radius: 2px;
+        }
+        .main-tab.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* Tab panel — only the active one is visible. Display toggling rather
+           than mount/unmount so state inside each panel (form inputs, scroll
+           positions) survives switching between tabs. */
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+
         .roster-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -585,10 +647,170 @@
         </button>
     </header>
 
-    <div class="dashboard-grid">
+    <div class="main-tabs" role="tablist" aria-label="Main navigation">
+        <button type="button" id="mainTab-draft" class="main-tab active" role="tab" aria-selected="true" aria-controls="tabPanel-draft" onclick="switchMainTab('draft')">Draft</button>
+        <button type="button" id="mainTab-settings" class="main-tab" role="tab" aria-selected="false" aria-controls="tabPanel-settings" onclick="switchMainTab('settings')">Settings</button>
+    </div>
+
+    <div id="tabPanel-draft" class="tab-panel active" role="tabpanel" aria-labelledby="mainTab-draft">
+    <div class="dashboard-grid draft-layout">
         
         <!-- LEFT: INPUTS & AUTOMATION -->
-        <div class="left-column">
+
+        <!-- CENTER: LIVE BOARD & SCARCITY POOL -->
+        <div class="center-column">
+            <div class="panel" style="margin-bottom: 15px; border-color: var(--accent-green); border-width: 2px;">
+                <div class="panel-title" style="color: var(--accent-green);">Best Available For Your Roster<span class="help-tip" tabindex="0" data-tip="Top 3 draft recommendations for your team, ranked by a composite score combining tier, positional need, run risk, and value vs ADP. The composite formula and how strongly each factor weighs in is controlled by the Recommendation Tuning panel below. When it's not your turn, this still shows you the best picks for your NEXT turn — useful for planning around what other teams might take.">?</span></div>
+                <div id="bestAvailableContainer"></div>
+            </div>
+
+            <div class="panel" style="margin-bottom: 15px;">
+                <div class="panel-title" style="color: var(--accent-amber);">Next Turn Analysis & Imminent Positional Runs<span class="help-tip" tabindex="0" data-tip="Run Risk per position — the chance an elite player at this position will get drafted before your next pick. Computed from (a) how many teams pick between now and your next turn, (b) how many of those teams still need this position, and (c) how many elite-tier players remain. Color-coded: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). High run risk in a position you also need is a strong reach signal.">?</span></div>
+                <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="filter-tabs">
+                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
+                </div>
+                <div class="player-search">
+                    <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name… (press /)" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
+                    <button type="button" id="playerSearchClear" class="player-search-clear" onclick="clearPlayerSearch()" aria-label="Clear search" style="display:none;">×</button>
+                </div>
+                <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
+                    <table class="player-table" id="playerTable">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Pos</th>
+                                <th>Tier</th>
+                                <th title="Average Draft Position">ADP</th>
+                                <th title="Pick value vs ADP. Negative = reaching, positive = value">vs ADP</th>
+                                <th>VOB</th>
+                                <th>Floor</th>
+                                <th>Ceiling</th>
+                                <th>Risk</th>
+                                <th>Run Risk</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playerTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Recommendation Tuning<span class="help-tip" tabindex="0" data-tip="Controls how the Best Available panel weighs different factors. Pick a Preset Strategy for a one-click setup, or fine-tune the five caps below. Each individual slider has its own hover tooltip explaining what it does. Moving any slider flips the preset to 'Custom'. Settings persist across reloads.">?</span></span>
+                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTuningDefaults()">Reset</button>
+                </div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Controls how the Best Available panel weighs tier vs. need vs. scarcity. Pick a preset or fine-tune below.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="tuningPreset">Preset Strategy</label>
+                        <select id="tuningPreset" class="form-control" onchange="applyTuningPreset(this.value)">
+                            <option value="balanced">Balanced (default)</option>
+                            <option value="bpa">BPA — Best Player Available</option>
+                            <option value="need">Need — Fill Roster Holes</option>
+                            <option value="pure">Pure Rankings (no VOB)</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tierWeight" title="How heavily tier affects the recommendation. Each tier step costs this many points of composite score. Higher = stronger preference for higher-tier players. Lower = need and scarcity matter more.">Tier Weight: <span id="tierWeightVal">10</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="tierWeight" min="3" max="20" value="10" step="1" oninput="document.getElementById('tierWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="needWeight" title="Maximum points the need adjustment can shift a player by. At default 3, a player filling an open starter slot gets a -3 boost to composite score (a fraction of a tier). Higher values let need adjustments override tier more.">Need Cap: <span id="needWeightVal">3</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="needWeight" min="0" max="8" value="3" step="1" oninput="document.getElementById('needWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scarcityWeight" title="Maximum points scarcity (positional run risk) can shift a player by. Higher = run risk is treated as a more urgent draft signal.">Scarcity Cap: <span id="scarcityWeightVal">2</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="scarcityWeight" min="0" max="6" value="2" step="1" oninput="document.getElementById('scarcityWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adpValueWeight" title="Maximum points the 'available past ADP' bonus can shift a player by. Higher = the engine values draft-board steals more.">ADP Value Cap: <span id="adpValueWeightVal">1.5</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="adpValueWeight" min="0" max="50" value="15" step="1" oninput="document.getElementById('adpValueWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="vobWeight" title="How much within-tier value (VOB) matters as a tiebreaker. Default 0.5 means VOB rarely jumps a player across tiers but breaks ties within one. Set to 0 to ignore VOB entirely (pure tier ordering).">VOB Tiebreaker Weight: <span id="vobWeightVal">0.5</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="vobWeight" min="0" max="20" value="5" step="1" oninput="document.getElementById('vobWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: LIVE MATRIX TRACKER -->
+        <div class="right-column">
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Draft Board & Team Roster Matrix<span class="help-tip tip-right" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. Columns map to roster slots: QB, RB, WR, TE, FX (Flex), DF (Defense), BN (Bench). The Undo button reverses the last pick — handy for misclicks. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
+                    <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
+                </div>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="undoLastPick()">↶ Undo Last Pick</button>
+                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
+                </div>
+                <div style="overflow-y: auto; max-height: 420px;">
+                    <table class="matrix-table" id="matrixTable">
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>QB</th>
+                                <th>RB</th>
+                                <th>WR</th>
+                                <th>TE</th>
+                                <th>FX</th>
+                                <th>DF</th>
+                                <th>BN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
+                <div class="roster-grid" id="myRosterGrid"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span style="color: var(--accent-amber);">★ Watch List<span class="help-tip tip-right" tabindex="0" data-tip="Players you've starred in the Available Player Matrix. Grouped by position. Drafted favorites are grayed out with a note showing who drafted them — useful for tracking who took 'your guys'. The list persists across sessions with your draft state.">?</span></span>
+                    <span id="watchListCount" style="font-size: 11px; color: var(--text-muted); font-weight: normal;"></span>
+                </div>
+                <div id="watchListContent"></div>
+            </div>
+        </div>
+
+    </div>
+    </div>  <!-- end Draft tab panel -->
+
+    <div id="tabPanel-settings" class="tab-panel" role="tabpanel" aria-labelledby="mainTab-settings">
+        <div class="settings-grid">
             <div class="panel">
                 <div class="panel-title" style="color: var(--accent-amber);">Player Data Import<span class="help-tip tip-right" tabindex="0" data-tip="Imports the pool of draftable players. Five tabs: CSV (rankings; auto-detects engine native vs FantasyPros export), Pasted Text (FantasyPros cheat sheet heuristic), JSON (script your own source), Injury (merges Draft Sharks injury data by name), and Rookies (merges FantasyPros rookies export by name). The Injury and Rookies caches auto-apply to your pool whenever you re-import rankings; the rankings cache can be reloaded explicitly. Players need at minimum a name, position, and tier; everything else is optional.">?</span></div>
                 <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
@@ -790,158 +1012,10 @@
                 <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Names appear in the draft board and roster matrix. Click your pick number in Profile Configuration to set which team is yours.</p>
                 <div id="teamNamesContainer"></div>
             </div>
+
         </div>
+    </div>  <!-- end Settings tab panel -->
 
-        <!-- CENTER: LIVE BOARD & SCARCITY POOL -->
-        <div class="center-column">
-            <div class="panel" style="margin-bottom: 15px; border-color: var(--accent-green); border-width: 2px;">
-                <div class="panel-title" style="color: var(--accent-green);">Best Available For Your Roster<span class="help-tip" tabindex="0" data-tip="Top 3 draft recommendations for your team, ranked by a composite score combining tier, positional need, run risk, and value vs ADP. The composite formula and how strongly each factor weighs in is controlled by the Recommendation Tuning panel below. When it's not your turn, this still shows you the best picks for your NEXT turn — useful for planning around what other teams might take.">?</span></div>
-                <div id="bestAvailableContainer"></div>
-            </div>
-
-            <div class="panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Next Turn Analysis & Imminent Positional Runs<span class="help-tip" tabindex="0" data-tip="Run Risk per position — the chance an elite player at this position will get drafted before your next pick. Computed from (a) how many teams pick between now and your next turn, (b) how many of those teams still need this position, and (c) how many elite-tier players remain. Color-coded: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). High run risk in a position you also need is a strong reach signal.">?</span></div>
-                <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
-                <div class="filter-tabs">
-                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
-                </div>
-                <div class="player-search">
-                    <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name… (press /)" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
-                    <button type="button" id="playerSearchClear" class="player-search-clear" onclick="clearPlayerSearch()" aria-label="Clear search" style="display:none;">×</button>
-                </div>
-                <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
-                    <table class="player-table" id="playerTable">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Pos</th>
-                                <th>Tier</th>
-                                <th title="Average Draft Position">ADP</th>
-                                <th title="Pick value vs ADP. Negative = reaching, positive = value">vs ADP</th>
-                                <th>VOB</th>
-                                <th>Floor</th>
-                                <th>Ceiling</th>
-                                <th>Risk</th>
-                                <th>Run Risk</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="playerTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">
-                    <span>Recommendation Tuning<span class="help-tip" tabindex="0" data-tip="Controls how the Best Available panel weighs different factors. Pick a Preset Strategy for a one-click setup, or fine-tune the five caps below. Each individual slider has its own hover tooltip explaining what it does. Moving any slider flips the preset to 'Custom'. Settings persist across reloads.">?</span></span>
-                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTuningDefaults()">Reset</button>
-                </div>
-                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Controls how the Best Available panel weighs tier vs. need vs. scarcity. Pick a preset or fine-tune below.</p>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="tuningPreset">Preset Strategy</label>
-                        <select id="tuningPreset" class="form-control" onchange="applyTuningPreset(this.value)">
-                            <option value="balanced">Balanced (default)</option>
-                            <option value="bpa">BPA — Best Player Available</option>
-                            <option value="need">Need — Fill Roster Holes</option>
-                            <option value="pure">Pure Rankings (no VOB)</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tierWeight" title="How heavily tier affects the recommendation. Each tier step costs this many points of composite score. Higher = stronger preference for higher-tier players. Lower = need and scarcity matter more.">Tier Weight: <span id="tierWeightVal">10</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="tierWeight" min="3" max="20" value="10" step="1" oninput="document.getElementById('tierWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="needWeight" title="Maximum points the need adjustment can shift a player by. At default 3, a player filling an open starter slot gets a -3 boost to composite score (a fraction of a tier). Higher values let need adjustments override tier more.">Need Cap: <span id="needWeightVal">3</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="needWeight" min="0" max="8" value="3" step="1" oninput="document.getElementById('needWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="scarcityWeight" title="Maximum points scarcity (positional run risk) can shift a player by. Higher = run risk is treated as a more urgent draft signal.">Scarcity Cap: <span id="scarcityWeightVal">2</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="scarcityWeight" min="0" max="6" value="2" step="1" oninput="document.getElementById('scarcityWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="adpValueWeight" title="Maximum points the 'available past ADP' bonus can shift a player by. Higher = the engine values draft-board steals more.">ADP Value Cap: <span id="adpValueWeightVal">1.5</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="adpValueWeight" min="0" max="50" value="15" step="1" oninput="document.getElementById('adpValueWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="vobWeight" title="How much within-tier value (VOB) matters as a tiebreaker. Default 0.5 means VOB rarely jumps a player across tiers but breaks ties within one. Set to 0 to ignore VOB entirely (pure tier ordering).">VOB Tiebreaker Weight: <span id="vobWeightVal">0.5</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="vobWeight" min="0" max="20" value="5" step="1" oninput="document.getElementById('vobWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT: LIVE MATRIX TRACKER -->
-        <div class="right-column">
-            <div class="panel">
-                <div class="panel-title">
-                    <span>Draft Board & Team Roster Matrix<span class="help-tip tip-right" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. Columns map to roster slots: QB, RB, WR, TE, FX (Flex), DF (Defense), BN (Bench). The Undo button reverses the last pick — handy for misclicks. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
-                    <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
-                </div>
-                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="undoLastPick()">↶ Undo Last Pick</button>
-                    <button class="btn btn-secondary" style="flex: 1; padding: 4px 8px; font-size: 11px;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
-                </div>
-                <div style="overflow-y: auto; max-height: 420px;">
-                    <table class="matrix-table" id="matrixTable">
-                        <thead>
-                            <tr>
-                                <th>Team</th>
-                                <th>QB</th>
-                                <th>RB</th>
-                                <th>WR</th>
-                                <th>TE</th>
-                                <th>FX</th>
-                                <th>DF</th>
-                                <th>BN</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matrixTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
-                <div class="roster-grid" id="myRosterGrid"></div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">
-                    <span style="color: var(--accent-amber);">★ Watch List<span class="help-tip tip-right" tabindex="0" data-tip="Players you've starred in the Available Player Matrix. Grouped by position. Drafted favorites are grayed out with a note showing who drafted them — useful for tracking who took 'your guys'. The list persists across sessions with your draft state.">?</span></span>
-                    <span id="watchListCount" style="font-size: 11px; color: var(--text-muted); font-weight: normal;"></span>
-                </div>
-                <div id="watchListContent"></div>
-            </div>
-        </div>
-
-    </div>
 
     <div class="panel" style="margin-top: 20px;">
         <div class="panel-title" style="cursor: pointer;" onclick="toggleGlossary()">
@@ -3057,6 +3131,26 @@
             if (confirm("Reset the entire draft? All picks will be cleared. Player pool and settings will be kept.")) {
                 resetDraftState();
             }
+        }
+
+        // Switch between Draft and Settings tabs. Display-toggles the panels and
+        // updates active state on the tab buttons. Tab state is NOT persisted —
+        // page loads always start on the Draft tab, since Settings is mostly a
+        // pre-draft setup view and you'd rather not land there on draft day if
+        // you'd accidentally left it open.
+        function switchMainTab(name) {
+            ["draft", "settings"].forEach(tab => {
+                const btn = document.getElementById("mainTab-" + tab);
+                const panel = document.getElementById("tabPanel-" + tab);
+                const isActive = tab === name;
+                if (btn) {
+                    btn.classList.toggle("active", isActive);
+                    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+                }
+                if (panel) {
+                    panel.classList.toggle("active", isActive);
+                }
+            });
         }
 
         function toggleGlossary() {
