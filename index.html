@@ -2934,19 +2934,21 @@
                 const badgeInfo = RISK_BADGE[p.injury] || RISK_BADGE.Low;
                 let riskLabel = badgeInfo.label;
                 let riskClass = badgeInfo.cls;
-                // Build a richer hover tooltip when Draft Sharks metadata is available.
-                // Falls back to the bare engine bucket for hand-set or rankings-default values.
-                let riskTip = `Injury risk: ${p.injury}`;
-                if (p.injuryRaw && p.injuryRaw.toLowerCase() !== p.injury.toLowerCase()) {
-                    riskTip = `${p.injuryRaw} (engine bucket: ${p.injury})`;
-                }
+                // Hover tooltip shows only the actionable Draft Sharks metadata —
+                // projected games missed and durability. The bucket label is already
+                // visible in the badge itself, so repeating it in the tooltip is noise.
+                // No tooltip when no metadata is available (e.g. player wasn't in the
+                // injury CSV); the badge alone is enough.
+                const tipParts = [];
                 if (p.projectedGamesMissed !== undefined) {
-                    riskTip += ` — projected ${p.projectedGamesMissed} games missed`;
+                    tipParts.push(`Projected ${p.projectedGamesMissed} games missed`);
                 }
                 if (p.durability !== undefined) {
-                    riskTip += `, durability ${p.durability}/5`;
+                    tipParts.push(`Durability ${p.durability}/5`);
                 }
-                let riskBadge = `<span class="status-badge ${riskClass}" title="${escapeHtml(riskTip)}">${riskLabel}</span>`;
+                const riskTip = tipParts.join(" · ");
+                const titleAttr = riskTip ? ` title="${escapeHtml(riskTip)}"` : "";
+                let riskBadge = `<span class="status-badge ${riskClass}"${titleAttr}>${riskLabel}</span>`;
 
                 let rookieBadge = p.rookie ? ` <span class="status-badge badge-rookie" title="Rookie">Rook</span>` : "";
 
