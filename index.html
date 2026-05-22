@@ -296,6 +296,30 @@
             background-color: var(--row-hover);
         }
 
+        /* Tier separator row in the player matrix. Doesn't act like a normal table
+           row — no hover, no per-column borders, just a horizontal divider with a
+           small caption noting which tier ended and which is starting. Helps you
+           spot "last guy in this tier — grab him" at a glance. */
+        .player-table tr.tier-break {
+            background-color: transparent;
+        }
+        .player-table tr.tier-break:hover {
+            background-color: transparent;
+        }
+        .player-table tr.tier-break td {
+            padding: 4px 8px;
+            border-bottom: 2px solid var(--accent-amber);
+            border-top: 1px solid var(--border-color);
+            background: linear-gradient(to right, var(--bg-tertiary), transparent 60%);
+        }
+        .player-table tr.tier-break span {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--accent-amber);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .filter-tabs {
             display: flex;
             gap: 4px;
@@ -351,6 +375,26 @@
         .tab:focus-visible {
             outline: 2px solid var(--accent-blue);
             outline-offset: 2px;
+        }
+
+        /* Count badge inside filter tabs — shows undrafted players at that position.
+           Muted on inactive tabs, slightly emphasized on the active tab. */
+        .tab-count {
+            display: inline-block;
+            margin-left: 4px;
+            padding: 0 5px;
+            min-width: 18px;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-muted);
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            line-height: 14px;
+            text-align: center;
+        }
+        .tab.active .tab-count {
+            background-color: var(--bg-tertiary);
+            color: var(--text-main);
         }
 
         .tab.active {
@@ -770,15 +814,15 @@
             <div class="panel">
                 <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="filter-tabs">
-                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL</button>
-                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB</button>
-                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB</button>
-                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR</button>
-                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE</button>
-                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF</button>
+                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
+                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
                 </div>
                 <div class="player-search">
-                    <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name…" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
+                    <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name… (press /)" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
                     <button type="button" id="playerSearchClear" class="player-search-clear" onclick="clearPlayerSearch()" aria-label="Clear search" style="display:none;">×</button>
                 </div>
                 <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
@@ -1176,7 +1220,39 @@
             // Will be a no-op unless the user has configured a rankings URL AND
             // doesn't already have cached data on this device.
             maybeAutoFetch();
+            // Keyboard shortcuts for the player matrix search. "/" focuses the
+            // search input (only when no other input is active, so typing "/" in
+            // a textarea still inserts the character). Esc clears the search
+            // when the search box itself has focus.
+            document.addEventListener("keydown", handleKeyboardShortcut);
         };
+
+        function handleKeyboardShortcut(e) {
+            // Skip if a modifier is held — we don't want to steal Ctrl+/, Cmd+/, etc.
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+            const active = document.activeElement;
+            const tag = active && active.tagName;
+            const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+                             (active && active.isContentEditable);
+
+            // "/" focuses search — but only when the user isn't already typing somewhere.
+            if (e.key === "/" && !isTyping) {
+                const input = document.getElementById("playerSearchInput");
+                if (input) {
+                    e.preventDefault();
+                    input.focus();
+                    input.select();
+                }
+                return;
+            }
+
+            // Esc clears the search input when it's focused. Doesn't fire when
+            // the user is in any other input, so it stays out of the way.
+            if (e.key === "Escape" && active && active.id === "playerSearchInput") {
+                clearPlayerSearch();
+            }
+        }
 
         // Custom High-Pass Parsing Matrix Engine tailored explicitly for FantasyPros Copy/Paste formats
         function parseFantasyProsText() {
@@ -2695,6 +2771,23 @@
             renderPlayerPool();
         }
 
+        // Updates the count badges inside each filter tab. Counts undrafted players
+        // only — so as players come off the board, the numbers tick down. Cached
+        // counts would be wrong after every draft, so we recompute fresh on each
+        // call. With ~400 players this is negligible work.
+        function updatePositionTabCounts() {
+            const counts = { ALL: 0, QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
+            for (const p of activePlayers) {
+                if (p.drafted) continue;
+                counts.ALL++;
+                if (counts[p.pos] !== undefined) counts[p.pos]++;
+            }
+            Object.keys(counts).forEach(pos => {
+                const el = document.getElementById("tabCount-" + pos);
+                if (el) el.innerText = counts[pos];
+            });
+        }
+
         function onPlayerSearchInput(value) {
             playerSearchQuery = (value || "").trim();
             const clearBtn = document.getElementById("playerSearchClear");
@@ -2715,6 +2808,11 @@
         function renderPlayerPool() {
             const body = document.getElementById("playerTableBody");
             body.innerHTML = "";
+
+            // Update filter-tab counts. Always counts undrafted players, ignoring
+            // the active position filter and search query — counts describe the
+            // pool, not the current view.
+            updatePositionTabCounts();
 
             let displayList = activePlayers.filter(p => !p.drafted);
             if (selectedPositionFilter !== "ALL") { displayList = displayList.filter(p => p.pos === selectedPositionFilter); }
@@ -2749,7 +2847,22 @@
                 return;
             }
 
-            displayList.forEach(p => {
+            // Track tier across iterations so we can drop a visual separator row
+            // each time the tier number changes. The list is pre-sorted by tier ASC
+            // then VOB DESC, so tier transitions happen exactly at the right spots.
+            let previousTier = null;
+
+            displayList.forEach((p, idx) => {
+                // Insert a tier-break separator before this row when tier changes.
+                // Skip on the very first row — the first tier is implicit at the top.
+                if (previousTier !== null && p.tier !== previousTier) {
+                    const sepTr = document.createElement("tr");
+                    sepTr.className = "tier-break";
+                    sepTr.innerHTML = `<td colspan="11"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
+                    body.appendChild(sepTr);
+                }
+                previousTier = p.tier;
+
                 let tr = document.createElement("tr");
 
                 let riskLabel = p.injury === "Medium" ? "Med" : (p.injury === "High" ? "High" : "Low");
