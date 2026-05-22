@@ -702,13 +702,6 @@
 
             <div class="panel">
                 <div class="panel-title">Profile Configuration<span class="help-tip tip-right" tabindex="0" data-tip="League-level settings: number of teams, your draft slot (1-indexed from left), scoring format (Standard / Half PPR / Full PPR), and the two engine-wide knobs. Rookie Late-Season Boost increases EV for rookies as a hedge against early-season uncertainty. ADP Market Adherence Weight controls how confident the engine is that other teams will draft near their ADP — lower = more uncertainty in run-risk forecasts.">?</span></div>
-                <div class="form-group">
-                    <label for="presetSelect">Active League Profile</label>
-                    <select id="presetSelect" class="form-control" onchange="loadPreset()">
-                        <option value="profile1">Primary Flex (12-Team Half PPR)</option>
-                        <option value="profile2">Superflex Deep (10-Team Full PPR)</option>
-                    </select>
-                </div>
                 <div class="row-2col">
                     <div class="form-group">
                         <label for="leagueSize">League Size</label>
@@ -1125,7 +1118,7 @@
 
         function saveState() {
             try {
-                const settingIds = ["presetSelect", "leagueSize", "draftOrder", "scoringFormat",
+                const settingIds = ["leagueSize", "draftOrder", "scoringFormat",
                     "rookieBoost", "adpVariance", "reqQB", "reqRB", "reqWR", "reqTE",
                     "reqFlex", "reqDEF", "reqBench", "flexAlloc",
                     "tuningPreset", "tierWeight", "needWeight", "scarcityWeight", "adpValueWeight", "vobWeight"];
@@ -1213,7 +1206,10 @@
             if (loadState()) {
                 recalculateEngine();
             } else {
-                loadPreset();
+                // No saved state — initialize from the static HTML defaults already
+                // present on each input (12-team Half PPR, etc.). resetDraftState
+                // sets up team rosters and runs the first engine calc.
+                resetDraftState();
             }
             renderTeamNameInputs();
             // After all sync state is restored, attempt the auto-fetch.
@@ -2528,36 +2524,6 @@
             const sel = document.getElementById("tuningPreset");
             if (sel) sel.value = "balanced";
             applyTuningPreset("balanced");
-        }
-
-        function loadPreset() {
-            const pType = document.getElementById("presetSelect").value;
-            if (pType === "profile1") {
-                document.getElementById("leagueSize").value = 12;
-                document.getElementById("draftOrder").value = 3;
-                document.getElementById("scoringFormat").value = "Half PPR";
-                document.getElementById("reqQB").value = 1;
-                document.getElementById("reqRB").value = 2;
-                document.getElementById("reqWR").value = 2;
-                document.getElementById("reqTE").value = 1;
-                document.getElementById("reqFlex").value = 1;
-                document.getElementById("reqDEF").value = 1;
-                document.getElementById("reqBench").value = 6;
-                document.getElementById("flexAlloc").value = 40;
-            } else if (pType === "profile2") {
-                document.getElementById("leagueSize").value = 10;
-                document.getElementById("draftOrder").value = 7;
-                document.getElementById("scoringFormat").value = "Full PPR";
-                document.getElementById("reqQB").value = 2;
-                document.getElementById("reqRB").value = 2;
-                document.getElementById("reqWR").value = 3;
-                document.getElementById("reqTE").value = 1;
-                document.getElementById("reqFlex").value = 2;
-                document.getElementById("reqDEF").value = 1;
-                document.getElementById("reqBench").value = 7;
-                document.getElementById("flexAlloc").value = 35;
-            }
-            resetDraftState();
         }
 
         function resetDraftState() {
