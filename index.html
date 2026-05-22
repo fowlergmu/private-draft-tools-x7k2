@@ -614,6 +614,31 @@
             flex: 1;
         }
 
+        /* Compact tuning panel — designed for the narrow right column.
+           Sliders stack vertically; each row is a tight label + value + slider
+           in 3 lines (label-on-top of slider) with reduced vertical padding. */
+        .tuning-compact .tuning-slider {
+            margin-bottom: 8px;
+        }
+        .tuning-compact .tuning-slider label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+        .tuning-compact .tuning-slider .tuning-val {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 11px;
+            font-variant-numeric: tabular-nums; /* keep values aligned as they change */
+        }
+        .tuning-compact .tuning-slider input[type="range"] {
+            width: 100%;
+            margin: 0;
+        }
+
         /* Tooltip system: small "?" icon next to panel titles. Hover or focus
            shows a positioned bubble. Keyboard-accessible via tabindex. */
         .help-tip {
@@ -772,62 +797,6 @@
                     </table>
                 </div>
             </div>
-
-            <div class="panel">
-                <div class="panel-title">
-                    <span>Recommendation Tuning<span class="help-tip" tabindex="0" data-tip="Controls how the Best Available panel weighs different factors. Pick a Preset Strategy for a one-click setup, or fine-tune the five caps below. Each individual slider has its own hover tooltip explaining what it does. Moving any slider flips the preset to 'Custom'. Settings persist across reloads.">?</span></span>
-                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTuningDefaults()">Reset</button>
-                </div>
-                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Controls how the Best Available panel weighs tier vs. need vs. scarcity. Pick a preset or fine-tune below.</p>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="tuningPreset">Preset Strategy</label>
-                        <select id="tuningPreset" class="form-control" onchange="applyTuningPreset(this.value)">
-                            <option value="balanced">Balanced (default)</option>
-                            <option value="bpa">BPA — Best Player Available</option>
-                            <option value="need">Need — Fill Roster Holes</option>
-                            <option value="pure">Pure Rankings (no VOB)</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tierWeight" title="How heavily tier affects the recommendation. Each tier step costs this many points of composite score. Higher = stronger preference for higher-tier players. Lower = need and scarcity matter more.">Tier Weight: <span id="tierWeightVal">10</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="tierWeight" min="3" max="20" value="10" step="1" oninput="document.getElementById('tierWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="needWeight" title="Maximum points the need adjustment can shift a player by. At default 3, a player filling an open starter slot gets a -3 boost to composite score (a fraction of a tier). Higher values let need adjustments override tier more.">Need Cap: <span id="needWeightVal">3</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="needWeight" min="0" max="8" value="3" step="1" oninput="document.getElementById('needWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="scarcityWeight" title="Maximum points scarcity (positional run risk) can shift a player by. Higher = run risk is treated as a more urgent draft signal.">Scarcity Cap: <span id="scarcityWeightVal">2</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="scarcityWeight" min="0" max="6" value="2" step="1" oninput="document.getElementById('scarcityWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="adpValueWeight" title="Maximum points the 'available past ADP' bonus can shift a player by. Higher = the engine values draft-board steals more.">ADP Value Cap: <span id="adpValueWeightVal">1.5</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="adpValueWeight" min="0" max="50" value="15" step="1" oninput="document.getElementById('adpValueWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="grid-column: 1 / -1;">
-                        <label for="vobWeight" title="How much within-tier value (VOB) matters as a tiebreaker. Default 0.5 means VOB rarely jumps a player across tiers but breaks ties within one. Set to 0 to ignore VOB entirely (pure tier ordering).">VOB Tiebreaker Weight: <span id="vobWeightVal">0.5</span></label>
-                        <div class="slider-container">
-                            <input type="range" id="vobWeight" min="0" max="20" value="5" step="1" oninput="document.getElementById('vobWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- RIGHT: LIVE MATRIX TRACKER -->
@@ -843,6 +812,48 @@
                     <span id="watchListCount" style="font-size: 11px; color: var(--text-muted); font-weight: normal;"></span>
                 </div>
                 <div id="watchListContent"></div>
+            </div>
+
+            <div class="panel tuning-compact">
+                <div class="panel-title">
+                    <span>Recommendation Tuning<span class="help-tip tip-right" tabindex="0" data-tip="Controls how the Best Available panel weighs different factors. Pick a Preset Strategy for a one-click setup, or fine-tune the sliders. Each slider has a hover tooltip explaining what it does. Moving any slider flips the preset to 'Custom'. Settings persist across reloads.">?</span></span>
+                    <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 6px; width: auto;" onclick="resetTuningDefaults()">Reset</button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <select id="tuningPreset" class="form-control" style="font-size: 11px; padding: 4px 6px;" onchange="applyTuningPreset(this.value)" aria-label="Preset strategy">
+                        <option value="balanced">Balanced (default)</option>
+                        <option value="bpa">BPA — Best Player Available</option>
+                        <option value="need">Need — Fill Roster Holes</option>
+                        <option value="pure">Pure Rankings (no VOB)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+
+                <div class="tuning-slider">
+                    <label for="tierWeight" title="How heavily tier affects the recommendation. Each tier step costs this many points of composite score. Higher = stronger preference for higher-tier players. Lower = need and scarcity matter more."><span>Tier</span><span class="tuning-val" id="tierWeightVal">10</span></label>
+                    <input type="range" id="tierWeight" min="3" max="20" value="10" step="1" oninput="document.getElementById('tierWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                </div>
+
+                <div class="tuning-slider">
+                    <label for="needWeight" title="Maximum points the need adjustment can shift a player by. At default 3, a player filling an open starter slot gets a -3 boost to composite score (a fraction of a tier). Higher values let need adjustments override tier more."><span>Need cap</span><span class="tuning-val" id="needWeightVal">3</span></label>
+                    <input type="range" id="needWeight" min="0" max="8" value="3" step="1" oninput="document.getElementById('needWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                </div>
+
+                <div class="tuning-slider">
+                    <label for="scarcityWeight" title="Maximum points scarcity (positional run risk) can shift a player by. Higher = run risk is treated as a more urgent draft signal."><span>Scarcity cap</span><span class="tuning-val" id="scarcityWeightVal">2</span></label>
+                    <input type="range" id="scarcityWeight" min="0" max="6" value="2" step="1" oninput="document.getElementById('scarcityWeightVal').innerText = this.value; markTuningCustom(); recalculateEngine();">
+                </div>
+
+                <div class="tuning-slider">
+                    <label for="adpValueWeight" title="Maximum points the 'available past ADP' bonus can shift a player by. Higher = the engine values draft-board steals more."><span>ADP value cap</span><span class="tuning-val" id="adpValueWeightVal">1.5</span></label>
+                    <input type="range" id="adpValueWeight" min="0" max="50" value="15" step="1" oninput="document.getElementById('adpValueWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                </div>
+
+                <div class="tuning-slider">
+                    <label for="vobWeight" title="How much within-tier value (VOB) matters as a tiebreaker. Default 0.5 means VOB rarely jumps a player across tiers but breaks ties within one. Set to 0 to ignore VOB entirely (pure tier ordering)."><span>VOB tiebreak</span><span class="tuning-val" id="vobWeightVal">0.5</span></label>
+                    <input type="range" id="vobWeight" min="0" max="20" value="5" step="1" oninput="document.getElementById('vobWeightVal').innerText = (this.value/10).toFixed(1); markTuningCustom(); recalculateEngine();">
+                </div>
             </div>
         </div>
 
