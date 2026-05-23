@@ -753,7 +753,7 @@
         <!-- CENTER: LIVE BOARD & SCARCITY POOL -->
         <div class="center-column">
             <div class="panel" style="margin-bottom: 15px; border-color: var(--accent-green); border-width: 2px;">
-                <div class="panel-title" style="color: var(--accent-green);">Best Available For Your Roster<span class="help-tip" tabindex="0" data-tip="Top 3 draft recommendations for your team, ranked by a composite score combining tier, positional need, run risk, and value vs ADP. The composite formula and how strongly each factor weighs in is controlled by the Recommendation Tuning panel below. When it's not your turn, this still shows you the best picks for your NEXT turn — useful for planning around what other teams might take.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-green);">Best Available For Your Roster<span class="help-tip" tabindex="0" data-tip="Top 3 draft recommendations for your team, ranked by a composite score combining tier, positional need, run risk, and value vs ADP. The score is displayed as a 0–100% recommendation strength — green ≥ 75% means a strong pick, amber 50–74% is okay, muted/red below 50% means you're picking from a thin crop. The formula and weights are controlled by the Recommendation Tuning panel. When it's not your turn, this still shows you the best picks for your NEXT turn — useful for planning around what other teams might take.">?</span></div>
                 <div id="bestAvailableContainer"></div>
             </div>
 
@@ -3044,6 +3044,17 @@
                 }
                 const adpDisplay = adpVal !== null ? adpVal.toFixed(1) : "—";
 
+                // Build VOB and Run Risk tooltips that explain both the metric and
+                // what this specific value means for this player. Generic on the
+                // metric itself, contextual on the value.
+                const vobTip = p.vob >= 0
+                    ? `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player's projected output above the replacement-level player at ${p.pos}. Positive = above the position's replacement; the higher, the better the value. Note: only compare VOB within the same position — RB and WR baselines differ.`
+                    : `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player projects below the replacement-level ${p.pos}, meaning a freely-available waiver/late-round player at this position is expected to outperform them.`;
+                let runRiskTip = `Run Risk: ${p.runRisk}%. Chance an elite ${p.pos} gets drafted before your next pick, based on how many teams between you and your next turn still need ${p.pos} and how many elite-tier ${p.pos}s remain.`;
+                if (p.runRisk > 75) runRiskTip += " High urgency — if you want one, take one now.";
+                else if (p.runRisk > 40) runRiskTip += " Moderate urgency — the position is thinning.";
+                else runRiskTip += " Calm — you can wait.";
+
                 tr.innerHTML = `
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>${rookieBadge}
@@ -3057,11 +3068,11 @@
                     <td><div style="text-align:center; font-weight:bold; color:var(--accent-amber);">${p.tier}</div></td>
                     <td class="text-muted">${adpDisplay}</td>
                     <td><span style="color:${vsAdpColor}; font-weight:600;" title="${vsAdp !== null && vsAdp > 0 ? 'Player is past ADP — value pick' : (vsAdp !== null && vsAdp < 0 ? 'Player is before ADP — reach' : 'At ADP')}">${vsAdpDisplay}</span></td>
-                    <td><strong style="color:${vobColor};">${vobSign}${p.vob.toFixed(1)}</strong></td>
+                    <td><strong style="color:${vobColor};" title="${escapeHtml(vobTip)}">${vobSign}${p.vob.toFixed(1)}</strong></td>
                     <td class="text-muted">${p.adjFloor.toFixed(1)}</td>
                     <td class="text-muted">${p.adjCeiling.toFixed(1)}</td>
                     <td>${riskBadge}</td>
-                    <td><span style="color:${runRiskColor}; font-weight:600;" aria-label="Run risk ${p.runRisk} percent">${p.runRisk}%</span></td>
+                    <td><span style="color:${runRiskColor}; font-weight:600;" title="${escapeHtml(runRiskTip)}" aria-label="Run risk ${p.runRisk} percent">${p.runRisk}%</span></td>
                     <td><button class="btn" style="padding:3px 6px; font-size:11px;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button></td>
                 `;
                 body.appendChild(tr);
@@ -3183,6 +3194,34 @@
                 const reasonText = entry.reasons.length > 0
                     ? entry.reasons.join(" · ")
                     : "best raw value remaining";
+
+                // Convert the internal composite score into a 0-100 percentage.
+                // The composite is a weighted-cost score where 0 represents the
+                // theoretical "perfect" pick (tier 1, no flaws) and large negative
+                // values represent picks heavily penalized for low tier, no need
+                // fit, no value, etc. Empirically observed ranges with default
+                // tuning weights:
+                //   Round 1 top picks: ~-1 to -3
+                //   Mid-round (pick 80-90) top picks: ~-3 to -15
+                //   Late round (pick 140+): ~-50 to -100
+                //   Deep bench scraps: down to ~-105
+                // Map [+1, -100] linearly to [100%, 0%] and clamp at edges. This
+                // is interpretive, not probabilistic — it's a more intuitive
+                // presentation of the relative ranking than a raw negative number.
+                const PCT_HIGH = 1;     // anything this good or better → 100%
+                const PCT_LOW = -100;   // anything this bad or worse → 0%
+                const pct = Math.round(Math.max(0, Math.min(100,
+                    ((entry.composite - PCT_LOW) / (PCT_HIGH - PCT_LOW)) * 100
+                )));
+                // Color the percentage based on rough quality bands. Match the
+                // existing run-risk color scheme so green = strong, amber = okay,
+                // muted/rose = weak.
+                let pctColor = "var(--accent-rose)";
+                if (pct >= 75) pctColor = "var(--accent-green)";
+                else if (pct >= 50) pctColor = "var(--accent-amber)";
+                else if (pct >= 25) pctColor = "var(--text-muted)";
+                const pctTip = `Recommendation strength: ${pct}%. Calculated from a weighted score blending tier, positional need, scarcity, ADP value, and VOB — see the Recommendation Tuning panel. Above 75% is a strong pick; below 50% means you're picking from a weak crop.`;
+
                 return `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; gap:8px; ${idx < top.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
                         <div style="display:flex; gap:6px; align-items:baseline; min-width:0; flex:1;">
@@ -3192,7 +3231,7 @@
                             <span style="color:var(--text-muted); font-size:10px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</span>
                         </div>
                         <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-                            <span style="font-weight:700; color:var(--accent-green); font-size:13px;" title="Composite score">${entry.composite.toFixed(1)}</span>
+                            <span style="font-weight:700; color:${pctColor}; font-size:13px;" title="${escapeHtml(pctTip)}">${pct}%</span>
                             <button class="btn" style="padding:3px 8px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})">Draft</button>
                         </div>
                     </div>
