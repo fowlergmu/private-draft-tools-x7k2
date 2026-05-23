@@ -2375,9 +2375,9 @@
 
         function loadGithubUrls() {
             // Start from defaults embedded in the HTML
-            githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "";
-            githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "";
-            githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "";
+            githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv";
+            githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv";
+            githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv";
             // Then layer any localStorage overrides on top. Per-field, so a user can
             // override just one URL while keeping defaults for the others.
             try {
