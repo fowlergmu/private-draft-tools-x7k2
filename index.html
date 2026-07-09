@@ -734,6 +734,7 @@
             <h1>Predictive Fantasy Football Draft Engine</h1>
             <p>FantasyPros Consensus Tier Matrix & Dynamic VOB Engine</p>
         </div>
+        <span id="dataFreshness" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-left: auto; max-width: 280px;"></span>
         <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light or dark theme">
             <span id="themeToggleIcon">☀</span>
             <span id="themeToggleLabel">Light</span>
@@ -866,10 +867,12 @@
              far more than the old right-column slot allowed. -->
         <div class="panel draft-board-panel">
             <div class="panel-title">
-                <span>Draft Board & Team Roster Matrix<span class="help-tip" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. One column per roster slot (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...). Slot columns are generated dynamically from your Roster Requirements settings. Scroll horizontally if the board exceeds your screen width. The Undo button reverses the last pick. Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
+                <span>Draft Board & Team Roster Matrix<span class="help-tip" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. One column per roster slot (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...). Slot columns are generated dynamically from your Roster Requirements settings. Scroll horizontally if the board exceeds your screen width. Mock drafting: Sim to My Pick makes ADP-based CPU picks for every other team until it's your turn — CPU randomness follows your ADP Market Adherence setting. The sim never picks for you. Undo reverses the last pick (yours or a CPU's). Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
                 <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
             </div>
-            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+                <button class="btn" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="simulateToMyPick()" title="CPU-autopick every team between now and your next turn. Never picks for you.">⏩ Sim to My Pick</button>
+                <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="simulateOnePick()" title="CPU-autopick just the current team's pick.">▶ Sim 1 Pick</button>
                 <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="undoLastPick()">↶ Undo Last Pick</button>
                 <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 11px; width: auto;" onclick="confirmResetDraft()">⟲ Reset Draft</button>
             </div>
@@ -1244,11 +1247,12 @@
         // testing without affecting the canonical config. The "Reset to Defaults"
         // button in the GitHub Sync panel clears the override.
         const DEFAULT_GITHUB_URLS = {
-            // After you create your repo and add the CSVs, paste your raw URLs here.
-            // Example: "https://raw.githubusercontent.com/yourname/yourrepo/main/data/rankings.csv"
-            rankings: "",
-            injury: "",
-            rookies: ""
+            // These travel with the app: every device that loads this HTML gets
+            // them. Note the %20 encoding — two of the repo filenames contain
+            // spaces ("Injury Risk.csv", "Rookie Tiers.csv").
+            rankings: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv",
+            injury: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv",
+            rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv"
         };
 
         // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
@@ -1263,6 +1267,7 @@
         const RANKINGS_CACHE_KEY = "fantasyDraftEngine_rankingsCache";
         const GITHUB_URLS_KEY = "fantasyDraftEngine_githubUrls";
         const ROOKIES_CACHE_KEY = "fantasyDraftEngine_rookiesCache";
+        const LAST_SYNC_KEY = "fantasyDraftEngine_lastSync";
 
         function saveState() {
             try {
@@ -1368,10 +1373,14 @@
                 resetDraftState();
             }
             renderTeamNameInputs();
-            // After all sync state is restored, attempt the auto-fetch.
-            // Will be a no-op unless the user has configured a rankings URL AND
-            // doesn't already have cached data on this device.
-            maybeAutoFetch();
+            // After all sync state is restored: first-visit devices do a full
+            // fetch (maybeAutoFetch); returning devices instead get a freshness
+            // check that auto-applies any CSVs that changed in the repo since
+            // the last sync (checkForDataUpdates). Both are fire-and-forget —
+            // the page is fully usable from cache while they run.
+            maybeAutoFetch().then(didFullSync => {
+                if (!didFullSync) checkForDataUpdates();
+            }).catch(() => { /* offline — cached data still works */ });
             // Keyboard shortcuts for the player matrix search. "/" focuses the
             // search input (only when no other input is active, so typing "/" in
             // a textarea still inserts the character). Esc clears the search
@@ -1567,15 +1576,18 @@
             reader.readAsText(file);
         }
 
-        function parseCsvText(text) {
+        // options.silent — used by the auto-update path: no alerts, no touching
+        // the import form inputs. Returns true on a successful import.
+        function parseCsvText(text, options) {
+            options = options || {};
             if (!text || !text.trim()) {
-                alert("No CSV data provided.");
-                return;
+                if (!options.silent) alert("No CSV data provided.");
+                return false;
             }
             const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
             if (lines.length < 2) {
-                alert("CSV needs at least a header row and one data row.");
-                return;
+                if (!options.silent) alert("CSV needs at least a header row and one data row.");
+                return false;
             }
 
             const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
@@ -1588,14 +1600,15 @@
                 headers.includes("player name");
 
             if (isFantasyPros) {
-                return parseFantasyProsCsv(lines, headers, text);
+                return parseFantasyProsCsv(lines, headers, text, options);
             }
-            return parseGenericCsv(lines, headers, text);
+            return parseGenericCsv(lines, headers, text, options);
         }
 
         // Parser for the FantasyPros draft rankings CSV export format.
         // Columns: RK, TIERS, PLAYER NAME, TEAM, POS, BYE WEEK, UPSIDE, BUST, SOS SEASON, ECR VS. ADP
-        function parseFantasyProsCsv(lines, headers, rawText) {
+        function parseFantasyProsCsv(lines, headers, rawText, options) {
+            options = options || {};
             const idx = name => headers.indexOf(name);
             const rkIdx = idx("rk");
             const tierIdx = idx("tiers");
@@ -1663,26 +1676,30 @@
             }
 
             if (pool.length === 0) {
-                alert("No valid players found in FantasyPros CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
-                return;
+                if (!options.silent) alert("No valid players found in FantasyPros CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
+                return false;
             }
 
             activePlayers = pool;
             reapplyCachedInjuryData();
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
-            const parts = [`Imported ${pool.length} players from FantasyPros CSV.`];
-            if (skippedKickers.length > 0) parts.push(`Skipped ${skippedKickers.length} kicker(s) — engine doesn't support K position.`);
-            if (errors.length > 0) parts.push(`${errors.length} row(s) had errors and were skipped.`);
-            alert(parts.join("\n"));
-            document.getElementById("csvPasteArea").value = "";
-            document.getElementById("csvFileInput").value = "";
+            if (!options.silent) {
+                const parts = [`Imported ${pool.length} players from FantasyPros CSV.`];
+                if (skippedKickers.length > 0) parts.push(`Skipped ${skippedKickers.length} kicker(s) — engine doesn't support K position.`);
+                if (errors.length > 0) parts.push(`${errors.length} row(s) had errors and were skipped.`);
+                alert(parts.join("\n"));
+                document.getElementById("csvPasteArea").value = "";
+                document.getElementById("csvFileInput").value = "";
+            }
             resetDraftState();
             saveState();
+            return true;
         }
 
         // Original generic CSV parser — for the engine's own format (name, pos, tier, adp, ...)
-        function parseGenericCsv(lines, headers, rawText) {
+        function parseGenericCsv(lines, headers, rawText, options) {
+            options = options || {};
             const idx = name => headers.indexOf(name);
             const nameIdx = idx("name") !== -1 ? idx("name") : idx("player");
             const posIdx = idx("pos") !== -1 ? idx("pos") : idx("position");
@@ -1732,20 +1749,23 @@
             }
 
             if (pool.length === 0) {
-                alert("No valid players found in CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
-                return;
+                if (!options.silent) alert("No valid players found in CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
+                return false;
             }
 
             activePlayers = pool;
             reapplyCachedInjuryData();
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
-            const errMsg = errors.length > 0 ? `\n\n${errors.length} row(s) skipped.` : "";
-            alert(`Imported ${pool.length} players from CSV.${errMsg}`);
-            document.getElementById("csvPasteArea").value = "";
-            document.getElementById("csvFileInput").value = "";
+            if (!options.silent) {
+                const errMsg = errors.length > 0 ? `\n\n${errors.length} row(s) skipped.` : "";
+                alert(`Imported ${pool.length} players from CSV.${errMsg}`);
+                document.getElementById("csvPasteArea").value = "";
+                document.getElementById("csvFileInput").value = "";
+            }
             resetDraftState();
             saveState();
+            return true;
         }
 
         function downloadCsvTemplate() {
@@ -1873,6 +1893,43 @@
                 .trim();
         }
 
+        // Position-aware pool matcher, shared by the injury and rookies merges.
+        // Two players can legitimately share a name (or normalize to the same
+        // key), so when the source row carries a position we match on
+        // name+position first. Name-only fallback only fires when the name is
+        // unambiguous in the pool — an ambiguous name with no position match is
+        // skipped and reported rather than silently tagging the wrong player.
+        function buildPoolMatcher() {
+            const byNamePos = new Map();   // "name|POS" → player
+            const byName = new Map();      // "name" → player, or AMBIGUOUS sentinel
+            const AMBIGUOUS = Symbol("ambiguous");
+            activePlayers.forEach(p => {
+                const key = normalizeNameForMatch(p.name);
+                byNamePos.set(key + "|" + p.pos, p);
+                if (byName.has(key)) byName.set(key, AMBIGUOUS);
+                else byName.set(key, p);
+            });
+            return {
+                // pos is optional. Returns { player } on a hit,
+                // { ambiguous: true } when the name matches multiple pool players
+                // and position couldn't disambiguate, or {} on a clean miss.
+                find(rawName, pos) {
+                    const key = normalizeNameForMatch(rawName);
+                    if (pos) {
+                        // Source position vocab differs slightly from the pool's:
+                        // Draft Sharks uses DST for defenses, the engine uses DEF.
+                        const normPos = pos.toUpperCase() === "DST" ? "DEF" : pos.toUpperCase();
+                        const hit = byNamePos.get(key + "|" + normPos);
+                        if (hit) return { player: hit };
+                    }
+                    const byNameHit = byName.get(key);
+                    if (byNameHit === undefined) return {};
+                    if (byNameHit === AMBIGUOUS) return { ambiguous: true };
+                    return { player: byNameHit };
+                }
+            };
+        }
+
         // Parse the Draft Sharks "Player" cell.
         // Format: "<Name with spaces> <TEAM> <POS> <PosRank>"
         // Walk from the right: numeric rank, then position token, then team token,
@@ -1943,28 +2000,18 @@
                 return { matched: 0, unmatched: [] };
             }
 
-            // Build a lookup map from the existing player pool: normalized name → player obj.
-            // Multiple players could theoretically share a normalized name; we keep the first
-            // and warn on collisions.
-            const playerByName = new Map();
-            const collisions = [];
-            activePlayers.forEach(p => {
-                const key = normalizeNameForMatch(p.name);
-                if (playerByName.has(key)) {
-                    collisions.push(p.name);
-                } else {
-                    playerByName.set(key, p);
-                }
-            });
+            // Position-aware matcher (name+pos first, unambiguous name fallback).
+            const matcher = buildPoolMatcher();
 
             let matched = 0;
             let unmatched = [];
+            let ambiguous = [];
             let idpSkipped = 0;
             let invalidRisk = 0;
 
             for (let i = 1; i < lines.length; i++) {
                 const cells = parseCsvLine(lines[i]);
-                let rawName, rawRisk, isIdp = false;
+                let rawName, rawRisk, rowPos = null;
                 let extras = {};
 
                 if (isDraftSharks) {
@@ -1972,6 +2019,7 @@
                     if (!parsed) continue;
                     if (parsed.isIdp) { idpSkipped++; continue; }
                     rawName = parsed.name;
+                    rowPos = parsed.pos; // e.g. QB / RB / WR / TE / DST
                     rawRisk = (cells[riskIdx] || "").trim();
                     if (gamesMissedIdx !== -1) {
                         const gm = parseFloat(cells[gamesMissedIdx]);
@@ -2003,16 +2051,19 @@
                     continue;
                 }
 
-                // Match against pool. Try normalized exact first; that handles 99%
-                // of cases including Jr./Sr./III variations.
-                const key = normalizeNameForMatch(rawName);
-                const player = playerByName.get(key);
-                if (player) {
+                // Match against pool: name+position first (Draft Sharks rows carry
+                // position), unambiguous name-only fallback. Ambiguous names with
+                // no position match are skipped and reported — never tag blindly.
+                const result = matcher.find(rawName, rowPos);
+                if (result.player) {
+                    const player = result.player;
                     player.injury = injury;
                     player.injuryRaw = rawRisk; // preserve original label for hover/tooltip
                     if (extras.projectedGamesMissed !== undefined) player.projectedGamesMissed = extras.projectedGamesMissed;
                     if (extras.durability !== undefined) player.durability = extras.durability;
                     matched++;
+                } else if (result.ambiguous) {
+                    ambiguous.push(rawName + (rowPos ? " (" + rowPos + ")" : ""));
                 } else {
                     unmatched.push(rawName);
                 }
@@ -2023,7 +2074,10 @@
             log.push(`Merged injury data into ${matched} player(s).`);
             if (idpSkipped > 0) log.push(`Skipped ${idpSkipped} IDP/defender row(s) (engine doesn't support IDP positions).`);
             if (invalidRisk > 0) log.push(`${invalidRisk} row(s) had unrecognized injury risk values.`);
-            if (collisions.length > 0) log.push(`Warning: ${collisions.length} player name collision(s) in pool (kept first).`);
+            if (ambiguous.length > 0) {
+                log.push(`Skipped ${ambiguous.length} row(s) with ambiguous names (multiple pool players share the name and position didn't disambiguate):`);
+                ambiguous.slice(0, 10).forEach(n => log.push(`  • ${n}`));
+            }
             if (unmatched.length > 0) {
                 log.push(``);
                 log.push(`Players in injury CSV not found in your player pool (${unmatched.length}):`);
@@ -2045,6 +2099,7 @@
                 try {
                     cachedInjuryCsv = text;
                     localStorage.setItem(INJURY_CACHE_KEY, text);
+                    touchLastSync(["injury"]);
                 } catch (e) {
                     console.warn("Could not cache injury CSV:", e);
                 }
@@ -2106,7 +2161,8 @@
             if (!statusEl) return;
             if (cachedInjuryCsv) {
                 const sizeKb = (cachedInjuryCsv.length / 1024).toFixed(1);
-                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB) — auto-applies after rankings imports`;
+                const t = formatSyncTime(getLastSync("injury"));
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB)${t ? " · updated " + t : ""} — auto-applies after rankings imports`;
                 if (clearBtn) clearBtn.style.display = "";
             } else {
                 statusEl.innerHTML = `<span style="color:var(--text-muted);">○</span> No injury data saved`;
@@ -2126,6 +2182,7 @@
             try {
                 cachedRankingsCsv = text;
                 localStorage.setItem(RANKINGS_CACHE_KEY, text);
+                touchLastSync(["rankings"]);
             } catch (e) {
                 console.warn("Could not cache rankings CSV:", e);
             }
@@ -2170,7 +2227,8 @@
             if (!statusEl) return;
             if (cachedRankingsCsv) {
                 const sizeKb = (cachedRankingsCsv.length / 1024).toFixed(1);
-                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB)`;
+                const t = formatSyncTime(getLastSync("rankings"));
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB)${t ? " · updated " + t : ""}`;
                 if (reloadBtn) reloadBtn.style.display = "";
                 if (clearBtn) clearBtn.style.display = "";
             } else {
@@ -2229,6 +2287,7 @@
             // Generic format has "name" (and optionally "rookie" for explicit true/false).
             const fpNameIdx = headers.indexOf("player name");
             const fpRkIdx = headers.indexOf("rk");
+            const fpPosIdx = headers.indexOf("pos"); // e.g. "RB14" — position + positional rank
             const isFp = fpNameIdx !== -1 && fpRkIdx !== -1;
             const genericNameIdx = headers.indexOf("name");
             const genericRookieIdx = headers.indexOf("rookie");
@@ -2239,23 +2298,28 @@
                 return { matched: 0, unmatched: [] };
             }
 
-            // Build name lookup map from current pool
-            const playerByName = new Map();
-            activePlayers.forEach(p => {
-                const key = normalizeNameForMatch(p.name);
-                if (!playerByName.has(key)) playerByName.set(key, p);
-            });
+            // Position-aware matcher (name+pos first, unambiguous name fallback) —
+            // same guard as the injury merge, so two pool players who share a name
+            // can never get cross-tagged by the rookies file.
+            const matcher = buildPoolMatcher();
 
             let matched = 0;
             const unmatched = [];
+            const ambiguous = [];
 
             for (let i = 1; i < lines.length; i++) {
                 const cells = parseCsvLine(lines[i]);
                 let rawName;
+                let rowPos = null;
                 let shouldFlag = true; // FP rookies file = anyone listed is a rookie
 
                 if (isFp) {
                     rawName = (cells[fpNameIdx] || "").trim();
+                    if (fpPosIdx !== -1) {
+                        // Strip the positional-rank suffix: "RB14" → "RB", "DST3" → "DST"
+                        const posMatch = (cells[fpPosIdx] || "").toUpperCase().trim().match(/^([A-Z]+)/);
+                        if (posMatch) rowPos = posMatch[1];
+                    }
                 } else {
                     rawName = (cells[genericNameIdx] || "").trim();
                     if (genericRookieIdx !== -1) {
@@ -2266,10 +2330,12 @@
 
                 if (!rawName) continue;
 
-                const player = playerByName.get(normalizeNameForMatch(rawName));
-                if (player) {
-                    if (shouldFlag) player.rookie = true;
+                const result = matcher.find(rawName, rowPos);
+                if (result.player) {
+                    if (shouldFlag) result.player.rookie = true;
                     matched++;
+                } else if (result.ambiguous) {
+                    ambiguous.push(rawName + (rowPos ? " (" + rowPos + ")" : ""));
                 } else {
                     unmatched.push(rawName);
                 }
@@ -2278,6 +2344,10 @@
             // Surface in log
             const log = [];
             log.push(`Marked ${matched} player(s) as rookies.`);
+            if (ambiguous.length > 0) {
+                log.push(`Skipped ${ambiguous.length} row(s) with ambiguous names (multiple pool players share the name and position didn't disambiguate):`);
+                ambiguous.slice(0, 10).forEach(n => log.push(`  • ${n}`));
+            }
             if (unmatched.length > 0) {
                 log.push(``);
                 log.push(`Rookies in CSV not found in your player pool (${unmatched.length}):`);
@@ -2295,6 +2365,7 @@
                 try {
                     cachedRookiesCsv = text;
                     localStorage.setItem(ROOKIES_CACHE_KEY, text);
+                    touchLastSync(["rookies"]);
                 } catch (e) {
                     console.warn("Could not cache rookies CSV:", e);
                 }
@@ -2350,7 +2421,8 @@
             if (!statusEl) return;
             if (cachedRookiesCsv) {
                 const sizeKb = (cachedRookiesCsv.length / 1024).toFixed(1);
-                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB) — auto-applies after rankings imports`;
+                const t = formatSyncTime(getLastSync("rookies"));
+                statusEl.innerHTML = `<span style="color:var(--accent-green);">●</span> Saved (${sizeKb} KB)${t ? " · updated " + t : ""} — auto-applies after rankings imports`;
                 if (clearBtn) clearBtn.style.display = "";
             } else {
                 statusEl.innerHTML = `<span style="color:var(--text-muted);">○</span> No rookie data saved`;
@@ -2515,8 +2587,11 @@
             if (configured.rankings) {
                 try {
                     const text = await fetchCsvFromUrl(githubUrls.rankings);
-                    parseCsvText(text); // This will also auto-remerge cached injury/rookies if any
-                    result.rankings = true;
+                    // Thread the silent flag through so auto-fetch on page load
+                    // doesn't pop an "Imported N players" alert.
+                    const ok = parseCsvText(text, { silent }); // Also auto-remerges cached injury/rookies
+                    if (ok) result.rankings = true;
+                    else errors.push("Rankings: CSV parsed but contained no valid players");
                 } catch (e) {
                     errors.push(`Rankings: ${e.message}`);
                 }
@@ -2571,21 +2646,151 @@
         // is configured, (b) we haven't already attempted this load, and (c) the
         // user has no cached rankings yet (so it's their first-ever visit, or
         // they explicitly cleared the cache). Avoids clobbering existing drafts.
+        // Returns true when it performed a full first-load sync (in which case
+        // the freshness check that follows can be skipped — data is brand new).
         async function maybeAutoFetch() {
-            if (autoFetchAttempted) return;
+            if (autoFetchAttempted) return false;
             autoFetchAttempted = true;
 
             // Need at least the rankings URL — fetching injury/rookies alone with
             // no player pool would be pointless.
-            if (!githubUrls.rankings) return;
+            if (!githubUrls.rankings) return false;
 
             // Don't auto-fetch if the user already has rankings cached. They've
             // either imported once and are returning, or they explicitly want
-            // local data. Manual sync button is still available.
-            if (cachedRankingsCsv) return;
+            // local data. The freshness check (checkForDataUpdates) handles the
+            // returning-user case.
+            if (cachedRankingsCsv) return false;
 
             setGhSyncStatus("First visit — fetching CSVs from GitHub...", "loading");
             await syncFromGithub({ silent: true });
+            touchLastSync(["rankings", "injury", "rookies"]);
+            setDataFreshness("Data synced from GitHub", "success");
+            return true;
+        }
+
+        // ─── Auto-update on load ───────────────────────────────────────────
+        //
+        // Runs on every page load for returning users (cache already populated).
+        // Fetches each configured CSV fresh from GitHub and compares against the
+        // cached copy:
+        //   • Injury / rookies changed → always safe to apply (additive merges
+        //     that only tag fields on existing players), so they update silently.
+        //   • Rankings changed + NO picks made → auto-apply. This is the "push a
+        //     new Tiers.csv to the repo, every device updates on next load" flow.
+        //   • Rankings changed + draft IN PROGRESS → do NOT apply (re-importing
+        //     rankings resets the draft, which would wipe live picks). Show a
+        //     notice instead; user can sync manually after the draft.
+        //   • Network failure / offline → fail quietly, cached data still works.
+
+        function touchLastSync(kinds) {
+            try {
+                const raw = localStorage.getItem(LAST_SYNC_KEY);
+                const data = raw ? JSON.parse(raw) : {};
+                const now = new Date().toISOString();
+                kinds.forEach(k => { data[k] = now; });
+                localStorage.setItem(LAST_SYNC_KEY, JSON.stringify(data));
+            } catch (e) { /* storage blocked — timestamps are cosmetic */ }
+        }
+
+        function getLastSync(kind) {
+            try {
+                const raw = localStorage.getItem(LAST_SYNC_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw)[kind] || null;
+            } catch (e) { return null; }
+        }
+
+        function formatSyncTime(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            if (isNaN(d)) return "";
+            return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+                " " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+        }
+
+        function setDataFreshness(msg, kind) {
+            const el = document.getElementById("dataFreshness");
+            if (!el) return;
+            const color = kind === "success" ? "var(--accent-green)" :
+                          kind === "warn" ? "var(--accent-amber)" :
+                          "var(--text-muted)";
+            el.innerHTML = msg ? `<span style="color:${color};">${msg}</span>` : "";
+        }
+
+        async function checkForDataUpdates() {
+            const anyConfigured = githubUrls.rankings || githubUrls.injury || githubUrls.rookies;
+            if (!anyConfigured) return;
+
+            setDataFreshness("Checking for data updates…");
+            const updated = [];
+            const failed = [];
+            let rankingsHeldBack = false;
+
+            // Injury and rookies first — additive, always safe. If rankings also
+            // changed and get applied below, the fresh caches remerge automatically.
+            if (githubUrls.injury) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.injury);
+                    if (text !== cachedInjuryCsv) {
+                        parseInjuryCsvText(text, { silent: true }); // caches + merges
+                        touchLastSync(["injury"]);
+                        updated.push("injury");
+                    }
+                } catch (e) { failed.push("injury"); }
+            }
+
+            if (githubUrls.rookies) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.rookies);
+                    if (text !== cachedRookiesCsv) {
+                        parseRookiesCsvText(text, { silent: true }); // caches + merges
+                        touchLastSync(["rookies"]);
+                        updated.push("rookies");
+                    }
+                } catch (e) { failed.push("rookies"); }
+            }
+
+            if (githubUrls.rankings) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.rankings);
+                    if (text !== cachedRankingsCsv) {
+                        const draftInProgress = draftHistory && draftHistory.length > 0;
+                        if (draftInProgress) {
+                            // Protect the live draft. Cache is NOT updated so the
+                            // next load (post-draft-reset) picks up the new file.
+                            rankingsHeldBack = true;
+                        } else {
+                            const ok = parseCsvText(text, { silent: true }); // caches + resets + remerges
+                            if (ok) { touchLastSync(["rankings"]); updated.push("rankings"); }
+                            else failed.push("rankings");
+                        }
+                    }
+                } catch (e) { failed.push("rankings"); }
+            }
+
+            // Anything that changed above already recalculated via its own path
+            // (parseCsvText → resetDraftState; injury/rookies silent merges skip
+            // recalc, so do one here if they were the only updates).
+            if (updated.length > 0 && !updated.includes("rankings")) {
+                recalculateEngine();
+                saveState();
+            }
+
+            // Surface the outcome in the header.
+            if (rankingsHeldBack) {
+                setDataFreshness("⚠ Newer rankings on GitHub — not applied (draft in progress). Sync from Settings when done.", "warn");
+            } else if (updated.length > 0) {
+                setDataFreshness(`✓ Auto-updated from GitHub: ${updated.join(", ")}`, "success");
+                console.log(`[Auto-update] Applied fresh data: ${updated.join(", ")}`);
+            } else if (failed.length === (githubUrls.rankings ? 1 : 0) + (githubUrls.injury ? 1 : 0) + (githubUrls.rookies ? 1 : 0) && failed.length > 0) {
+                // Everything failed — probably offline. Cached data still works.
+                setDataFreshness("Offline — using cached data", "");
+            } else {
+                const t = formatSyncTime(getLastSync("rankings"));
+                setDataFreshness(`Data up to date${t ? " · synced " + t : ""}`, "");
+            }
+            touchLastSync(["checked"]);
         }
 
         // ─── League mate names ─────────────────────────────────────────────
@@ -2803,11 +3008,24 @@
             // Update header pick indicator
             const indicator = document.getElementById("currentPickIndicator");
             if (indicator) {
-                const team = getActivePickingTeam(currentPick, cfg.size);
-                const round = Math.ceil(currentPick / cfg.size);
-                const youLabel = team === cfg.userPos ? " (YOU)" : "";
-                indicator.innerText = `Pick ${currentPick} • Round ${round} • ${getTeamLabel(team)}${youLabel}`;
-                indicator.style.color = team === cfg.userPos ? "var(--accent-green)" : "var(--text-muted)";
+                if (isDraftComplete(cfg)) {
+                    indicator.innerText = "Draft complete — all rosters full";
+                    indicator.style.color = "var(--accent-green)";
+                } else {
+                    const team = getActivePickingTeam(currentPick, cfg.size);
+                    const round = Math.ceil(currentPick / cfg.size);
+                    const youLabel = team === cfg.userPos ? " (YOU)" : "";
+                    // Count picks until your turn so you always know how much
+                    // runway you have. Cap the walk defensively.
+                    let untilYou = "";
+                    if (team !== cfg.userPos) {
+                        let n = 0, cp = currentPick;
+                        while (getActivePickingTeam(cp, cfg.size) !== cfg.userPos && n < 100) { cp++; n++; }
+                        untilYou = ` • your pick in ${n}`;
+                    }
+                    indicator.innerText = `Pick ${currentPick} • Round ${round} • ${getTeamLabel(team)}${youLabel}${untilYou}`;
+                    indicator.style.color = team === cfg.userPos ? "var(--accent-green)" : "var(--text-muted)";
+                }
             }
         }
 
@@ -3328,37 +3546,48 @@
             if (label) label.innerText = theme === "light" ? "Dark" : "Light";
         }
 
-        function executePlayerDraft(id) {
+        // Where would this player land on this team's roster right now?
+        // Returns the slot key ("QB"/"RB"/"WR"/"TE"/"DF"/"FX"/"BN") or null if the
+        // roster has no room. Shared by executePlayerDraft and the mock-draft
+        // simulator so placement rules live in exactly one place.
+        // NOTE: roster objects key defenses as "DF" while player.pos is "DEF" —
+        // the mapping here fixes a crash where drafting any defense indexed
+        // roster["DEF"] (undefined).
+        function findPlacementSlot(teamNum, player, cfg) {
+            const roster = teamRosters[teamNum];
+            if (!roster) return null;
+            const slotKey = player.pos === "DEF" ? "DF" : player.pos;
+            const posMaxReq = cfg.req[player.pos === "DEF" ? "DEF" : player.pos];
+            const flexEligible = (player.pos === "RB" || player.pos === "WR" || player.pos === "TE");
+
+            // Placement priority: starter slot → flex (if eligible) → bench.
+            if (roster[slotKey] && roster[slotKey].length < posMaxReq) return slotKey;
+            if (flexEligible && roster.FX.length < cfg.req.Flex) return "FX";
+            if (roster.BN.length < cfg.req.Bench) return "BN";
+            return null;
+        }
+
+        function executePlayerDraft(id, options) {
+            options = options || {};
             const cfg = readConfig();
             const activeTeam = getActivePickingTeam(currentPick, cfg.size);
 
             let player = activePlayers.find(p => p.id === id);
-            if (!player) return;
+            if (!player) return false;
 
-            let roster = teamRosters[activeTeam];
-            const posMaxReq = cfg.req[player.pos === "DEF" ? "DEF" : player.pos];
-            const flexEligible = (player.pos === "RB" || player.pos === "WR" || player.pos === "TE");
+            const roster = teamRosters[activeTeam];
+            const placedSlot = findPlacementSlot(activeTeam, player, cfg);
 
-            // Placement priority: starter slot → flex (if eligible) → bench. Reject if all are full.
-            let placed = false;
-            let placedSlot = null;
-            if (roster[player.pos].length < posMaxReq) {
-                roster[player.pos].push(player.name);
-                placed = true;
-                placedSlot = player.pos;
-            } else if (flexEligible && roster.FX.length < cfg.req.Flex) {
-                roster.FX.push(player.name + ` (${player.pos})`);
-                placed = true;
-                placedSlot = "FX";
-            } else if (roster.BN.length < cfg.req.Bench) {
-                roster.BN.push(player.name + ` (${player.pos})`);
-                placed = true;
-                placedSlot = "BN";
+            if (!placedSlot) {
+                if (!options.silent) alert(`Team ${activeTeam}'s roster is full at ${player.pos}, Flex, and Bench. Cannot draft ${player.name}. Increase bench size if you need more room.`);
+                return false;
             }
 
-            if (!placed) {
-                alert(`Team ${activeTeam}'s roster is full at ${player.pos}, Flex, and Bench. Cannot draft ${player.name}. Increase bench size if you need more room.`);
-                return;
+            // Starter slots store the bare name; flex and bench annotate position.
+            if (placedSlot === "FX" || placedSlot === "BN") {
+                roster[placedSlot].push(player.name + ` (${player.pos})`);
+            } else {
+                roster[placedSlot].push(player.name);
             }
 
             player.drafted = true;
@@ -3368,8 +3597,100 @@
 
             draftHistory.push({ pick: currentPick, playerObj: player, team: activeTeam, slot: placedSlot });
             currentPick++;
-            recalculateEngine();
-            saveState();
+            // options.skipRender lets the simulator batch many picks and render once
+            // at the end instead of doing a full recalc per CPU pick.
+            if (!options.skipRender) {
+                recalculateEngine();
+                saveState();
+            }
+            return true;
+        }
+
+        // ─── Mock Draft simulator ──────────────────────────────────────────
+        //
+        // CPU autopick for every team that isn't yours, so you can practice full
+        // drafts without hand-clicking 150+ picks. Pick logic is deliberately
+        // simple and human-shaped:
+        //   • ADP is the backbone — CPUs consider the top ~10 available by ADP.
+        //   • Mild pull toward open starter slots, mild penalty for stacking a
+        //     position whose starters are full.
+        //   • Hard penalty on a 2nd defense (real leagues never do this) and a
+        //     strong one on a 2nd QB in a 1-QB league.
+        //   • Randomness scales with the existing "ADP Market Adherence" setting:
+        //     at 1.0 CPUs draft chalk, at lower values they get chaotic — the
+        //     same knob that drives run-risk uncertainty drives sim behavior.
+
+        function getTotalRosterSlots(cfg) {
+            return cfg.req.QB + cfg.req.RB + cfg.req.WR + cfg.req.TE +
+                   cfg.req.Flex + cfg.req.DEF + cfg.req.Bench;
+        }
+
+        function isDraftComplete(cfg) {
+            return currentPick > cfg.size * getTotalRosterSlots(cfg);
+        }
+
+        function pickForCpuTeam(teamNum, cfg) {
+            const candidates = activePlayers.filter(p => !p.drafted && findPlacementSlot(teamNum, p, cfg));
+            if (candidates.length === 0) return null;
+            candidates.sort((a, b) => (Number(a.adp) || 9999) - (Number(b.adp) || 9999));
+            const window_ = candidates.slice(0, 10);
+            const roster = teamRosters[teamNum];
+
+            let best = null;
+            let bestScore = Infinity;
+            window_.forEach((p, i) => {
+                let score = i; // ADP order — lower index = better
+                const slotKey = p.pos === "DEF" ? "DF" : p.pos;
+                const req = cfg.req[p.pos === "DEF" ? "DEF" : p.pos];
+                const startersOpen = roster[slotKey].length < req;
+                if (startersOpen) score -= 1.5;
+                else score += 2;
+                if (p.pos === "DEF" && !startersOpen) score += 50; // never a 2nd defense
+                if (p.pos === "QB" && !startersOpen) score += 6;   // rarely a 2nd QB (1-QB league)
+                score += Math.random() * 6 * (1 - cfg.adpWeight);  // market chaos
+                if (score < bestScore) { bestScore = score; best = p; }
+            });
+            return best;
+        }
+
+        // Sim a single CPU pick. No-op with a hint when it's your turn — the sim
+        // never picks FOR you.
+        function simulateOnePick() {
+            const cfg = readConfig();
+            if (isDraftComplete(cfg)) { alert("Draft is complete — all rosters are full."); return; }
+            const team = getActivePickingTeam(currentPick, cfg.size);
+            if (team === cfg.userPos) {
+                alert("It's your pick. Draft from Best Available or the player matrix, then sim again.");
+                return;
+            }
+            const pick = pickForCpuTeam(team, cfg);
+            if (!pick) { alert(`${getTeamLabel(team)} has no roster room left.`); return; }
+            executePlayerDraft(pick.id); // full render — it's a single pick
+        }
+
+        // Sim every CPU pick between now and your next turn (or draft end).
+        // Renders once at the end instead of per pick — simming 11 picks with a
+        // full recalc each would visibly stutter.
+        function simulateToMyPick() {
+            const cfg = readConfig();
+            if (isDraftComplete(cfg)) { alert("Draft is complete — all rosters are full."); return; }
+            let simmed = 0;
+            const cap = cfg.size * getTotalRosterSlots(cfg) + 10; // safety valve
+            while (simmed < cap && !isDraftComplete(cfg)) {
+                const team = getActivePickingTeam(currentPick, cfg.size);
+                if (team === cfg.userPos) break;
+                const pick = pickForCpuTeam(team, cfg);
+                if (!pick) break; // shouldn't happen before completion, but never spin
+                executePlayerDraft(pick.id, { silent: true, skipRender: true });
+                simmed++;
+            }
+            if (simmed > 0) {
+                recalculateEngine();
+                saveState();
+            }
+            if (isDraftComplete(cfg)) {
+                alert(`Simulated ${simmed} pick(s). Draft complete — every roster is full. Review the board, then Reset Draft to run another mock.`);
+            }
         }
 
         function undoLastPick() {
