@@ -240,6 +240,9 @@
         .badge-low { background-color: var(--badge-green-bg); color: var(--accent-green); }
         .badge-med { background-color: var(--badge-amber-bg); color: var(--accent-amber); }
         .badge-high { background-color: var(--badge-rose-bg); color: var(--accent-rose); }
+        .badge-current-monitor { background-color: var(--badge-amber-bg); color: var(--accent-amber); }
+        .badge-current-out { background-color: var(--badge-rose-bg); color: var(--accent-rose); }
+        .badge-current-ir { background-color: var(--badge-magenta-bg); color: var(--accent-magenta); }
         /* "Yikes" tier is reserved for Draft Sharks "Very High Risk" — players who
            are practically guaranteed to miss multiple games. Visually louder than
            the regular High badge: magenta instead of rose, slightly bolder font,
@@ -989,6 +992,10 @@
                     <input type="url" id="ghUrlInjury" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
                 </div>
                 <div class="form-group">
+                    <label for="ghUrlCurrentInjuries">Current Injuries CSV URL</label>
+                    <input type="url" id="ghUrlCurrentInjuries" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
+                </div>
+                <div class="form-group">
                     <label for="ghUrlRookies">Rookies CSV URL</label>
                     <input type="url" id="ghUrlRookies" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
                 </div>
@@ -1226,6 +1233,10 @@
         // under its own localStorage key (separate from draft state) so clearing
         // one doesn't affect the other — different concerns, different keys.
         let cachedInjuryCsv = null;
+        // Current availability is intentionally separate from long-term injury
+        // risk. This CSV is maintained from weekly NFL news and is replaced as a
+        // snapshot, so removing a row also removes the badge on the next sync.
+        let cachedCurrentInjuriesCsv = null;
         // Cached raw rankings CSV (FantasyPros or generic format). Saved on import,
         // exposed via a "Reload Saved" button in the CSV tab — NOT auto-applied on
         // page load because doing so could silently wipe an in-progress draft. The
@@ -1252,18 +1263,20 @@
             // spaces ("Injury Risk.csv", "Rookie Tiers.csv").
             rankings: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv",
             injury: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv",
+            currentInjuries: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Current%20Injuries.csv",
             rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv"
         };
 
         // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
         // localStorage has device-specific overrides.
-        let githubUrls = { rankings: "", injury: "", rookies: "" };
+        let githubUrls = { rankings: "", injury: "", currentInjuries: "", rookies: "" };
         // Tracks whether we've already attempted an auto-fetch on this page load.
         // Prevents double-fetching if the user navigates state changes that re-run init.
         let autoFetchAttempted = false;
 
         const STORAGE_KEY = "fantasyDraftEngine_v3";
         const INJURY_CACHE_KEY = "fantasyDraftEngine_injuryCache";
+        const CURRENT_INJURIES_CACHE_KEY = "fantasyDraftEngine_currentInjuriesCache";
         const RANKINGS_CACHE_KEY = "fantasyDraftEngine_rankingsCache";
         const GITHUB_URLS_KEY = "fantasyDraftEngine_githubUrls";
         const ROOKIES_CACHE_KEY = "fantasyDraftEngine_rookiesCache";
@@ -1340,6 +1353,7 @@
                 // This keeps player.injury in sync with the current merge logic on
                 // every page load, with zero user action required.
                 reapplyCachedInjuryData();
+                reapplyCachedCurrentInjuriesData();
                 reapplyCachedRookiesData();
                 return true;
             } catch (e) {
@@ -1361,6 +1375,7 @@
             // subsequent rankings imports; the rankings cache is exposed via an
             // explicit "Reload Saved" button (not auto-applied).
             loadCachedInjuryCsv();
+            loadCachedCurrentInjuriesCsv();
             loadCachedRookiesCsv();
             loadCachedRankingsCsv();
             loadGithubUrls();
@@ -1532,6 +1547,7 @@
                 });
                 activePlayers = Object.values(uniqueMap);
                 reapplyCachedInjuryData();
+                reapplyCachedCurrentInjuriesData();
                 reapplyCachedRookiesData();
 
                 alert(`Parsed ${activePlayers.length} unique players. ${unparsedLines.length} lines skipped — see debug log if any look like real players.`);
@@ -1682,6 +1698,7 @@
 
             activePlayers = pool;
             reapplyCachedInjuryData();
+            reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
             if (!options.silent) {
@@ -1755,6 +1772,7 @@
 
             activePlayers = pool;
             reapplyCachedInjuryData();
+            reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
             if (!options.silent) {
@@ -1838,6 +1856,7 @@
             }
             activePlayers = pool;
             reapplyCachedInjuryData();
+            reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
             alert(`Imported ${pool.length} players from JSON.${errors.length ? `\n${errors.length} item(s) skipped.` : ""}`);
             document.getElementById("jsonPasteArea").value = "";
@@ -2170,6 +2189,121 @@
             }
         }
 
+        // ─── Current injury/news snapshot ─────────────────────────────────
+        //
+        // Expected columns: name,status,injury,updated,source,notes. "pos" is
+        // optional and is used to disambiguate duplicate names. Unlike the
+        // historical injury-risk file, this is a complete snapshot: fields are
+        // cleared before every merge so deleting a recovered player from the CSV
+        // removes their current-status badge on the next page load.
+        const CURRENT_STATUS_MAP = {
+            "monitor": "Monitor",
+            "day-to-day": "Day-to-day",
+            "day to day": "Day-to-day",
+            "questionable": "Questionable",
+            "doubtful": "Doubtful",
+            "out": "Out",
+            "ir": "IR",
+            "injured reserve": "IR",
+            "pup": "PUP",
+            "nfi": "NFI",
+            "active": "Active"
+        };
+
+        function clearCurrentInjuryFields() {
+            activePlayers.forEach(p => {
+                delete p.currentStatus;
+                delete p.currentInjury;
+                delete p.currentInjuryUpdated;
+                delete p.currentInjurySource;
+                delete p.currentInjuryNotes;
+            });
+        }
+
+        function parseCurrentInjuriesCsvText(text, options) {
+            options = options || {};
+            const silent = !!options.silent;
+            const skipCache = !!options.skipCache;
+            if (!text || !text.trim() || !activePlayers || activePlayers.length === 0) {
+                return { matched: 0, unmatched: [], invalid: 0 };
+            }
+
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
+            const nameIdx = headers.indexOf("name");
+            const statusIdx = headers.indexOf("status");
+            if (nameIdx === -1 || statusIdx === -1) {
+                if (!silent) alert("Current injuries CSV needs name and status columns.");
+                return { matched: 0, unmatched: [], invalid: 0 };
+            }
+
+            const posIdx = headers.indexOf("pos");
+            const injuryIdx = headers.indexOf("injury");
+            const updatedIdx = headers.indexOf("updated");
+            const sourceIdx = headers.indexOf("source");
+            const notesIdx = headers.indexOf("notes");
+            const matcher = buildPoolMatcher();
+            const unmatched = [];
+            let matched = 0;
+            let invalid = 0;
+
+            clearCurrentInjuryFields();
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const rawName = (cells[nameIdx] || "").trim();
+                const rawStatus = (cells[statusIdx] || "").trim();
+                if (!rawName || !rawStatus) continue;
+                const status = CURRENT_STATUS_MAP[rawStatus.toLowerCase()];
+                if (!status) { invalid++; continue; }
+                const rowPos = posIdx === -1 ? null : (cells[posIdx] || "").trim();
+                const result = matcher.find(rawName, rowPos);
+                if (!result.player) { unmatched.push(rawName); continue; }
+
+                // Active rows are allowed as explicit resolution records, but do
+                // not display a badge. They are useful for one update cycle before
+                // the automation removes the resolved row entirely.
+                if (status !== "Active") {
+                    result.player.currentStatus = status;
+                    result.player.currentInjury = injuryIdx === -1 ? "" : (cells[injuryIdx] || "").trim();
+                    result.player.currentInjuryUpdated = updatedIdx === -1 ? "" : (cells[updatedIdx] || "").trim();
+                    result.player.currentInjurySource = sourceIdx === -1 ? "" : (cells[sourceIdx] || "").trim();
+                    result.player.currentInjuryNotes = notesIdx === -1 ? "" : (cells[notesIdx] || "").trim();
+                }
+                matched++;
+            }
+
+            if (!skipCache) {
+                try {
+                    cachedCurrentInjuriesCsv = text;
+                    localStorage.setItem(CURRENT_INJURIES_CACHE_KEY, text);
+                    touchLastSync(["currentInjuries"]);
+                } catch (e) {
+                    console.warn("Could not cache current injuries CSV:", e);
+                }
+            }
+            if (!silent) {
+                alert(`Current injury snapshot merged: ${matched} player(s).${unmatched.length ? `\n${unmatched.length} name(s) not matched.` : ""}${invalid ? `\n${invalid} row(s) had unsupported statuses.` : ""}`);
+                recalculateEngine();
+                saveState();
+            }
+            return { matched, unmatched, invalid };
+        }
+
+        function reapplyCachedCurrentInjuriesData() {
+            if (!cachedCurrentInjuriesCsv) {
+                clearCurrentInjuryFields();
+                return;
+            }
+            parseCurrentInjuriesCsvText(cachedCurrentInjuriesCsv, { silent: true, skipCache: true });
+        }
+
+        function loadCachedCurrentInjuriesCsv() {
+            try {
+                const cached = localStorage.getItem(CURRENT_INJURIES_CACHE_KEY);
+                if (cached) cachedCurrentInjuriesCsv = cached;
+            } catch (e) { /* storage blocked — ignore */ }
+        }
+
         // ─── Rankings CSV cache ────────────────────────────────────────────
         //
         // Unlike injury/rookies caches which auto-merge on top of an existing pool,
@@ -2449,6 +2583,7 @@
             // Start from defaults embedded in the HTML
             githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv";
             githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv";
+            githubUrls.currentInjuries = DEFAULT_GITHUB_URLS.currentInjuries || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Current%20Injuries.csv";
             githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv";
             // Then layer any localStorage overrides on top. Per-field, so a user can
             // override just one URL while keeping defaults for the others.
@@ -2459,6 +2594,7 @@
                     if (parsed && typeof parsed === "object") {
                         if (typeof parsed.rankings === "string") githubUrls.rankings = parsed.rankings;
                         if (typeof parsed.injury === "string") githubUrls.injury = parsed.injury;
+                        if (typeof parsed.currentInjuries === "string") githubUrls.currentInjuries = parsed.currentInjuries;
                         if (typeof parsed.rookies === "string") githubUrls.rookies = parsed.rookies;
                     }
                 }
@@ -2468,19 +2604,23 @@
             // Reflect into inputs
             const r = document.getElementById("ghUrlRankings");
             const i = document.getElementById("ghUrlInjury");
+            const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             if (r) r.value = githubUrls.rankings;
             if (i) i.value = githubUrls.injury;
+            if (c) c.value = githubUrls.currentInjuries;
             if (k) k.value = githubUrls.rookies;
         }
 
         function saveGithubUrls() {
             const r = document.getElementById("ghUrlRankings");
             const i = document.getElementById("ghUrlInjury");
+            const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             // Trim to handle accidental whitespace from paste
             githubUrls.rankings = r ? r.value.trim() : "";
             githubUrls.injury = i ? i.value.trim() : "";
+            githubUrls.currentInjuries = c ? c.value.trim() : "";
             githubUrls.rookies = k ? k.value.trim() : "";
             // Only persist to localStorage if values differ from the embedded
             // defaults. This keeps a "Reset to defaults" semantically clean: clearing
@@ -2488,6 +2628,7 @@
             const overrides = {};
             if (githubUrls.rankings !== (DEFAULT_GITHUB_URLS.rankings || "")) overrides.rankings = githubUrls.rankings;
             if (githubUrls.injury !== (DEFAULT_GITHUB_URLS.injury || "")) overrides.injury = githubUrls.injury;
+            if (githubUrls.currentInjuries !== (DEFAULT_GITHUB_URLS.currentInjuries || "")) overrides.currentInjuries = githubUrls.currentInjuries;
             if (githubUrls.rookies !== (DEFAULT_GITHUB_URLS.rookies || "")) overrides.rookies = githubUrls.rookies;
             try {
                 if (Object.keys(overrides).length === 0) {
@@ -2501,7 +2642,7 @@
         }
 
         function resetGithubUrls() {
-            const hasDefaults = !!(DEFAULT_GITHUB_URLS.rankings || DEFAULT_GITHUB_URLS.injury || DEFAULT_GITHUB_URLS.rookies);
+            const hasDefaults = !!(DEFAULT_GITHUB_URLS.rankings || DEFAULT_GITHUB_URLS.injury || DEFAULT_GITHUB_URLS.currentInjuries || DEFAULT_GITHUB_URLS.rookies);
             const msg = hasDefaults
                 ? "Reset URLs to the defaults embedded in this app (from GitHub)? Any device-specific overrides will be cleared."
                 : "No default URLs are configured in this build. Clear the URLs on this device anyway?";
@@ -2510,12 +2651,15 @@
             // Reload from defaults
             githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "";
             githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "";
+            githubUrls.currentInjuries = DEFAULT_GITHUB_URLS.currentInjuries || "";
             githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "";
             const r = document.getElementById("ghUrlRankings");
             const i = document.getElementById("ghUrlInjury");
+            const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             if (r) r.value = githubUrls.rankings;
             if (i) i.value = githubUrls.injury;
+            if (c) c.value = githubUrls.currentInjuries;
             if (k) k.value = githubUrls.rookies;
             setGhSyncStatus("");
         }
@@ -2570,17 +2714,18 @@
             const configured = {
                 rankings: !!githubUrls.rankings,
                 injury: !!githubUrls.injury,
+                currentInjuries: !!githubUrls.currentInjuries,
                 rookies: !!githubUrls.rookies
             };
-            const anyConfigured = configured.rankings || configured.injury || configured.rookies;
+            const anyConfigured = configured.rankings || configured.injury || configured.currentInjuries || configured.rookies;
             if (!anyConfigured) {
                 if (!silent) alert("No GitHub URLs configured. Paste at least one raw.githubusercontent.com URL above.");
-                return { rankings: false, injury: false, rookies: false };
+                return { rankings: false, injury: false, currentInjuries: false, rookies: false };
             }
 
             setGhSyncStatus("Fetching from GitHub...", "loading");
 
-            const result = { rankings: false, injury: false, rookies: false };
+            const result = { rankings: false, injury: false, currentInjuries: false, rookies: false };
             const errors = [];
 
             // Rankings first — applying it later would overwrite injury/rookies merges.
@@ -2607,6 +2752,16 @@
                 }
             }
 
+            if (configured.currentInjuries) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.currentInjuries);
+                    parseCurrentInjuriesCsvText(text, { silent: true });
+                    result.currentInjuries = true;
+                } catch (e) {
+                    errors.push(`Current injuries: ${e.message}`);
+                }
+            }
+
             if (configured.rookies) {
                 try {
                     const text = await fetchCsvFromUrl(githubUrls.rookies);
@@ -2622,10 +2777,11 @@
             saveState();
 
             // Report
-            const successCount = [result.rankings, result.injury, result.rookies].filter(Boolean).length;
+            const successCount = [result.rankings, result.injury, result.currentInjuries, result.rookies].filter(Boolean).length;
             const successLabels = [];
             if (result.rankings) successLabels.push("rankings");
             if (result.injury) successLabels.push("injury");
+            if (result.currentInjuries) successLabels.push("current injuries");
             if (result.rookies) successLabels.push("rookies");
 
             if (errors.length === 0) {
@@ -2664,7 +2820,7 @@
 
             setGhSyncStatus("First visit — fetching CSVs from GitHub...", "loading");
             await syncFromGithub({ silent: true });
-            touchLastSync(["rankings", "injury", "rookies"]);
+            touchLastSync(["rankings", "injury", "currentInjuries", "rookies"]);
             setDataFreshness("Data synced from GitHub", "success");
             return true;
         }
@@ -2719,7 +2875,7 @@
         }
 
         async function checkForDataUpdates() {
-            const anyConfigured = githubUrls.rankings || githubUrls.injury || githubUrls.rookies;
+            const anyConfigured = githubUrls.rankings || githubUrls.injury || githubUrls.currentInjuries || githubUrls.rookies;
             if (!anyConfigured) return;
 
             setDataFreshness("Checking for data updates…");
@@ -2738,6 +2894,17 @@
                         updated.push("injury");
                     }
                 } catch (e) { failed.push("injury"); }
+            }
+
+            if (githubUrls.currentInjuries) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.currentInjuries);
+                    if (text !== cachedCurrentInjuriesCsv) {
+                        parseCurrentInjuriesCsvText(text, { silent: true });
+                        touchLastSync(["currentInjuries"]);
+                        updated.push("current injuries");
+                    }
+                } catch (e) { failed.push("current injuries"); }
             }
 
             if (githubUrls.rookies) {
@@ -2783,7 +2950,7 @@
             } else if (updated.length > 0) {
                 setDataFreshness(`✓ Auto-updated from GitHub: ${updated.join(", ")}`, "success");
                 console.log(`[Auto-update] Applied fresh data: ${updated.join(", ")}`);
-            } else if (failed.length === (githubUrls.rankings ? 1 : 0) + (githubUrls.injury ? 1 : 0) + (githubUrls.rookies ? 1 : 0) && failed.length > 0) {
+            } else if (failed.length === (githubUrls.rankings ? 1 : 0) + (githubUrls.injury ? 1 : 0) + (githubUrls.currentInjuries ? 1 : 0) + (githubUrls.rookies ? 1 : 0) && failed.length > 0) {
                 // Everything failed — probably offline. Cached data still works.
                 setDataFreshness("Offline — using cached data", "");
             } else {
@@ -3240,6 +3407,28 @@
                 const riskBadge = `<span class="status-badge ${riskClass}" title="${escapeHtml(riskTip)}">${riskLabel}</span>`;
 
                 let rookieBadge = p.rookie ? ` <span class="status-badge badge-rookie" title="Rookie">Rook</span>` : "";
+                let currentInjuryBadge = "";
+                if (p.currentStatus) {
+                    const CURRENT_BADGE = {
+                        "Monitor":      { label: "Monitor", cls: "badge-current-monitor" },
+                        "Day-to-day":   { label: "D2D", cls: "badge-current-monitor" },
+                        "Questionable": { label: "Q", cls: "badge-current-monitor" },
+                        "Doubtful":     { label: "Doubtful", cls: "badge-current-out" },
+                        "Out":          { label: "Out", cls: "badge-current-out" },
+                        "IR":           { label: "IR", cls: "badge-current-ir" },
+                        "PUP":          { label: "PUP", cls: "badge-current-ir" },
+                        "NFI":          { label: "NFI", cls: "badge-current-ir" }
+                    };
+                    const current = CURRENT_BADGE[p.currentStatus] || CURRENT_BADGE.Monitor;
+                    const currentTip = [
+                        p.currentStatus,
+                        p.currentInjury,
+                        p.currentInjuryNotes,
+                        p.currentInjuryUpdated ? `Updated ${p.currentInjuryUpdated}` : "",
+                        p.currentInjurySource ? `Source: ${p.currentInjurySource}` : ""
+                    ].filter(Boolean).join(" · ");
+                    currentInjuryBadge = ` <span class="status-badge ${current.cls}" title="${escapeHtml(currentTip)}">${current.label}</span>`;
+                }
 
                 let runRiskColor = "var(--accent-green)";
                 if (p.runRisk > 40) runRiskColor = "var(--accent-amber)";
@@ -3275,7 +3464,7 @@
 
                 tr.innerHTML = `
                     <td>
-                        <strong>${escapeHtml(p.name)}</strong>${rookieBadge}
+                        <strong>${escapeHtml(p.name)}</strong>${rookieBadge}${currentInjuryBadge}
                         <button type="button"
                             class="favorite-toggle ${p.favorite ? 'is-favorite' : ''}"
                             onclick="toggleFavorite(${p.id})"
