@@ -929,7 +929,7 @@
             </div>
 
             <div class="panel run-risk-panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) the distinct teams picking between now and your next turn, (b) those teams' positional needs, and (c) elite-tier players remaining. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The lines beneath each position show league-wide need, how many of those teams pick before you, and elite-tier players remaining.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Estimated chance that the current elite tier at a position is meaningfully depleted before your next pick. The model uses each elite player's FantasyPros market ADP, the number of picks before you, the distinct teams that still need the position, remaining elite supply, and your ADP Market Adherence setting. RB and WR naturally carry more early-round pressure because their elite players have earlier ADPs and leagues start more of them; QB, TE, and DEF rise only when their market window approaches. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent).">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
             </div>
 
@@ -1425,7 +1425,7 @@
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">A group of players considered roughly equivalent in expected value. Tier breaks reflect real talent gaps — you'd rather have any tier 2 RB than the best tier 3 RB.</dd>
 
                         <dt style="font-weight: 600; margin-top: 8px;">Run Risk</dt>
-                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate of the chance a positional "run" happens before your next pick — i.e. how likely the elite players at this position get drafted away. Computed from team needs around the snake and remaining elite supply.</dd>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate that the best remaining tier at a position is meaningfully depleted before your next pick. It combines FantasyPros market ADP timing, the distinct teams picking before you, their remaining starter needs, elite-tier supply, lineup requirements, and the ADP Market Adherence setting.</dd>
 
                         <dt style="font-weight: 600; margin-top: 8px;">Snake Draft</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Draft order reverses each round. If you pick 3rd in round 1, you pick 10th in round 2 (in a 12-team league), then 3rd again in round 3. Equalizes value across draft positions.</dd>
@@ -3625,28 +3625,61 @@
             runContainer.innerHTML = "";
 
             posList.forEach(pos => {
-                // Scarcity: how many top-tier players remain vs. how many teams want this position.
-                // Top tier = lowest (best) tier among undrafted at this position; "elite remaining" = players in that tier.
+                // Current elite supply = players in the best remaining tier at this position.
                 let available = activePlayers.filter(p => p.pos === pos && !p.drafted);
                 let topTier = available.length > 0 ? Math.min(...available.map(p => p.tier)) : null;
-                let eliteRemaining = topTier !== null ? available.filter(p => p.tier === topTier).length : 0;
+                let elitePlayers = topTier !== null ? available.filter(p => p.tier === topTier) : [];
+                let eliteRemaining = elitePlayers.length;
 
                 let gapDemand = positionalGapsCount[pos];
                 let leagueDemand = leagueGapsCount[pos];
 
-                // Scarcity risk: 0-100. Demand exceeding supply at the elite tier drives this up.
-                let scarcityRisk = 0;
-                if (eliteRemaining > 0) {
-                    scarcityRisk = Math.min(100, Math.round((gapDemand / eliteRemaining) * 100));
-                } else if (gapDemand > 0) {
-                    scarcityRisk = 100; // No elite players left but teams still need them.
+                // Market pressure: estimate how much of the elite tier is likely to be
+                // drafted by the end of the pick window. A player's ADP is the midpoint
+                // of a logistic draft curve; its spread widens gradually for later ADPs.
+                // Averaging across the elite tier measures expected tier depletion, so a
+                // deep WR tier is not treated as fragile merely because one WR may go.
+                const picksBeforeUser = interveningTeams.length;
+                const lastThreatPick = currentPick + picksBeforeUser - 1;
+                const validEliteAdps = elitePlayers
+                    .map(p => Number(p.adp))
+                    .filter(adp => Number.isFinite(adp) && adp > 0);
+                const bestEliteAdp = validEliteAdps.length > 0 ? Math.min(...validEliteAdps) : null;
+                const eliteDraftProbabilities = picksBeforeUser > 0
+                    ? validEliteAdps.map(adp => {
+                        const spread = Math.max(4, Math.min(14, adp * 0.18));
+                        return 1 / (1 + Math.exp((adp - lastThreatPick) / spread));
+                    })
+                    : [];
+                const bestEliteMarketProbability = eliteDraftProbabilities.length > 0
+                    ? Math.max(...eliteDraftProbabilities)
+                    : 0;
+                let marketRisk = 0;
+                if (gapDemand > 0 && eliteDraftProbabilities.length > 0) {
+                    const expectedEliteLoss = eliteDraftProbabilities.reduce((sum, probability) => sum + probability, 0) /
+                        eliteDraftProbabilities.length;
+
+                    const needShare = gapDemand / Math.max(1, interveningTeamIds.length);
+                    const scarcityPressure = Math.min(1, gapDemand / Math.max(1, eliteRemaining));
+                    const needAndSupplyMultiplier = 0.55 + (0.30 * needShare) + (0.15 * scarcityPressure);
+                    marketRisk = expectedEliteLoss * needAndSupplyMultiplier * 100;
                 }
 
-                // ADP confidence modulates how literally we trust the gap count.
-                // Low ADP weight → other teams may deviate; high ADP weight → assume rational picks.
-                // We blend: at adpWeight=0, fall back to a flat 50% (max uncertainty).
-                // At adpWeight=1, use scarcityRisk directly.
-                let blendedRisk = Math.round(scarcityRisk * cfg.adpWeight + 50 * (1 - cfg.adpWeight) * (gapDemand > 0 ? 1 : 0));
+                // When market adherence is lowered, blend toward a roster-shape model
+                // instead of treating every position as a flat 50/50 proposition. RB
+                // and WR receive more random-draft pressure because standard leagues
+                // start more of them; filled positions contribute no near-term threat.
+                const totalStarterSlots = posList.reduce((sum, position) => sum + Math.max(0, cfg.req[position] || 0), 0);
+                const positionStarterShare = totalStarterSlots > 0 ? Math.max(0, cfg.req[pos] || 0) / totalStarterSlots : 0;
+                const rawRosterShapeRisk = gapDemand > 0
+                    ? (1 - Math.pow(1 - positionStarterShare, gapDemand)) * 100
+                    : 0;
+                // Even a chaotic room rarely takes a position wildly ahead of its
+                // market window (especially DEF). Keep 20% baseline uncertainty,
+                // then scale the rest by how close the best elite ADP is to the turn.
+                const rosterShapeRisk = rawRosterShapeRisk * (0.20 + (0.80 * bestEliteMarketProbability));
+
+                let blendedRisk = Math.round((marketRisk * cfg.adpWeight) + (rosterShapeRisk * (1 - cfg.adpWeight)));
                 blendedRisk = Math.min(100, Math.max(0, blendedRisk));
 
                 let colorClass = "var(--accent-green)";
@@ -3657,10 +3690,13 @@
                 const leagueNeedText = leagueDemand === 1 ? `1 team needs ${pos} league-wide` : `${leagueDemand} teams need ${pos} league-wide`;
                 const beforeYouText = gapDemand === 1 ? `1 team that needs ${pos} picks before you` : `${gapDemand} teams that need ${pos} pick before you`;
                 const eliteRemainText = eliteRemaining === 1 ? "1 elite player remains" : `${eliteRemaining} elite players remain`;
+                const marketWindowText = bestEliteAdp !== null
+                    ? `${eliteRemainText} · next ADP ${bestEliteAdp.toFixed(0)}`
+                    : `${eliteRemainText} · no market ADP`;
 
                 let div = document.createElement("div");
                 div.setAttribute("role", "group");
-                div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${leagueNeedText}; ${beforeYouText}; ${eliteRemainText}.`);
+                div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${leagueNeedText}; ${beforeYouText}; ${eliteRemainText}; next elite market ADP ${bestEliteAdp !== null ? bestEliteAdp.toFixed(0) : "unavailable"}.`);
                 div.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:6px 4px; border-radius:4px; background-color:var(--row-stripe);";
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:baseline; gap:6px;">
@@ -3673,7 +3709,7 @@
                     <div style="font-size: 9px; line-height:1.35; color: var(--text-muted); text-align:center;">
                         <div>${leagueNeedText}</div>
                         <div>${beforeYouText}</div>
-                        <div>${eliteRemainText}</div>
+                        <div>${marketWindowText}</div>
                     </div>
                 `;
                 runContainer.appendChild(div);
