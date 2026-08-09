@@ -1,7 +1,9 @@
-name: Refresh NFL Daily News injuries
+name: Refresh NFL injuries
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 13 * * *"
 
 permissions:
   contents: write
@@ -24,7 +26,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Search NFL Daily News
+      - name: Refresh Sleeper and NFL Daily News
         run: python scripts/update_nfl_daily_news.py --days 7
 
       - name: Commit updated injury snapshot

@@ -27,7 +27,7 @@
         bar.innerHTML =
             "<span class='source-chip'><strong>Rankings:</strong> FantasyPros Full PPR · " +
             activePlayers.length + " players · checked " + escapeHtml(formatSourceTime("rankings")) + "</span>" +
-            "<span class='source-chip'><strong>Injuries:</strong> NFL Daily News · " +
+            "<span class='source-chip'><strong>Injuries:</strong> Sleeper + NFL Daily News · " +
             currentCount + " current · checked " + escapeHtml(formatSourceTime("currentInjuries")) + "</span>" +
             "<span class='source-chip'><strong>Projections:</strong> " + escapeHtml(projectionText) + "</span>";
     }
@@ -62,8 +62,9 @@
             const adpLabel = Number.isFinite(adpValue) && adpValue > 0
                 ? adpValue.toFixed(1).replace(/\.0$/, "")
                 : "—";
+            const sourceLabel = p.currentInjuryProvider || "Injury source";
             const source = p.currentInjurySource
-                ? "<a href='" + escapeHtml(p.currentInjurySource) + "' target='_blank' rel='noopener'>Open source ↗</a>"
+                ? "<a href='" + escapeHtml(p.currentInjurySource) + "' target='_blank' rel='noopener'>" + escapeHtml(sourceLabel) + " ↗</a>"
                 : "";
             return "<article class='news-card" + className + "'>" +
                 "<div style='display:flex;justify-content:space-between;gap:8px;align-items:flex-start;'>" +

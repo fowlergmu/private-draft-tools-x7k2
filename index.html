@@ -822,9 +822,9 @@
     <div class="panel" id="newsInjuriesPanel">
         <div class="panel-title"><span>News &amp; Current Injuries</span><span id="injurySummary" style="font-size:11px;color:var(--text-muted);font-weight:400;"></span></div>
         <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:-3px 0 12px;">
-            <a class="btn btn-secondary" style="width:auto;text-decoration:none;font-size:11px;padding:6px 9px;" href="https://github.com/fowlergmu/private-draft-tools-x7k2/actions/workflows/refresh-nfl-daily-news.yml" target="_blank" rel="noopener">Search NFL Daily News ↗</a>
+            <a class="btn btn-secondary" style="width:auto;text-decoration:none;font-size:11px;padding:6px 9px;" href="https://github.com/fowlergmu/private-draft-tools-x7k2/actions/workflows/refresh-nfl-daily-news.yml" target="_blank" rel="noopener">Update Injury Sources ↗</a>
             <button type="button" id="refreshCurrentInjuriesBtn" class="btn btn-sync" style="width:auto;font-size:11px;padding:6px 9px;" onclick="refreshCurrentInjuriesFromGithub()">Refresh Display</button>
-            <span id="injuryRefreshStatus" style="font-size:10px;color:var(--text-muted);">Run the search on GitHub, then refresh the display.</span>
+            <span id="injuryRefreshStatus" style="font-size:10px;color:var(--text-muted);">Run the update on GitHub, then refresh the display.</span>
         </div>
         <div id="currentInjuriesDashboard" class="news-grid"></div>
     </div>
@@ -2380,6 +2380,7 @@
                 delete p.currentInjury;
                 delete p.currentInjuryUpdated;
                 delete p.currentInjurySource;
+                delete p.currentInjuryProvider;
                 delete p.currentInjuryNotes;
             });
         }
@@ -2405,6 +2406,7 @@
             const injuryIdx = headers.indexOf("injury");
             const updatedIdx = headers.indexOf("updated");
             const sourceIdx = headers.indexOf("source");
+            const providerIdx = headers.indexOf("provider");
             const notesIdx = headers.indexOf("notes");
             const matcher = buildPoolMatcher();
             const unmatched = [];
@@ -2431,6 +2433,7 @@
                     result.player.currentInjury = injuryIdx === -1 ? "" : (cells[injuryIdx] || "").trim();
                     result.player.currentInjuryUpdated = updatedIdx === -1 ? "" : (cells[updatedIdx] || "").trim();
                     result.player.currentInjurySource = sourceIdx === -1 ? "" : (cells[sourceIdx] || "").trim();
+                    result.player.currentInjuryProvider = providerIdx === -1 ? "" : (cells[providerIdx] || "").trim();
                     result.player.currentInjuryNotes = notesIdx === -1 ? "" : (cells[notesIdx] || "").trim();
                 }
                 matched++;
@@ -4291,6 +4294,6 @@
             container.innerHTML = sections.join("");
         }
     </script>
-    <script src="features.js?v=20260809-adp-sort"></script>
+    <script src="features.js?v=20260809-sleeper-injuries"></script>
 </body>
 </html>

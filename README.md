@@ -9,21 +9,24 @@ affected players without changing their historical risk rating.
 
 Required columns are `name` and `status`. Supported statuses are `Monitor`,
 `Day-to-day`, `Questionable`, `Doubtful`, `Out`, `IR`, `PUP`, `NFI`, and
-`Active`. Optional columns are `pos`, `injury`, `updated`, `source`, and `notes`.
+`Active`. Optional columns are `pos`, `injury`, `updated`, `source`, `provider`,
+and `notes`.
 The file is treated as a complete snapshot, so removing a player removes their
 badge on the next site sync.
 
-## Manual NFL Daily News refresh
+## Injury refresh
 
 The injury dashboard includes two controls:
 
-1. **Search NFL Daily News** opens the manually triggered GitHub Action. Choose
-   **Run workflow** there to scan the public Bluesky feed and update the current
-   injuries CSV.
+1. **Update Injury Sources** opens the GitHub Action. Choose **Run workflow**
+   there to pull structured injury statuses from Sleeper and scan the public
+   NFL Daily News feed on Bluesky.
 2. **Refresh Display** reloads only that CSV in the website without resetting a
    draft or re-importing rankings.
 
-The workflow uses Bluesky's public author-feed API and requires no Bluesky
-credentials. It matches posts to fantasy players in the rankings CSV, keeps
-recent unresolved statuses for a limited period, and removes players when a
-newer post reports that they returned or were activated.
+The same workflow runs automatically once daily. Neither source requires login
+credentials. Sleeper supplies the structured status and injured body part;
+NFL Daily News supplies breaking-report context and links. The updater matches
+both sources to fantasy players in the rankings CSV, rejects stale short-term
+statuses, keeps longer-term IR/PUP/NFI designations, and honors newer reports
+that a player returned or was activated.

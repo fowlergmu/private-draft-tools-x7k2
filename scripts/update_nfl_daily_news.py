@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the current fantasy injury snapshot from NFL Daily News on Bluesky."""
+"""Build the current fantasy injury snapshot from Sleeper and NFL Daily News."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from pathlib import Path
 
 HANDLE = "insidenflnews.bsky.social"
 API_URL = "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed"
+SLEEPER_API_URL = "https://api.sleeper.app/v1/players/nfl?active=true"
 ACTIVE_POSITIONS = {"QB", "RB", "WR", "TE"}
 RESOLUTION_TERMS = (
     "activated from", "activated off", "returned to practice", "returns to practice",
@@ -71,6 +72,23 @@ TTL_DAYS = {
     "Day-to-day": 10,
     "Monitor": 10,
 }
+SLEEPER_TTL_DAYS = {
+    "IR": 120,
+    "PUP": 120,
+    "NFI": 120,
+    "Out": 30,
+    "Doubtful": 30,
+    "Questionable": 30,
+}
+SLEEPER_STATUS_MAP = {
+    "injured reserve": "IR",
+    "ir": "IR",
+    "pup": "PUP",
+    "nfi": "NFI",
+    "out": "Out",
+    "doubtful": "Doubtful",
+    "questionable": "Questionable",
+}
 
 
 @dataclass(frozen=True)
@@ -87,6 +105,25 @@ def normalized(value: str) -> str:
 
 def parse_iso(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+
+
+def parse_row_date(value: str) -> date | None:
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def provider_for(row: dict[str, str]) -> str:
+    provider = row.get("provider", "").strip()
+    if provider:
+        return provider
+    source = row.get("source", "")
+    if "bsky.app" in source:
+        return "NFL Daily News"
+    if "sleeper" in source:
+        return "Sleeper"
+    return ""
 
 
 def load_players(path: Path) -> list[Player]:
@@ -248,6 +285,66 @@ def fetch_feed(days: int, now: datetime, limit_pages: int = 6) -> list[dict]:
     return collected
 
 
+def fetch_sleeper_players() -> dict[str, dict]:
+    request = urllib.request.Request(
+        SLEEPER_API_URL,
+        headers={"User-Agent": "private-draft-tools-injury-refresh/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=45) as response:
+        return json.load(response)
+
+
+def build_sleeper_rows(
+    payload: dict[str, dict],
+    players: list[Player],
+    today: date,
+) -> list[dict[str, str]]:
+    index: dict[str, dict] = {}
+    for sleeper_player in payload.values():
+        full_name = (sleeper_player.get("full_name") or "").strip()
+        if not full_name:
+            first = (sleeper_player.get("first_name") or "").strip()
+            last = (sleeper_player.get("last_name") or "").strip()
+            full_name = f"{first} {last}".strip()
+        key = normalized(full_name)
+        if key:
+            index[key] = sleeper_player
+            index.setdefault(re.sub(r"\s+(jr|sr|ii|iii|iv)$", "", key), sleeper_player)
+
+    rows = []
+    for player in players:
+        key = normalized(player.name)
+        sleeper_player = index.get(key) or index.get(re.sub(r"\s+(jr|sr|ii|iii|iv)$", "", key))
+        if not sleeper_player:
+            continue
+        raw_status = normalized(str(sleeper_player.get("injury_status") or ""))
+        status = SLEEPER_STATUS_MAP.get(raw_status)
+        if not status:
+            continue
+        try:
+            updated_at = datetime.fromtimestamp(int(sleeper_player["news_updated"]) / 1000, tz=timezone.utc)
+        except (KeyError, TypeError, ValueError, OSError):
+            continue
+        if (today - updated_at.date()).days > SLEEPER_TTL_DAYS[status]:
+            continue
+        injury = (sleeper_player.get("injury_body_part") or "Undisclosed").strip()
+        practice = (sleeper_player.get("practice_participation") or "").strip()
+        details = [f"Sleeper lists {player.name} as {status}."]
+        if practice:
+            details.append(f"Practice: {practice}.")
+        rows.append({
+            "name": player.name,
+            "pos": player.pos,
+            "status": status,
+            "injury": injury,
+            "updated": updated_at.date().isoformat(),
+            "source": SLEEPER_API_URL,
+            "provider": "Sleeper",
+            "notes": " ".join(details),
+        })
+    return rows
+
+
 def load_existing(path: Path) -> dict[str, dict[str, str]]:
     if not path.exists():
         return {}
@@ -265,10 +362,12 @@ def build_snapshot(
     existing: dict[str, dict[str, str]],
     today: date,
     days: int,
+    sleeper_payload: dict[str, dict] | None = None,
 ) -> list[dict[str, str]]:
     aliases = player_aliases(players)
     cutoff = datetime.combine(today - timedelta(days=days), datetime.min.time(), tzinfo=timezone.utc)
     newest: dict[str, tuple[datetime, dict[str, str]]] = {}
+    resolved: dict[str, date] = {}
 
     for item in feed:
         post = item.get("post", {})
@@ -290,6 +389,7 @@ def build_snapshot(
                 "injury": extract_injury(text, player),
                 "updated": created.date().isoformat(),
                 "source": post_url(post),
+                "provider": "NFL Daily News",
                 "notes": text[:400],
             }
             prior = newest.get(player.name)
@@ -304,19 +404,47 @@ def build_snapshot(
         except ValueError:
             continue
         if age <= TTL_DAYS.get(row.get("status", ""), 0):
-            snapshot[name] = row
+            snapshot[name] = {**row, "provider": provider_for(row)}
 
     for name, (_, row) in newest.items():
         if row["status"] == "Active":
             snapshot.pop(name, None)
+            resolved[name] = row["updated"] and date.fromisoformat(row["updated"])
         else:
             snapshot[name] = row
+
+    sleeper_rows = build_sleeper_rows(sleeper_payload or {}, players, today)
+    sleeper_names = {row["name"] for row in sleeper_rows}
+    current_news_names = {name for name, (_, row) in newest.items() if row["status"] != "Active"}
+    for name, row in list(snapshot.items()):
+        if "Sleeper" in provider_for(row) and name not in sleeper_names and name not in current_news_names:
+            snapshot.pop(name, None)
+
+    for sleeper_row in sleeper_rows:
+        name = sleeper_row["name"]
+        sleeper_date = date.fromisoformat(sleeper_row["updated"])
+        if resolved.get(name) and resolved[name] >= sleeper_date:
+            continue
+        current = snapshot.get(name)
+        if current is None:
+            snapshot[name] = sleeper_row
+            continue
+        current_date = parse_row_date(current.get("updated", ""))
+        if current_date and current_date > sleeper_date:
+            continue
+        current_provider = provider_for(current)
+        merged = sleeper_row.copy()
+        if "NFL Daily News" in current_provider:
+            merged["source"] = current.get("source", merged["source"])
+            merged["notes"] = current.get("notes", merged["notes"])
+            merged["provider"] = "Sleeper + NFL Daily News"
+        snapshot[name] = merged
 
     return sorted(snapshot.values(), key=lambda row: (rank_by_name.get(row["name"], 99999), row["name"]))
 
 
 def write_snapshot(path: Path, rows: list[dict[str, str]], dry_run: bool) -> None:
-    fields = ["name", "pos", "status", "injury", "updated", "source", "notes"]
+    fields = ["name", "pos", "status", "injury", "updated", "source", "provider", "notes"]
     if dry_run:
         writer = csv.DictWriter(sys.stdout, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -333,6 +461,7 @@ def main() -> int:
     parser.add_argument("--rankings", type=Path, default=Path("Data/Tiers.csv"))
     parser.add_argument("--output", type=Path, default=Path("Data/Current Injuries.csv"))
     parser.add_argument("--feed-file", type=Path)
+    parser.add_argument("--sleeper-file", type=Path)
     parser.add_argument("--days", type=int, default=7)
     parser.add_argument("--today", type=date.fromisoformat, default=datetime.now(timezone.utc).date())
     parser.add_argument("--dry-run", action="store_true")
@@ -345,9 +474,17 @@ def main() -> int:
     else:
         now = datetime.combine(args.today, datetime.max.time(), tzinfo=timezone.utc)
         feed = fetch_feed(args.days, now)
-    rows = build_snapshot(feed, players, existing, args.today, args.days)
+    if args.sleeper_file:
+        sleeper_payload = json.loads(args.sleeper_file.read_text(encoding="utf-8"))
+    else:
+        sleeper_payload = fetch_sleeper_players()
+    rows = build_snapshot(feed, players, existing, args.today, args.days, sleeper_payload)
     write_snapshot(args.output, rows, args.dry_run)
-    print(f"Matched {len(rows)} current fantasy injuries from {len(feed)} feed items.", file=sys.stderr)
+    print(
+        f"Matched {len(rows)} current fantasy injuries from {len(feed)} news items "
+        f"and {len(sleeper_payload)} Sleeper players.",
+        file=sys.stderr,
+    )
     return 0
 
 
