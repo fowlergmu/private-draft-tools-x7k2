@@ -120,14 +120,9 @@
             if (open > 0) warnings.push("Need " + open + " more starting " + label + (open > 1 ? "s" : ""));
         });
         const players = rosterPlayersForTeam(cfg.userPos);
-        const byes = {};
         const teams = {};
         players.forEach(p => {
-            if (p.bye && p.bye !== "-") (byes[p.bye] = byes[p.bye] || []).push(p.name);
             if (p.nflTeam && p.nflTeam !== "FA") (teams[p.nflTeam] = teams[p.nflTeam] || []).push(p.name);
-        });
-        Object.entries(byes).filter(([, names]) => names.length >= 3).forEach(([week, names]) => {
-            warnings.push("Bye Week " + week + " cluster: " + names.length + " players");
         });
         Object.entries(teams).filter(([, names]) => names.length >= 3).forEach(([team, names]) => {
             warnings.push(team + " concentration: " + names.length + " players");
