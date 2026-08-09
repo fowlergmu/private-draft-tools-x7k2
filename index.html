@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Predictive Fantasy Football Draft Engine (FantasyPros Edition)</title>
     <style>
         :root {
@@ -367,6 +367,33 @@
             gap: 4px;
             margin-bottom: 12px;
             overflow-x: auto;
+        }
+
+        .matrix-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .matrix-controls .filter-tabs {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        .matrix-sort-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .matrix-sort-control label {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .matrix-sort-control .form-control {
+            width: auto;
+            min-width: 118px;
         }
 
         /* Search box sits between filter tabs and the table. The clear (×) button
@@ -763,6 +790,53 @@
             .player-table th:nth-child(11), .player-table td:nth-child(11) { display:none; }
         }
 
+        /* iPhone 16 portrait is 393 CSS pixels wide. Keep the draft-day controls
+           thumb-friendly and preserve the two comparison columns that matter most:
+           Rank and ADP. */
+        @media (max-width: 430px) {
+            html { overflow-x:hidden; }
+            body {
+                padding-top:max(8px, env(safe-area-inset-top));
+                padding-right:max(8px, env(safe-area-inset-right));
+                padding-bottom:max(8px, env(safe-area-inset-bottom));
+                padding-left:max(8px, env(safe-area-inset-left));
+                font-size:13px;
+            }
+            header { margin-bottom:12px; padding-bottom:10px; gap:8px; }
+            header h1 { font-size:18px; line-height:1.2; }
+            header p { font-size:11px; }
+            #dataFreshness { order:3; width:100%; max-width:none !important; text-align:left !important; margin-left:0 !important; }
+            .main-tabs { position:sticky; top:0; z-index:40; background:var(--bg-primary); margin-bottom:12px; }
+            .main-tab { flex:1; padding:10px 8px; }
+            .source-meta-bar { display:grid; grid-template-columns:1fr; gap:5px; margin:0 0 12px; }
+            .source-chip { border-radius:6px; padding:6px 8px; }
+            .dashboard-grid, .dashboard-grid.draft-layout { gap:0; }
+            .center-column, .right-column { min-width:0; }
+            .panel { padding:10px; margin-bottom:12px; border-radius:7px; }
+            .panel-title { font-size:14px; gap:8px; align-items:flex-start; }
+            .draft-command-bar { gap:8px; }
+            .quick-draft-controls { display:grid; grid-template-columns:1fr; width:100%; }
+            .quick-draft-controls .btn { width:100% !important; min-height:40px; }
+            .news-grid { grid-template-columns:1fr; }
+            .news-card { padding:8px; }
+            #runAnalysisContainer { grid-template-columns:repeat(3,1fr) !important; gap:6px !important; }
+            .matrix-controls { display:grid; grid-template-columns:1fr; gap:8px; }
+            .matrix-controls .filter-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; overflow:visible; }
+            .matrix-controls .tab { justify-content:center; min-height:36px; }
+            .matrix-sort-control { justify-content:space-between; }
+            .matrix-sort-control .form-control { min-height:38px; min-width:150px; }
+            .player-table-scroll { max-height:60vh !important; -webkit-overflow-scrolling:touch; }
+            .player-table { font-size:11px; margin-top:6px; }
+            .player-table th, .player-table td { padding:6px 4px; }
+            .player-rank-col { width:38px; min-width:38px; }
+            .player-table th:nth-child(2), .player-table td:nth-child(2) { min-width:128px; }
+            .player-table th:nth-child(4), .player-table td:nth-child(4),
+            .player-table th:nth-child(10), .player-table td:nth-child(10) { display:none; }
+            .player-table td:nth-child(12) .btn { min-height:32px; }
+            .row-2col { grid-template-columns:1fr; }
+            .roster-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
+
         /* When the tooltip would overflow the right edge, anchor it to the right */
         .help-tip.tip-right[data-tip]:hover::after,
         .help-tip.tip-right[data-tip]:focus::after {
@@ -860,20 +934,29 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
-                <div class="filter-tabs">
-                    <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
-                    <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="matrix-controls">
+                    <div class="filter-tabs">
+                        <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
+                    </div>
+                    <div class="matrix-sort-control">
+                        <label for="playerSortOrder">Sort players by</label>
+                        <select id="playerSortOrder" class="form-control" onchange="setPlayerSort(this.value)">
+                            <option value="rank" selected>Rank</option>
+                            <option value="adp">ADP</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="player-search">
                     <input type="search" id="playerSearchInput" class="form-control" placeholder="Search players by name… (press /)" oninput="onPlayerSearchInput(this.value)" autocomplete="off">
                     <button type="button" id="playerSearchClear" class="player-search-clear" onclick="clearPlayerSearch()" aria-label="Clear search" style="display:none;">×</button>
                 </div>
-                <div style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
+                <div class="player-table-scroll" style="overflow-x: auto; max-height: 560px; overflow-y: auto;">
                     <table class="player-table" id="playerTable">
                         <thead>
                             <tr>
@@ -1383,6 +1466,7 @@
 
         let currentPick = 1;
         let selectedPositionFilter = "ALL";
+        let selectedPlayerSort = "rank";
         // Search query for the Available Player Matrix — case-insensitive substring
         // match against player.name. Empty string = no search filter.
         let playerSearchQuery = "";
@@ -1451,6 +1535,7 @@
         const COMPACT_MODE_KEY = "fantasyDraftEngine_compactMode";
         const PROJECTION_SOURCE_KEY = "fantasyDraftEngine_projectionSource";
         const SCORING_PREFERENCE_KEY = "fantasyDraftEngine_scoringPreference";
+        const PLAYER_SORT_KEY = "fantasyDraftEngine_playerSort";
 
         function setScoringFormat(value) {
             if (!["Standard", "Half PPR", "Full PPR"].includes(value)) return;
@@ -1467,6 +1552,22 @@
                     scoringFormat.value = value;
                 }
             } catch (e) {}
+        }
+
+        function setPlayerSort(value) {
+            if (!["rank", "adp"].includes(value)) return;
+            selectedPlayerSort = value;
+            try { localStorage.setItem(PLAYER_SORT_KEY, value); } catch (e) {}
+            renderPlayerPool();
+        }
+
+        function restorePlayerSortPreference() {
+            try {
+                const value = localStorage.getItem(PLAYER_SORT_KEY);
+                if (["rank", "adp"].includes(value)) selectedPlayerSort = value;
+            } catch (e) {}
+            const select = document.getElementById("playerSortOrder");
+            if (select) select.value = selectedPlayerSort;
         }
 
         function saveState() {
@@ -1572,6 +1673,7 @@
             loadCachedRankingsCsv();
             loadGithubUrls();
             restoreScoringPreference();
+            restorePlayerSortPreference();
             if (loadState()) {
                 recalculateEngine();
             } else {
@@ -3619,8 +3721,11 @@
             }
 
             displayList.sort((a, b) => {
-                if (a.tier !== b.tier) return a.tier - b.tier;
-                return b.vob - a.vob;
+                const aValue = selectedPlayerSort === "adp" ? Number(a.adp) : Number(a.rank);
+                const bValue = selectedPlayerSort === "adp" ? Number(b.adp) : Number(b.rank);
+                const aSort = Number.isFinite(aValue) && aValue > 0 ? aValue : Infinity;
+                const bSort = Number.isFinite(bValue) && bValue > 0 ? bValue : Infinity;
+                return aSort - bSort || Number(a.rank || Infinity) - Number(b.rank || Infinity) || a.name.localeCompare(b.name);
             });
 
             // Empty-state hint: useful when a search returns nothing so it doesn't
@@ -3650,7 +3755,7 @@
             displayList.forEach((p, idx) => {
                 // Insert a tier-break separator before this row when tier changes.
                 // Skip on the very first row — the first tier is implicit at the top.
-                if (previousTier !== null && p.tier !== previousTier) {
+                if (selectedPlayerSort === "rank" && previousTier !== null && p.tier !== previousTier) {
                     const sepTr = document.createElement("tr");
                     sepTr.className = "tier-break";
                     sepTr.innerHTML = `<td colspan="12"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
