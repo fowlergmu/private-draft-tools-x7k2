@@ -1,5 +1,7 @@
 "use strict";
 
+const extensionApi = typeof browser !== "undefined" ? browser : chrome;
+
 const companionStatus = document.createElement("button");
 companionStatus.type = "button";
 companionStatus.textContent = "Draft Tool: watching ESPN";
@@ -24,7 +26,7 @@ let lastSignature = "";
 let scanTimer = null;
 
 function sendStatus(message, connected) {
-    chrome.runtime.sendMessage({
+    extensionApi.runtime.sendMessage({
         type: "ESPN_COMPANION_STATUS",
         connected: connected !== false,
         message
@@ -48,7 +50,7 @@ function scanEspnDraft() {
 
     if (signature === lastSignature) return;
     lastSignature = signature;
-    chrome.runtime.sendMessage({
+    extensionApi.runtime.sendMessage({
         type: "ESPN_DRAFT_SNAPSHOT",
         picks,
         pageUrl: location.href,
@@ -62,7 +64,7 @@ function scheduleScan() {
 }
 
 companionStatus.addEventListener("click", scanEspnDraft);
-chrome.runtime.onMessage.addListener(message => {
+extensionApi.runtime.onMessage.addListener(message => {
     if (message && message.type === "ESPN_SCAN_NOW") scanEspnDraft();
 });
 
