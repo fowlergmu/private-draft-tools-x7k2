@@ -700,7 +700,13 @@
         .draft-command-bar { display:grid; grid-template-columns:minmax(260px,1fr) auto; gap:10px; align-items:center; margin-bottom:15px; }
         .quick-draft-controls { display:flex; gap:6px; min-width:0; }
         .quick-draft-controls .form-control { min-width:0; }
-        .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; }
+        .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; align-content:start; }
+        .news-grid.is-scrollable {
+            overflow-y:auto;
+            overscroll-behavior:contain;
+            padding-right:6px;
+            scrollbar-gutter:stable;
+        }
         .news-card { border:1px solid var(--border-color); border-left:4px solid var(--accent-amber); border-radius:6px; background:var(--bg-primary); padding:9px 10px; }
         .news-card.out { border-left-color:var(--accent-rose); }
         .news-card.ir { border-left-color:var(--accent-magenta); }
@@ -4294,6 +4300,6 @@
             container.innerHTML = sections.join("");
         }
     </script>
-    <script src="features.js?v=20260809-sleeper-injuries"></script>
+    <script src="features.js?v=20260809-injury-scroll"></script>
 </body>
 </html>
