@@ -36,6 +36,24 @@
         return { IR: 7, PUP: 6, NFI: 6, Out: 5, Doubtful: 4, Questionable: 3, "Day-to-day": 2, Monitor: 1 }[status] || 0;
     }
 
+    function limitInjuryDashboardToThreeRows(container) {
+        container.classList.remove("is-scrollable");
+        container.style.maxHeight = "";
+        const cards = Array.from(container.querySelectorAll(".news-card"));
+        if (cards.length <= 3) return;
+        requestAnimationFrame(() => {
+            if (!cards[0] || !cards[0].isConnected) return;
+            const rowTops = Array.from(new Set(cards.map(card => card.offsetTop))).sort((a, b) => a - b);
+            if (rowTops.length <= 3) return;
+            const thirdRowTop = rowTops[2];
+            const thirdRowBottom = Math.max(...cards
+                .filter(card => card.offsetTop === thirdRowTop)
+                .map(card => card.offsetTop + card.offsetHeight));
+            container.style.maxHeight = Math.ceil(thirdRowBottom - rowTops[0]) + "px";
+            container.classList.add("is-scrollable");
+        });
+    }
+
     function renderCurrentInjuriesDashboard() {
         const container = document.getElementById("currentInjuriesDashboard");
         const summary = document.getElementById("injurySummary");
@@ -54,6 +72,7 @@
         if (summary) summary.textContent = injured.length + " player" + (injured.length === 1 ? "" : "s") + " being monitored";
         if (injured.length === 0) {
             container.innerHTML = "<p style='color:var(--text-muted);font-size:12px;'>No active fantasy-player injuries are in the current news snapshot.</p>";
+            limitInjuryDashboardToThreeRows(container);
             return;
         }
         container.innerHTML = injured.map(p => {
@@ -76,6 +95,7 @@
                 escapeHtml(p.currentInjuryNotes || "") + (p.currentInjuryUpdated ? " · Updated " + escapeHtml(p.currentInjuryUpdated) : "") +
                 "</div>" + source + "</article>";
         }).join("");
+        limitInjuryDashboardToThreeRows(container);
     }
 
     function rosterPlayersForTeam(teamNum) {
@@ -697,4 +717,13 @@
         if (originalOnload) originalOnload.call(window, event);
         initializeDraftDayFeatures();
     };
+
+    let injuryResizeTimer = null;
+    window.addEventListener("resize", () => {
+        if (injuryResizeTimer) clearTimeout(injuryResizeTimer);
+        injuryResizeTimer = setTimeout(() => {
+            const container = document.getElementById("currentInjuriesDashboard");
+            if (container) limitInjuryDashboardToThreeRows(container);
+        }, 120);
+    });
 })();
