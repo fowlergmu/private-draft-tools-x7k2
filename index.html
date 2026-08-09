@@ -311,6 +311,15 @@
             border-bottom: 1px solid var(--border-color);
         }
 
+        .player-rank-col {
+            width: 46px;
+            min-width: 46px;
+            text-align: center !important;
+            color: var(--accent-blue);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
         .player-table th {
             color: var(--text-muted);
             font-size: 12px;
@@ -728,12 +737,12 @@
         body.compact-mode .draft-board-panel,
         body.compact-mode .glossary-panel { display:none; }
         body.compact-mode .dashboard-grid.draft-layout { grid-template-columns:minmax(0,1fr) 340px; }
-        body.compact-mode .player-table th:nth-child(6),
-        body.compact-mode .player-table td:nth-child(6),
         body.compact-mode .player-table th:nth-child(7),
         body.compact-mode .player-table td:nth-child(7),
         body.compact-mode .player-table th:nth-child(8),
-        body.compact-mode .player-table td:nth-child(8) { display:none; }
+        body.compact-mode .player-table td:nth-child(8),
+        body.compact-mode .player-table th:nth-child(9),
+        body.compact-mode .player-table td:nth-child(9) { display:none; }
         @media (max-width: 760px) {
             body { padding:10px; }
             header { align-items:flex-start; flex-wrap:wrap; }
@@ -747,11 +756,11 @@
             .settings-grid { grid-template-columns:1fr; }
             .report-grid { grid-template-columns:1fr; }
             body.compact-mode .dashboard-grid.draft-layout { grid-template-columns:1fr; }
-            .player-table th:nth-child(5), .player-table td:nth-child(5),
             .player-table th:nth-child(6), .player-table td:nth-child(6),
             .player-table th:nth-child(7), .player-table td:nth-child(7),
             .player-table th:nth-child(8), .player-table td:nth-child(8),
-            .player-table th:nth-child(10), .player-table td:nth-child(10) { display:none; }
+            .player-table th:nth-child(9), .player-table td:nth-child(9),
+            .player-table th:nth-child(11), .player-table td:nth-child(11) { display:none; }
         }
 
         /* When the tooltip would overflow the right edge, anchor it to the right */
@@ -851,7 +860,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Tier (lower = better, derived from rankings), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by tier first then VOB within tier. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="filter-tabs">
                     <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
                     <button type="button" class="tab" onclick="filterPosition('QB', this)">QB <span class="tab-count" id="tabCount-QB"></span></button>
@@ -868,6 +877,7 @@
                     <table class="player-table" id="playerTable">
                         <thead>
                             <tr>
+                                <th class="player-rank-col" title="FantasyPros overall consensus rank">Rank</th>
                                 <th>Player</th>
                                 <th>Pos</th>
                                 <th>Tier</th>
@@ -1352,14 +1362,14 @@
     <script>
         // Baseline seeding data structure used before manual copy-paste action is initiated
         let activePlayers = [
-            { id: 1, name: "Christian McCaffrey", pos: "RB", tier: 1, floor: 16.5, ceiling: 24.0, injury: "High", rookie: false, adp: 2.1 },
-            { id: 2, name: "CeeDee Lamb", pos: "WR", tier: 1, floor: 15.8, ceiling: 23.5, injury: "Low", rookie: false, adp: 1.8 },
-            { id: 3, name: "Tyreek Hill", pos: "WR", tier: 1, floor: 15.2, ceiling: 23.8, injury: "Low", rookie: false, adp: 3.4 },
-            { id: 4, name: "Breece Hall", pos: "RB", tier: 1, floor: 14.5, ceiling: 22.0, injury: "Medium", rookie: false, adp: 4.2 },
-            { id: 5, name: "Bijan Robinson", pos: "RB", tier: 1, floor: 14.2, ceiling: 22.5, injury: "Low", rookie: false, adp: 5.0 },
-            { id: 6, name: "Justin Jefferson", pos: "WR", tier: 1, floor: 14.6, ceiling: 22.4, injury: "Low", rookie: false, adp: 6.1 },
-            { id: 7, name: "Josh Allen", pos: "QB", tier: 1, floor: 18.2, ceiling: 25.8, injury: "Low", rookie: false, adp: 28.5 },
-            { id: 8, name: "Travis Kelce", pos: "TE", tier: 1, floor: 11.0, ceiling: 17.2, injury: "Low", rookie: false, adp: 32.7 }
+            { id: 1, rank: 1, name: "Christian McCaffrey", pos: "RB", tier: 1, floor: 16.5, ceiling: 24.0, injury: "High", rookie: false, adp: 2.1 },
+            { id: 2, rank: 2, name: "CeeDee Lamb", pos: "WR", tier: 1, floor: 15.8, ceiling: 23.5, injury: "Low", rookie: false, adp: 1.8 },
+            { id: 3, rank: 3, name: "Tyreek Hill", pos: "WR", tier: 1, floor: 15.2, ceiling: 23.8, injury: "Low", rookie: false, adp: 3.4 },
+            { id: 4, rank: 4, name: "Breece Hall", pos: "RB", tier: 1, floor: 14.5, ceiling: 22.0, injury: "Medium", rookie: false, adp: 4.2 },
+            { id: 5, rank: 5, name: "Bijan Robinson", pos: "RB", tier: 1, floor: 14.2, ceiling: 22.5, injury: "Low", rookie: false, adp: 5.0 },
+            { id: 6, rank: 6, name: "Justin Jefferson", pos: "WR", tier: 1, floor: 14.6, ceiling: 22.4, injury: "Low", rookie: false, adp: 6.1 },
+            { id: 7, rank: 7, name: "Josh Allen", pos: "QB", tier: 1, floor: 18.2, ceiling: 25.8, injury: "Low", rookie: false, adp: 28.5 },
+            { id: 8, rank: 8, name: "Travis Kelce", pos: "TE", tier: 1, floor: 11.0, ceiling: 17.2, injury: "Low", rookie: false, adp: 32.7 }
         ];
 
         // Rookie flag must be data-driven, not guessed. Users can extend this list, or
@@ -1520,6 +1530,7 @@
                 }
 
                 activePlayers = payload.activePlayers;
+                applyCachedRankingMetadata();
                 currentPick = payload.currentPick;
                 teamRosters = payload.teamRosters;
                 leagueNames = payload.leagueNames || {};
@@ -1695,6 +1706,7 @@
 
                     parsedPool.push({
                         id: globalIdCounter++,
+                        rank: globalIdCounter - 1,
                         name: finalName,
                         pos: extractedPos,
                         tier: currentTier,
@@ -1763,6 +1775,37 @@
             return out.map(s => s.trim());
         }
 
+        // Upgrade saved player pools created before Rank and market ADP were
+        // stored separately. The cached FantasyPros CSV is already available
+        // on returning visits, so this preserves the draft while refreshing
+        // only the two ranking fields.
+        function applyCachedRankingMetadata() {
+            if (!cachedRankingsCsv || !Array.isArray(activePlayers)) return;
+            const lines = cachedRankingsCsv.split(/\r?\n/).filter(line => line.trim());
+            if (lines.length < 2) return;
+            const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().trim());
+            const rkIdx = headers.indexOf("rk");
+            const nameIdx = headers.indexOf("player name");
+            const deltaIdx = headers.indexOf("ecr vs. adp");
+            if (rkIdx === -1 || nameIdx === -1) return;
+
+            const metadata = new Map();
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const name = (cells[nameIdx] || "").trim();
+                const rank = parseInt(cells[rkIdx]);
+                if (!name || !Number.isFinite(rank)) continue;
+                const delta = deltaIdx !== -1 ? parseFloat(cells[deltaIdx]) || 0 : 0;
+                metadata.set(normalizeNameForMatch(name), { rank, adp: Math.max(1, rank + delta) });
+            }
+            activePlayers.forEach(player => {
+                const values = metadata.get(normalizeNameForMatch(player.name));
+                if (!values) return;
+                player.rank = values.rank;
+                player.adp = values.adp;
+            });
+        }
+
         function handleCsvFile(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -1814,6 +1857,7 @@
             const posIdx = idx("pos");
             const teamIdx = idx("team");
             const byeIdx = idx("bye week");
+            const ecrVsAdpIdx = idx("ecr vs. adp");
 
             const pool = [];
             const errors = [];
@@ -1846,14 +1890,12 @@
                     continue;
                 }
 
-                // RK is the overall ECR (Expert Consensus Rank), which we use directly
-                // as the player's ADP for engine purposes. The "ECR VS. ADP" column in
-                // FantasyPros exports is a *delta* between ECR and the market ADP, useful
-                // as info but not something we transform RK by. (Earlier versions tried
-                // to compute a "true ADP" from RK ± delta; the convention was inverted
-                // and produced negative ADPs for top players. Simpler is better here.)
+                // RK is FantasyPros' overall Expert Consensus Rank. ECR VS. ADP
+                // is positive when ECR is that many slots ahead of market ADP,
+                // so market ADP = RK + delta (for example RK 1 and +2 => ADP 3).
                 const rk = parseInt(cells[rkIdx]) || i;
-                const adp = rk;
+                const ecrVsAdp = ecrVsAdpIdx !== -1 ? parseFloat(cells[ecrVsAdpIdx]) || 0 : 0;
+                const adp = Math.max(1, rk + ecrVsAdp);
 
                 const tier = parseInt(cells[tierIdx]) || 10;
 
@@ -1866,7 +1908,7 @@
                 if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
 
                 pool.push({
-                    id: id++, name, pos, tier, adp,
+                    id: id++, rank: rk, name, pos, tier, adp,
                     nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
                     bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : "",
                     floor: Math.max(2.0, floorScore),
@@ -1908,6 +1950,7 @@
             const posIdx = idx("pos") !== -1 ? idx("pos") : idx("position");
             const tierIdx = idx("tier");
             const adpIdx = idx("adp");
+            const rankIdx = idx("rank") !== -1 ? idx("rank") : idx("rk");
             const floorIdx = idx("floor");
             const ceilingIdx = idx("ceiling");
             const rookieIdx = idx("rookie");
@@ -1935,6 +1978,7 @@
                 }
                 const tier = tierIdx !== -1 ? parseInt(cells[tierIdx]) || 5 : 5;
                 const adp = adpIdx !== -1 ? parseFloat(cells[adpIdx]) || (i) : i;
+                const rank = rankIdx !== -1 ? parseInt(cells[rankIdx]) || i : i;
                 let floorScore = floorIdx !== -1 ? parseFloat(cells[floorIdx]) : (14.5 - tier * 1.1);
                 let ceilingScore = ceilingIdx !== -1 ? parseFloat(cells[ceilingIdx]) : (21.5 - tier * 1.4);
                 if (floorIdx === -1) {
@@ -1947,7 +1991,7 @@
                 const injury = injuryIdx !== -1 && ["Low", "Medium", "High"].includes(cells[injuryIdx]) ? cells[injuryIdx] : "Low";
 
                 pool.push({
-                    id: id++, name, pos, tier, adp,
+                    id: id++, rank, name, pos, tier, adp,
                     nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
                     bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : "",
                     projectedPoints: projectedIdx !== -1 ? parseFloat(cells[projectedIdx]) || null : null,
@@ -2033,6 +2077,7 @@
                 }
                 pool.push({
                     id: id++,
+                    rank: p.rank !== undefined ? parseInt(p.rank) : i + 1,
                     name: p.name,
                     pos,
                     tier,
@@ -3583,7 +3628,7 @@
             if (displayList.length === 0) {
                 const tr = document.createElement("tr");
                 const td = document.createElement("td");
-                td.colSpan = 11;
+                td.colSpan = 12;
                 td.style.cssText = "text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;";
                 if (playerSearchQuery) {
                     td.innerText = `No players match "${playerSearchQuery}"` +
@@ -3608,7 +3653,7 @@
                 if (previousTier !== null && p.tier !== previousTier) {
                     const sepTr = document.createElement("tr");
                     sepTr.className = "tier-break";
-                    sepTr.innerHTML = `<td colspan="11"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
+                    sepTr.innerHTML = `<td colspan="12"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
                     body.appendChild(sepTr);
                 }
                 previousTier = p.tier;
@@ -3689,6 +3734,10 @@
                     else { vsAdpDisplay = "0.0"; }
                 }
                 const adpDisplay = adpVal !== null ? adpVal.toFixed(1) : "—";
+                const storedRank = Number(p.rank);
+                const rankDisplay = Number.isFinite(storedRank) && storedRank > 0
+                    ? Math.round(storedRank)
+                    : activePlayers.indexOf(p) + 1;
 
                 // Build VOB and Run Risk tooltips that explain both the metric and
                 // what this specific value means for this player. Generic on the
@@ -3702,6 +3751,7 @@
                 else runRiskTip += " Calm — you can wait.";
 
                 tr.innerHTML = `
+                    <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}</td>
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>${rookieBadge}${currentInjuryBadge}
                         <button type="button"
