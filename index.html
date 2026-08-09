@@ -312,13 +312,25 @@
         }
 
         .player-rank-col {
-            width: 46px;
-            min-width: 46px;
+            width: 58px;
+            min-width: 58px;
             text-align: center !important;
             color: var(--accent-blue);
             font-weight: 700;
             font-variant-numeric: tabular-nums;
         }
+
+        .rank-move {
+            display: inline-block;
+            margin-left: 3px;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1;
+            vertical-align: 1px;
+        }
+
+        .rank-move.significant-up { color: var(--accent-green); }
+        .rank-move.significant-down { color: var(--accent-rose); }
 
         .player-table th {
             color: var(--text-muted);
@@ -594,6 +606,41 @@
             text-overflow: ellipsis;
             margin-top: 2px;
         }
+
+        .roster-bye {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 9px;
+        }
+
+        .bye-conflict-check {
+            display: grid;
+            gap: 5px;
+            margin-top: 10px;
+            padding-top: 9px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .bye-conflict-heading {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .bye-conflict-item {
+            padding: 6px 7px;
+            border-left: 3px solid var(--accent-amber);
+            border-radius: 4px;
+            background: var(--bg-primary);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .bye-conflict-item.severe { border-left-color: var(--accent-rose); }
+        .bye-conflict-item.good { border-left-color: var(--accent-green); }
 
         .matrix-table {
             width: 100%;
@@ -876,7 +923,7 @@
             .player-table-scroll { max-height:60vh !important; -webkit-overflow-scrolling:touch; }
             .player-table { font-size:11px; margin-top:6px; }
             .player-table th, .player-table td { padding:6px 4px; }
-            .player-rank-col { width:38px; min-width:38px; }
+            .player-rank-col { width:50px; min-width:50px; }
             .player-table th:nth-child(2), .player-table td:nth-child(2) { min-width:128px; }
             .player-table th:nth-child(4), .player-table td:nth-child(4),
             .player-table th:nth-child(10), .player-table td:nth-child(10),
@@ -1012,7 +1059,7 @@
                     <table class="player-table" id="playerTable">
                         <thead>
                             <tr>
-                                <th class="player-rank-col" title="FantasyPros overall consensus rank">Rank</th>
+                                <th class="player-rank-col" title="FantasyPros overall consensus rank. Arrows show movement since the prior rankings update; colored arrows mark a significant move of 10 or more spots.">Rank</th>
                                 <th>Player</th>
                                 <th>Pos</th>
                                 <th>Tier</th>
@@ -1036,8 +1083,9 @@
         <!-- RIGHT: LIVE MATRIX TRACKER -->
         <div class="right-column">
             <div class="panel">
-                <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster. Each cell represents one starter, flex, defense, or bench spot. Empty slots show as 'Empty' in muted text — these are the holes the Best Available recommendations try to fill. Slot counts come from the Roster Requirements panel.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-green);">My Active Team Construction<span class="help-tip tip-right" tabindex="0" data-tip="Slot-by-slot view of your roster, including each player's bye week. The bye-week check flags two or more starters who are off in the same week; bench players are excluded. Slot counts come from the Roster Requirements panel.">?</span></div>
                 <div class="roster-grid" id="myRosterGrid"></div>
+                <div id="activeTeamByeConflicts" class="bye-conflict-check"></div>
             </div>
 
             <div class="panel">
@@ -1554,6 +1602,10 @@
         // page load because doing so could silently wipe an in-progress draft. The
         // user always explicitly chooses to reload.
         let cachedRankingsCsv = null;
+        // The prior committed version of Data/Tiers.csv is loaded from GitHub's
+        // file history. This makes weekly rank arrows automatic whenever the
+        // rankings file is updated, with no second snapshot file to maintain.
+        let previousRankingMap = new Map();
         // Cached raw rookies CSV. Same auto-remerge pattern as injuries: applied
         // after every rankings import (and on demand via the rookies tab button).
         let cachedRookiesCsv = null;
@@ -1578,6 +1630,9 @@
             currentInjuries: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Current%20Injuries.csv",
             rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv"
         };
+        const RANKING_HISTORY_API = "https://api.github.com/repos/fowlergmu/private-draft-tools-x7k2/commits?path=Data%2FTiers.csv&per_page=2";
+        const PREVIOUS_RANKINGS_CACHE_KEY = "ff_previous_rankings_snapshot_v1";
+        const SIGNIFICANT_RANK_MOVE = 10;
 
         // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
         // localStorage has device-specific overrides.
@@ -1745,6 +1800,9 @@
                 resetDraftState();
             }
             renderTeamNameInputs();
+            // Show cached weekly movers immediately, then refresh the comparison
+            // against the previous committed rankings in the background.
+            loadPreviousRankingSnapshot();
             // After all sync state is restored: first-visit devices do a full
             // fetch (maybeAutoFetch); returning devices instead get a freshness
             // check that auto-applies any CSVs that changed in the repo since
@@ -1968,6 +2026,65 @@
                 player.rank = values.rank;
                 player.adp = values.adp;
             });
+        }
+
+        function parseRankingSnapshot(text) {
+            const map = new Map();
+            const lines = String(text || "").split(/\r?\n/).filter(line => line.trim());
+            if (lines.length < 2) return map;
+            const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().trim());
+            const rankIdx = headers.indexOf("rk") !== -1 ? headers.indexOf("rk") : headers.indexOf("rank");
+            const nameIdx = headers.indexOf("player name") !== -1 ? headers.indexOf("player name") :
+                (headers.indexOf("name") !== -1 ? headers.indexOf("name") : headers.indexOf("player"));
+            if (rankIdx === -1 || nameIdx === -1) return map;
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const name = (cells[nameIdx] || "").trim();
+                const rank = parseInt(cells[rankIdx]);
+                if (name && Number.isFinite(rank)) map.set(normalizeNameForMatch(name), rank);
+            }
+            return map;
+        }
+
+        async function loadPreviousRankingSnapshot() {
+            // Cached history keeps arrows available offline and avoids a blank
+            // state while GitHub is being checked for a newer weekly update.
+            try {
+                const cached = JSON.parse(localStorage.getItem(PREVIOUS_RANKINGS_CACHE_KEY) || "null");
+                if (cached && cached.csv) previousRankingMap = parseRankingSnapshot(cached.csv);
+            } catch (e) { /* storage unavailable or stale cache */ }
+            if (previousRankingMap.size) renderPlayerPool();
+
+            try {
+                const response = await fetch(RANKING_HISTORY_API, {
+                    cache: "no-store",
+                    headers: { "Accept": "application/vnd.github+json" }
+                });
+                if (!response.ok) throw new Error("GitHub history unavailable");
+                const commits = await response.json();
+                if (!Array.isArray(commits) || commits.length < 2 || !commits[1].sha) return;
+                const previousSha = commits[1].sha;
+                const rawUrl = `https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/${previousSha}/Data/Tiers.csv`;
+                const csvResponse = await fetch(rawUrl, { cache: "no-store" });
+                if (!csvResponse.ok) throw new Error("Previous rankings unavailable");
+                const csv = await csvResponse.text();
+                const parsed = parseRankingSnapshot(csv);
+                if (!parsed.size) return;
+                previousRankingMap = parsed;
+                try {
+                    localStorage.setItem(PREVIOUS_RANKINGS_CACHE_KEY, JSON.stringify({ sha: previousSha, csv }));
+                } catch (e) { /* storage unavailable */ }
+                renderPlayerPool();
+            } catch (e) {
+                console.warn("Could not refresh previous rankings; using cached comparison if available.", e);
+            }
+        }
+
+        function rankMovementFor(player) {
+            const currentRank = Number(player && player.rank);
+            const previousRank = previousRankingMap.get(normalizeNameForMatch(player && player.name));
+            if (!Number.isFinite(currentRank) || !Number.isFinite(previousRank)) return 0;
+            return previousRank - currentRank;
         }
 
         function handleCsvFile(file) {
@@ -4072,6 +4189,16 @@
                 const rankDisplay = Number.isFinite(storedRank) && storedRank > 0
                     ? Math.round(storedRank)
                     : activePlayers.indexOf(p) + 1;
+                const rankMovement = rankMovementFor(p);
+                const movedUp = rankMovement > 0;
+                const significantMove = Math.abs(rankMovement) >= SIGNIFICANT_RANK_MOVE;
+                const rankMoveClass = significantMove
+                    ? (movedUp ? " significant-up" : " significant-down")
+                    : "";
+                const rankMoveLabel = rankMovement === 0 ? "" :
+                    `${movedUp ? "Up" : "Down"} ${Math.abs(rankMovement)} spot${Math.abs(rankMovement) === 1 ? "" : "s"} since the last ranking update`;
+                const rankMoveMarkup = rankMovement === 0 ? "" :
+                    `<span class="rank-move${rankMoveClass}" title="${escapeHtml(rankMoveLabel)}" aria-label="${escapeHtml(rankMoveLabel)}">${movedUp ? "↑" : "↓"}</span>`;
 
                 // Build VOB and Run Risk tooltips that explain both the metric and
                 // what this specific value means for this player. Generic on the
@@ -4093,7 +4220,7 @@
                 const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Avail. next: ${survivalPercentage}</span>`;
 
                 tr.innerHTML = `
-                    <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}</td>
+                    <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}${rankMoveMarkup}</td>
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>${rookieBadge}${currentInjuryBadge}
                         <button type="button"
@@ -4627,11 +4754,64 @@
                 for (let idx = 0; idx < slot.max; idx++) {
                     let cell = document.createElement("div");
                     cell.className = "roster-cell";
-                    let pName = filledItems[idx] || `<span style="color:var(--text-muted); font-style:italic;">Empty</span>`;
-                    cell.innerHTML = `<span class="pos-label">${slot.label}</span><div class="player-name">${pName}</div>`;
+                    const rosterEntry = filledItems[idx];
+                    const player = findPlayerForRosterEntry(rosterEntry);
+                    const pName = rosterEntry
+                        ? escapeHtml(rosterEntry)
+                        : `<span style="color:var(--text-muted); font-style:italic;">Empty</span>`;
+                    const bye = player && player.bye && player.bye !== "-"
+                        ? `<span class="roster-bye">Bye ${escapeHtml(player.bye)}</span>`
+                        : "";
+                    cell.innerHTML = `<span class="pos-label">${slot.label}</span><div class="player-name" title="${rosterEntry ? escapeHtml(rosterEntry) : "Empty"}">${pName}</div>${bye}`;
                     container.appendChild(cell);
                 }
             });
+            renderActiveTeamByeConflicts(cfg);
+        }
+
+        function findPlayerForRosterEntry(entry) {
+            if (!entry) return null;
+            const cleanName = String(entry).replace(/\s+\((QB|RB|WR|TE|DEF)\)$/i, "").trim();
+            const key = normalizeNameForMatch(cleanName);
+            return activePlayers.find(player => normalizeNameForMatch(player.name) === key) || null;
+        }
+
+        function renderActiveTeamByeConflicts(cfg) {
+            const container = document.getElementById("activeTeamByeConflicts");
+            if (!container) return;
+            const roster = teamRosters[cfg.userPos];
+            if (!roster) {
+                container.innerHTML = `<div class="bye-conflict-heading">Bye-week check</div><div class="bye-conflict-item">Set your draft slot to begin.</div>`;
+                return;
+            }
+
+            const starterKeys = ["QB", "RB", "WR", "TE", "FX", "DF"];
+            const starters = starterKeys.flatMap(key => (roster[key] || []).map(entry => findPlayerForRosterEntry(entry))).filter(Boolean);
+            const byWeek = new Map();
+            starters.forEach(player => {
+                const week = String(player.bye || "").trim();
+                if (!week || week === "-") return;
+                if (!byWeek.has(week)) byWeek.set(week, []);
+                byWeek.get(week).push(player);
+            });
+            const conflicts = Array.from(byWeek.entries())
+                .filter(([, players]) => players.length >= 2)
+                .sort((a, b) => Number(a[0]) - Number(b[0]));
+
+            const heading = `<div class="bye-conflict-heading">Bye-week check · starters only</div>`;
+            if (!starters.length) {
+                container.innerHTML = heading + `<div class="bye-conflict-item good">Conflicts will appear as you draft starters.</div>`;
+                return;
+            }
+            if (!conflicts.length) {
+                container.innerHTML = heading + `<div class="bye-conflict-item good">No shared starter bye weeks.</div>`;
+                return;
+            }
+            container.innerHTML = heading + conflicts.map(([week, players]) => {
+                const severe = players.length >= 3 ? " severe" : "";
+                const names = players.map(player => player.name).join(", ");
+                return `<div class="bye-conflict-item${severe}"><strong>Week ${escapeHtml(week)}:</strong> ${players.length} starters · ${escapeHtml(names)}</div>`;
+            }).join("");
         }
 
         // ─── Watch List ─────────────────────────────────────────────────────
@@ -4717,6 +4897,6 @@
             container.innerHTML = sections.join("");
         }
     </script>
-    <script src="features.js?v=20260809-injury-scroll"></script>
+    <script src="features.js?v=20260809-ranking-movers-byes"></script>
 </body>
 </html>
