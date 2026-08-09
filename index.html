@@ -362,6 +362,53 @@
             letter-spacing: 0.5px;
         }
 
+        .tier-cliff-heading {
+            margin: 12px 0 7px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.45px;
+            text-transform: uppercase;
+        }
+        .tier-cliff-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 7px;
+        }
+        .tier-cliff-card {
+            min-width: 0;
+            padding: 7px 8px;
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-green);
+            border-radius: 5px;
+            background: var(--row-stripe);
+            font-size: 9px;
+            line-height: 1.35;
+        }
+        .tier-cliff-card.watch { border-left-color: var(--accent-amber); }
+        .tier-cliff-card.urgent { border-left-color: var(--accent-rose); }
+        .tier-cliff-card strong { display:block; color:var(--text-main); font-size:10px; margin-bottom:2px; }
+        .tier-cliff-card span { color:var(--text-muted); display:block; }
+
+        .survival-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            padding: 2px 5px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid currentColor;
+        }
+        .survival-likely { color:var(--accent-green); background:var(--bg-secondary); }
+        .survival-tossup { color:var(--accent-amber); background:var(--bg-secondary); }
+        .survival-gone { color:var(--accent-rose); background:var(--bg-secondary); }
+        .mobile-survival { display:none; margin-top:3px; width:max-content; }
+
         .filter-tabs {
             display: flex;
             gap: 4px;
@@ -820,6 +867,7 @@
             .news-grid { grid-template-columns:1fr; }
             .news-card { padding:8px; }
             #runAnalysisContainer { grid-template-columns:repeat(3,1fr) !important; gap:6px !important; }
+            .tier-cliff-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
             .matrix-controls { display:grid; grid-template-columns:1fr; gap:8px; }
             .matrix-controls .filter-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; overflow:visible; }
             .matrix-controls .tab { justify-content:center; min-height:36px; }
@@ -831,8 +879,10 @@
             .player-rank-col { width:38px; min-width:38px; }
             .player-table th:nth-child(2), .player-table td:nth-child(2) { min-width:128px; }
             .player-table th:nth-child(4), .player-table td:nth-child(4),
-            .player-table th:nth-child(10), .player-table td:nth-child(10) { display:none; }
-            .player-table td:nth-child(12) .btn { min-height:32px; }
+            .player-table th:nth-child(10), .player-table td:nth-child(10),
+            .player-table th:nth-child(12), .player-table td:nth-child(12) { display:none; }
+            .player-table td:nth-child(13) .btn { min-height:32px; }
+            .mobile-survival { display:inline-flex; }
             .row-2col { grid-template-columns:1fr; }
             .roster-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
         }
@@ -931,10 +981,12 @@
             <div class="panel run-risk-panel" style="margin-bottom: 15px;">
                 <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Estimated chance that the current elite tier at a position is meaningfully depleted before your next pick. The model uses each elite player's FantasyPros market ADP, the number of picks before you, the distinct teams that still need the position, remaining elite supply, and your ADP Market Adherence setting. RB and WR naturally carry more early-round pressure because their elite players have earlier ADPs and leagues start more of them; QB, TE, and DEF rise only when their market window approaches. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent).">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
+                <div class="tier-cliff-heading">Tier-Cliff Alerts</div>
+                <div id="tierCliffAlerts" class="tier-cliff-grid" aria-label="Tier-cliff alerts by position"></div>
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Next Pick (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="matrix-controls">
                     <div class="filter-tabs">
                         <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
@@ -971,6 +1023,7 @@
                                 <th>Ceiling<span class="modeled-label">modeled*</span></th>
                                 <th>Risk</th>
                                 <th>Run Risk</th>
+                                <th title="Estimated chance this player remains available at your next pick">Next Pick</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1427,6 +1480,12 @@
                         <dt style="font-weight: 600; margin-top: 8px;">Run Risk</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate that the best remaining tier at a position is meaningfully depleted before your next pick. It combines FantasyPros market ADP timing, the distinct teams picking before you, their remaining starter needs, elite-tier supply, lineup requirements, and the ADP Market Adherence setting.</dd>
 
+                        <dt style="font-weight: 600; margin-top: 8px;">Next Pick %</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Estimated chance an individual player is still available at your next turn. It uses that player's ADP, your pick window, competing-team positional needs, lineup requirements, and ADP Market Adherence. This is a draft-market estimate, not a guarantee.</dd>
+
+                        <dt style="font-weight: 600; margin-top: 8px;">Tier Cliff</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">A meaningful drop from the best remaining tier at a position to the next tier. Alerts show how many players remain, whether the top option is likely to reach your next pick, and the within-position VOB drop when available.</dd>
+
                         <dt style="font-weight: 600; margin-top: 8px;">Snake Draft</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Draft order reverses each round. If you pick 3rd in round 1, you pick 10th in round 2 (in a 12-team league), then 3rd again in round 3. Equalizes value across draft positions.</dd>
 
@@ -1473,6 +1532,9 @@
         let teamRosters = {};
         let draftHistory = [];
         let comparisonPlayerIds = [];
+        // Updated by calculateSnakeRunProbabilities and reused by the individual
+        // player survival estimates and tier-cliff alerts during the same render.
+        let draftWindowInsights = null;
         let sleeperPollTimer = null;
         let sleeperDraftInfo = null;
         let projectionSourceLabel = "Tier-modeled estimates";
@@ -3602,6 +3664,9 @@
             const interveningTeamIds = [...new Set(interveningTeams)];
 
             const posList = ["QB", "RB", "WR", "TE", "DEF"];
+            const picksBeforeUser = interveningTeams.length;
+            const lastThreatPick = currentPick + picksBeforeUser - 1;
+            const totalStarterSlots = posList.reduce((sum, position) => sum + Math.max(0, cfg.req[position] || 0), 0);
             let positionalGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
             let leagueGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
 
@@ -3623,6 +3688,12 @@
 
             const runContainer = document.getElementById("runAnalysisContainer");
             runContainer.innerHTML = "";
+            draftWindowInsights = {
+                picksBeforeUser,
+                lastThreatPick,
+                distinctTeamsBeforeUser: interveningTeamIds.length,
+                positions: {}
+            };
 
             posList.forEach(pos => {
                 // Current elite supply = players in the best remaining tier at this position.
@@ -3639,8 +3710,6 @@
                 // of a logistic draft curve; its spread widens gradually for later ADPs.
                 // Averaging across the elite tier measures expected tier depletion, so a
                 // deep WR tier is not treated as fragile merely because one WR may go.
-                const picksBeforeUser = interveningTeams.length;
-                const lastThreatPick = currentPick + picksBeforeUser - 1;
                 const validEliteAdps = elitePlayers
                     .map(p => Number(p.adp))
                     .filter(adp => Number.isFinite(adp) && adp > 0);
@@ -3669,7 +3738,6 @@
                 // instead of treating every position as a flat 50/50 proposition. RB
                 // and WR receive more random-draft pressure because standard leagues
                 // start more of them; filled positions contribute no near-term threat.
-                const totalStarterSlots = posList.reduce((sum, position) => sum + Math.max(0, cfg.req[position] || 0), 0);
                 const positionStarterShare = totalStarterSlots > 0 ? Math.max(0, cfg.req[pos] || 0) / totalStarterSlots : 0;
                 const rawRosterShapeRisk = gapDemand > 0
                     ? (1 - Math.pow(1 - positionStarterShare, gapDemand)) * 100
@@ -3681,6 +3749,15 @@
 
                 let blendedRisk = Math.round((marketRisk * cfg.adpWeight) + (rosterShapeRisk * (1 - cfg.adpWeight)));
                 blendedRisk = Math.min(100, Math.max(0, blendedRisk));
+
+                draftWindowInsights.positions[pos] = {
+                    gapDemand,
+                    leagueDemand,
+                    eliteRemaining,
+                    bestEliteAdp,
+                    positionStarterShare,
+                    runRisk: blendedRisk
+                };
 
                 let colorClass = "var(--accent-green)";
                 let riskLabel = "low";
@@ -3715,6 +3792,100 @@
                 runContainer.appendChild(div);
 
                 activePlayers.forEach(p => { if (p.pos === pos) p.runRisk = blendedRisk; });
+            });
+
+            renderTierCliffAlerts(cfg);
+        }
+
+        function getPlayerSurvivalEstimate(player, cfg) {
+            cfg = cfg || readConfig();
+            const windowInfo = draftWindowInsights;
+            if (!windowInfo || windowInfo.picksBeforeUser <= 0) {
+                return { percentage: 100, label: "Likely available", cssClass: "survival-likely" };
+            }
+
+            const adp = Number(player.adp);
+            const positionInfo = windowInfo.positions[player.pos];
+            if (!positionInfo || !Number.isFinite(adp) || adp <= 0) {
+                return { percentage: null, label: "No estimate", cssClass: "survival-tossup" };
+            }
+
+            const spread = Math.max(4, Math.min(14, adp * 0.18));
+            const marketDraftProbability = 1 / (1 + Math.exp((adp - windowInfo.lastThreatPick) / spread));
+            const needShare = positionInfo.gapDemand / Math.max(1, windowInfo.distinctTeamsBeforeUser);
+
+            // A team can still draft for its bench after filling a starter, so keep
+            // 35% of market pressure even when immediate starter need is zero.
+            const marketDraftRisk = marketDraftProbability * (0.35 + (0.65 * needShare)) * 100;
+            const rawRosterShapeRisk = positionInfo.gapDemand > 0
+                ? (1 - Math.pow(1 - positionInfo.positionStarterShare, positionInfo.gapDemand)) * 100
+                : 0;
+            const rosterShapeRisk = rawRosterShapeRisk * (0.20 + (0.80 * marketDraftProbability));
+            const draftedBeforeNextPick = Math.min(100, Math.max(0,
+                (marketDraftRisk * cfg.adpWeight) + (rosterShapeRisk * (1 - cfg.adpWeight))
+            ));
+            const percentage = Math.round(100 - draftedBeforeNextPick);
+
+            if (percentage >= 70) return { percentage, label: "Likely available", cssClass: "survival-likely" };
+            if (percentage >= 40) return { percentage, label: "Toss-up", cssClass: "survival-tossup" };
+            return { percentage, label: "Likely gone", cssClass: "survival-gone" };
+        }
+
+        function renderTierCliffAlerts(cfg) {
+            cfg = cfg || readConfig();
+            const container = document.getElementById("tierCliffAlerts");
+            if (!container) return;
+            container.innerHTML = "";
+
+            ["QB", "RB", "WR", "TE", "DEF"].forEach(pos => {
+                const available = activePlayers
+                    .filter(p => p.pos === pos && !p.drafted)
+                    .sort((a, b) => Number(a.rank || Infinity) - Number(b.rank || Infinity));
+                const card = document.createElement("div");
+                card.className = "tier-cliff-card";
+
+                if (available.length === 0) {
+                    card.innerHTML = `<strong>${pos}</strong><span>No players available</span>`;
+                    container.appendChild(card);
+                    return;
+                }
+
+                const topTier = Math.min(...available.map(p => Number(p.tier || Infinity)));
+                const topTierPlayers = available.filter(p => Number(p.tier) === topTier);
+                const laterTiers = available.map(p => Number(p.tier)).filter(tier => Number.isFinite(tier) && tier > topTier);
+                const nextTier = laterTiers.length > 0 ? Math.min(...laterTiers) : null;
+                const nextTierPlayers = nextTier !== null ? available.filter(p => Number(p.tier) === nextTier) : [];
+                const topOption = topTierPlayers[0];
+                const survival = getPlayerSurvivalEstimate(topOption, cfg);
+
+                let cliffDrop = null;
+                if (nextTierPlayers.length > 0) {
+                    const tierEdgeVob = Math.min(...topTierPlayers.map(p => Number(p.vob)).filter(Number.isFinite));
+                    const nextBestVob = Math.max(...nextTierPlayers.map(p => Number(p.vob)).filter(Number.isFinite));
+                    if (Number.isFinite(tierEdgeVob) && Number.isFinite(nextBestVob)) {
+                        cliffDrop = Math.max(0, tierEdgeVob - nextBestVob);
+                    }
+                }
+
+                if (topTierPlayers.length === 1 && survival.percentage !== null && survival.percentage < 50) {
+                    card.classList.add("urgent");
+                } else if (topTierPlayers.length === 1 || (survival.percentage !== null && survival.percentage < 70)) {
+                    card.classList.add("watch");
+                }
+
+                const headline = topTierPlayers.length === 1
+                    ? `Last Tier ${topTier}: ${escapeHtml(topOption.name)}`
+                    : `${topTierPlayers.length} players left in Tier ${topTier}`;
+                const survivalText = survival.percentage === null
+                    ? "Top option survival unavailable"
+                    : `${survival.percentage}% chance ${escapeHtml(topOption.name)} lasts`;
+                const cliffText = nextTier === null
+                    ? "No later tier available"
+                    : `Next: Tier ${nextTier}${cliffDrop !== null && cliffDrop > 0 ? ` · ${cliffDrop.toFixed(1)} VOB drop` : ""}`;
+
+                card.setAttribute("aria-label", `${pos}. ${headline}. ${survivalText}. ${cliffText}.`);
+                card.innerHTML = `<strong>${pos} · ${headline}</strong><span>${survivalText}</span><span>${cliffText}</span>`;
+                container.appendChild(card);
             });
         }
 
@@ -3762,6 +3933,7 @@
         function renderPlayerPool() {
             const body = document.getElementById("playerTableBody");
             body.innerHTML = "";
+            const cfg = readConfig();
 
             // Update filter-tab counts. Always counts undrafted players, ignoring
             // the active position filter and search query — counts describe the
@@ -3790,7 +3962,7 @@
             if (displayList.length === 0) {
                 const tr = document.createElement("tr");
                 const td = document.createElement("td");
-                td.colSpan = 12;
+                td.colSpan = 13;
                 td.style.cssText = "text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;";
                 if (playerSearchQuery) {
                     td.innerText = `No players match "${playerSearchQuery}"` +
@@ -3815,7 +3987,7 @@
                 if (selectedPlayerSort === "rank" && previousTier !== null && p.tier !== previousTier) {
                     const sepTr = document.createElement("tr");
                     sepTr.className = "tier-break";
-                    sepTr.innerHTML = `<td colspan="12"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
+                    sepTr.innerHTML = `<td colspan="13"><span>End of Tier ${previousTier} — Tier ${p.tier} begins</span></td>`;
                     body.appendChild(sepTr);
                 }
                 previousTier = p.tier;
@@ -3907,10 +4079,18 @@
                 const vobTip = p.vob >= 0
                     ? `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player's projected output above the replacement-level player at ${p.pos}. Positive = above the position's replacement; the higher, the better the value. Note: only compare VOB within the same position — RB and WR baselines differ.`
                     : `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player projects below the replacement-level ${p.pos}, meaning a freely-available waiver/late-round player at this position is expected to outperform them.`;
-                let runRiskTip = `Run Risk: ${p.runRisk}%. Chance an elite ${p.pos} gets drafted before your next pick, based on how many teams between you and your next turn still need ${p.pos} and how many elite-tier ${p.pos}s remain.`;
+                let runRiskTip = `Run Risk: ${p.runRisk}%. Estimated elite-tier depletion before your next pick, using FantasyPros market ADP timing, competing-team needs, lineup requirements, and remaining tier supply.`;
                 if (p.runRisk > 75) runRiskTip += " High urgency — if you want one, take one now.";
                 else if (p.runRisk > 40) runRiskTip += " Moderate urgency — the position is thinning.";
                 else runRiskTip += " Calm — you can wait.";
+
+                const survival = getPlayerSurvivalEstimate(p, cfg);
+                const survivalPercentage = survival.percentage === null ? "—" : `${survival.percentage}%`;
+                const survivalTip = survival.percentage === null
+                    ? `No next-pick survival estimate is available for ${p.name} because market ADP is missing.`
+                    : `${survival.percentage}% estimated chance ${p.name} is still available at your next pick · ${survival.label}. Based on ADP ${adpDisplay}, your draft window, competing-team ${p.pos} needs, and ADP Market Adherence.`;
+                const survivalBadge = `<span class="survival-badge ${survival.cssClass}" title="${escapeHtml(survivalTip)}" aria-label="${escapeHtml(survivalTip)}">${survivalPercentage}</span>`;
+                const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Next pick ${survivalPercentage}</span>`;
 
                 tr.innerHTML = `
                     <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}</td>
@@ -3921,6 +4101,7 @@
                             onclick="toggleFavorite(${p.id})"
                             aria-label="${p.favorite ? 'Remove ' + escapeHtml(p.name) + ' from watch list' : 'Add ' + escapeHtml(p.name) + ' to watch list'}"
                             title="${p.favorite ? 'Remove from watch list' : 'Add to watch list'}">${p.favorite ? '★' : '☆'}</button>
+                        ${mobileSurvivalBadge}
                     </td>
                     <td>${p.pos}</td>
                     <td><div style="text-align:center; font-weight:bold; color:var(--accent-amber);">${p.tier}</div></td>
@@ -3931,6 +4112,7 @@
                     <td class="text-muted">${p.adjCeiling.toFixed(1)}</td>
                     <td>${riskBadge}</td>
                     <td><span style="color:${runRiskColor}; font-weight:600;" title="${escapeHtml(runRiskTip)}" aria-label="Run risk ${p.runRisk} percent">${p.runRisk}%</span></td>
+                    <td>${survivalBadge}</td>
                     <td><div style="display:flex;gap:4px;align-items:center;">
                         <button class="btn" style="padding:3px 6px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button>
                         <button class="btn btn-secondary compare-toggle ${comparisonPlayerIds.includes(p.id) ? 'active' : ''}" onclick="toggleComparison(${p.id})" aria-label="Compare ${escapeHtml(p.name)}" title="Add to player comparison">⇄</button>
