@@ -42,7 +42,15 @@
         if (!container) return;
         const injured = activePlayers
             .filter(p => p.currentStatus)
-            .sort((a, b) => injurySeverity(b.currentStatus) - injurySeverity(a.currentStatus) || (a.adp || 9999) - (b.adp || 9999));
+            .sort((a, b) => {
+                const aAdp = Number(a.adp);
+                const bAdp = Number(b.adp);
+                const aSort = Number.isFinite(aAdp) && aAdp > 0 ? aAdp : Infinity;
+                const bSort = Number.isFinite(bAdp) && bAdp > 0 ? bAdp : Infinity;
+                return aSort - bSort ||
+                    injurySeverity(b.currentStatus) - injurySeverity(a.currentStatus) ||
+                    a.name.localeCompare(b.name);
+            });
         if (summary) summary.textContent = injured.length + " player" + (injured.length === 1 ? "" : "s") + " being monitored";
         if (injured.length === 0) {
             container.innerHTML = "<p style='color:var(--text-muted);font-size:12px;'>No active fantasy-player injuries are in the current news snapshot.</p>";
