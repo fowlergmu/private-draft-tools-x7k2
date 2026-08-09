@@ -1172,10 +1172,10 @@
                 </div>
                 <div class="form-group">
                     <label for="scoringFormat">Scoring Format</label>
-                    <select id="scoringFormat" class="form-control" onchange="recalculateEngine()">
+                    <select id="scoringFormat" class="form-control" onchange="setScoringFormat(this.value)">
                         <option value="Standard">Standard (0.0 PPR)</option>
-                        <option value="Half PPR" selected>Half PPR (0.5 PPR)</option>
-                        <option value="Full PPR">Full PPR (1.0 PPR)</option>
+                        <option value="Half PPR">Half PPR (0.5 PPR)</option>
+                        <option value="Full PPR" selected>Full PPR (1.0 PPR)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1440,6 +1440,24 @@
         const SLEEPER_CONFIG_KEY = "fantasyDraftEngine_sleeperConfig";
         const COMPACT_MODE_KEY = "fantasyDraftEngine_compactMode";
         const PROJECTION_SOURCE_KEY = "fantasyDraftEngine_projectionSource";
+        const SCORING_PREFERENCE_KEY = "fantasyDraftEngine_scoringPreference";
+
+        function setScoringFormat(value) {
+            if (!["Standard", "Half PPR", "Full PPR"].includes(value)) return;
+            try { localStorage.setItem(SCORING_PREFERENCE_KEY, value); } catch (e) {}
+            recalculateEngine();
+            saveState();
+        }
+
+        function restoreScoringPreference() {
+            try {
+                const value = localStorage.getItem(SCORING_PREFERENCE_KEY);
+                const scoringFormat = document.getElementById("scoringFormat");
+                if (scoringFormat && ["Standard", "Half PPR", "Full PPR"].includes(value)) {
+                    scoringFormat.value = value;
+                }
+            } catch (e) {}
+        }
 
         function saveState() {
             try {
@@ -1478,6 +1496,10 @@
                 // Restore settings first so they're in place before recalc
                 if (payload.settings) {
                     Object.entries(payload.settings).forEach(([id, val]) => {
+                        // Scoring has its own explicit preference. Ignoring the
+                        // legacy draft-state copy upgrades the former Half PPR
+                        // default to Full PPR without overwriting a later choice.
+                        if (id === "scoringFormat") return;
                         const el = document.getElementById(id);
                         if (el) el.value = val;
                     });
@@ -1538,11 +1560,12 @@
             loadCachedRookiesCsv();
             loadCachedRankingsCsv();
             loadGithubUrls();
+            restoreScoringPreference();
             if (loadState()) {
                 recalculateEngine();
             } else {
                 // No saved state — initialize from the static HTML defaults already
-                // present on each input (12-team Half PPR, etc.). resetDraftState
+                // present on each input (12-team Full PPR, etc.). resetDraftState
                 // sets up team rosters and runs the first engine calc.
                 resetDraftState();
             }
