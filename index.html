@@ -816,7 +816,7 @@
             <datalist id="quickDraftPlayers"></datalist>
             <button class="btn" style="width:auto; white-space:nowrap;" onclick="quickDraftPlayer()">Mark Drafted</button>
         </div>
-        <span id="sleeperLiveBadge" class="source-chip"><strong>Sleeper:</strong> not connected</span>
+        <span id="draftPlatformBadge" class="source-chip"><strong>Draft sync:</strong> Manual</span>
     </div>
 
     <div class="panel" id="newsInjuriesPanel">
@@ -1095,19 +1095,47 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Sleeper Live Draft Sync</div>
-                <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Paste a Sleeper draft ID to mirror completed picks automatically. Sleeper's public read-only API requires no login.</p>
-                <p style="font-size:10px;margin:-3px 0 8px;"><a href="https://docs.sleeper.com/" target="_blank" rel="noopener" style="color:var(--accent-blue);">Sleeper API documentation ↗</a></p>
+                <div class="panel-title">Live Draft Sync</div>
                 <div class="form-group">
-                    <label for="sleeperDraftId">Sleeper Draft ID</label>
-                    <input id="sleeperDraftId" class="form-control" placeholder="e.g. 123456789012345678" inputmode="numeric">
+                    <label for="draftPlatform">Draft Platform</label>
+                    <select id="draftPlatform" class="form-control" onchange="switchDraftPlatform(this.value)">
+                        <option value="manual">Manual / ESPN mobile</option>
+                        <option value="sleeper">Sleeper</option>
+                        <option value="espn">ESPN desktop browser</option>
+                    </select>
                 </div>
-                <div class="row-2col">
-                    <button class="btn btn-sync" onclick="connectSleeperDraft()">Connect &amp; Sync</button>
-                    <button class="btn btn-secondary" onclick="disconnectSleeperDraft()">Disconnect</button>
+
+                <div id="draftPlatform-sleeper" style="display:none;">
+                    <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Paste a Sleeper draft ID to mirror completed picks automatically. Sleeper's public read-only API requires no login.</p>
+                    <p style="font-size:10px;margin:-3px 0 8px;"><a href="https://docs.sleeper.com/" target="_blank" rel="noopener" style="color:var(--accent-blue);">Sleeper API documentation ↗</a></p>
+                    <div class="form-group">
+                        <label for="sleeperDraftId">Sleeper Draft ID</label>
+                        <input id="sleeperDraftId" class="form-control" placeholder="e.g. 123456789012345678" inputmode="numeric">
+                    </div>
+                    <div class="row-2col">
+                        <button class="btn btn-sync" onclick="connectSleeperDraft()">Connect &amp; Sync</button>
+                        <button class="btn btn-secondary" onclick="disconnectSleeperDraft()">Disconnect</button>
+                    </div>
+                    <label style="display:flex;gap:7px;align-items:center;font-size:11px;color:var(--text-muted);margin-top:9px;"><input type="checkbox" id="sleeperAutoSync" checked onchange="configureSleeperPolling()"> Refresh picks every 15 seconds</label>
+                    <div id="sleeperSettingsStatus" class="sleeper-status">Not connected.</div>
                 </div>
-                <label style="display:flex;gap:7px;align-items:center;font-size:11px;color:var(--text-muted);margin-top:9px;"><input type="checkbox" id="sleeperAutoSync" checked onchange="configureSleeperPolling()"> Refresh picks every 15 seconds</label>
-                <div id="sleeperSettingsStatus" class="sleeper-status">Not connected.</div>
+
+                <div id="draftPlatform-espn" style="display:none;">
+                    <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">ESPN desktop sync uses the Draft Tool ESPN Companion extension to read the visible ESPN draft board. Your ESPN login stays inside ESPN.</p>
+                    <ol style="font-size:11px;color:var(--text-muted);padding-left:18px;margin-bottom:8px;">
+                        <li>Install the companion from the repository folder.</li>
+                        <li>Open this page and your ESPN draft room in the same browser.</li>
+                        <li>Click Check Connection below.</li>
+                    </ol>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <a class="btn btn-secondary" style="width:auto;text-decoration:none;font-size:11px;" href="https://github.com/fowlergmu/private-draft-tools-x7k2/tree/main/espn-companion" target="_blank" rel="noopener">Install Companion ↗</a>
+                        <button class="btn btn-sync" style="width:auto;font-size:11px;" onclick="checkEspnCompanion()">Check Connection</button>
+                        <button class="btn btn-secondary" style="width:auto;font-size:11px;" onclick="disconnectEspnCompanion()">Disconnect</button>
+                    </div>
+                    <div id="espnSettingsStatus" class="sleeper-status">Companion not detected.</div>
+                </div>
+
+                <div id="draftPlatform-manual" style="font-size:11px;color:var(--text-muted);">Use the Mark Drafted search bar during the draft. This works with any platform.</div>
             </div>
 
             <div class="panel">

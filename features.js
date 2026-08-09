@@ -3,7 +3,11 @@
 
     const PROJECTION_CACHE_KEY = "fantasyDraftEngine_projectionCache";
     const COMPARISON_KEY = "fantasyDraftEngine_comparisonPlayers";
+    const DRAFT_PLATFORM_KEY = "fantasyDraftEngine_draftPlatform";
     let cachedProjectionCsv = null;
+    let espnLastSignature = "";
+    let espnCheckTimer = null;
+    let espnLastContact = 0;
 
     function playerForRosterEntry(entry) {
         const clean = String(entry || "").replace(/\s+\((QB|RB|WR|TE|DEF)\)$/, "");
@@ -347,10 +351,81 @@
 
     function setSleeperStatus(message, connected) {
         const status = document.getElementById("sleeperSettingsStatus");
-        const badge = document.getElementById("sleeperLiveBadge");
         if (status) status.textContent = message;
-        if (badge) badge.innerHTML = "<strong>Sleeper:</strong> " + escapeHtml(connected ? message : "not connected");
+        if (currentDraftPlatform() === "sleeper") {
+            setDraftBadge("Sleeper", connected ? message : "not connected", connected);
+        }
     }
+
+    function currentDraftPlatform() {
+        const select = document.getElementById("draftPlatform");
+        return select ? select.value : "manual";
+    }
+
+    function setDraftBadge(platform, message, connected) {
+        const badge = document.getElementById("draftPlatformBadge");
+        if (!badge) return;
+        badge.innerHTML = "<strong>" + escapeHtml(platform) + ":</strong> " + escapeHtml(message);
+        badge.style.borderColor = connected ? "var(--accent-green)" : "";
+    }
+
+    function setEspnStatus(message, connected) {
+        espnLastContact = Date.now();
+        if (espnCheckTimer) clearTimeout(espnCheckTimer);
+        espnCheckTimer = null;
+        const status = document.getElementById("espnSettingsStatus");
+        if (status) status.textContent = message;
+        if (currentDraftPlatform() === "espn") setDraftBadge("ESPN", message, connected);
+    }
+
+    window.switchDraftPlatform = function (value) {
+        const platform = ["manual", "sleeper", "espn"].includes(value) ? value : "manual";
+        const select = document.getElementById("draftPlatform");
+        if (select) select.value = platform;
+        ["manual", "sleeper", "espn"].forEach(name => {
+            const panel = document.getElementById("draftPlatform-" + name);
+            if (panel) panel.style.display = name === platform ? "" : "none";
+        });
+        try { localStorage.setItem(DRAFT_PLATFORM_KEY, platform); } catch (e) {}
+
+        if (platform !== "sleeper" && sleeperPollTimer) {
+            clearInterval(sleeperPollTimer);
+            sleeperPollTimer = null;
+        }
+        if (platform === "manual") setDraftBadge("Draft sync", "Manual", false);
+        if (platform === "sleeper") {
+            setSleeperStatus(sleeperDraftInfo ? "connected" : "Not connected.", Boolean(sleeperDraftInfo));
+            configureSleeperPolling();
+        }
+        if (platform === "espn") {
+            setDraftBadge("ESPN", "checking companion…", false);
+            checkEspnCompanion();
+        }
+    };
+
+    window.checkEspnCompanion = function () {
+        espnLastContact = 0;
+        const status = document.getElementById("espnSettingsStatus");
+        if (status) status.textContent = "Checking for the companion and an open ESPN draft room…";
+        setDraftBadge("ESPN", "checking companion…", false);
+        window.postMessage({ source: "fantasy-draft-tool", type: "ESPN_COMPANION_PING" }, window.location.origin);
+        if (espnCheckTimer) clearTimeout(espnCheckTimer);
+        espnCheckTimer = setTimeout(() => {
+            if (Date.now() - espnLastContact < 2500) return;
+            const message = "Companion not detected. Install it, then refresh this page and ESPN.";
+            if (status) status.textContent = message;
+            if (currentDraftPlatform() === "espn") setDraftBadge("ESPN", "companion not detected", false);
+        }, 2500);
+    };
+
+    window.disconnectEspnCompanion = function () {
+        espnLastSignature = "";
+        const select = document.getElementById("draftPlatform");
+        if (select) select.value = "manual";
+        switchDraftPlatform("manual");
+        const status = document.getElementById("espnSettingsStatus");
+        if (status) status.textContent = "Disconnected locally. The companion may remain installed.";
+    };
 
     async function fetchSleeperJson(path) {
         const response = await fetch("https://api.sleeper.app/v1" + path, { cache: "no-store" });
@@ -405,6 +480,93 @@
         return { applied, unmatched, unchanged: false };
     }
 
+    function matchEspnPlayer(pick) {
+        const normalized = normalizeNameForMatch(pick.playerName);
+        let player = activePlayers.find(p => normalizeNameForMatch(p.name) === normalized);
+        if (!player && pick.position === "DEF") {
+            const teamCode = String(pick.playerName || "").toUpperCase().match(/\b[A-Z]{2,3}\b/);
+            if (teamCode) player = activePlayers.find(p => p.pos === "DEF" && p.nflTeam === teamCode[0]);
+        }
+        return player || null;
+    }
+
+    function applyEspnPicks(picks) {
+        const cfg = readConfig();
+        const byPick = new Map();
+        (Array.isArray(picks) ? picks : []).forEach(pick => {
+            const overall = Number(pick.pickNumber) ||
+                ((Number(pick.round) - 1) * cfg.size + Number(pick.draftSlot));
+            if (!Number.isFinite(overall) || overall < 1 || !pick.playerName) return;
+            byPick.set(overall, Object.assign({}, pick, { pickNumber: overall }));
+        });
+        const sorted = Array.from(byPick.values()).sort((a, b) => a.pickNumber - b.pickNumber);
+        if (!sorted.length) return { applied: 0, unmatched: 0, unchanged: true };
+
+        const signature = sorted.map(p => p.pickNumber + ":" + normalizeNameForMatch(p.playerName)).join("|");
+        if (signature === espnLastSignature) return { applied: 0, unmatched: 0, unchanged: true };
+
+        if (draftHistory.length && !draftHistory.every(item => item.source === "espn")) {
+            const replace = confirm("ESPN sync found live picks. Replace the current manual or Sleeper draft state with the ESPN draft?");
+            if (!replace) {
+                switchDraftPlatform("manual");
+                return { applied: 0, unmatched: sorted.length, unchanged: true };
+            }
+        }
+
+        resetDraftState();
+        let applied = 0;
+        let unmatched = 0;
+        sorted.forEach(pick => {
+            const player = matchEspnPlayer(pick);
+            const team = getActivePickingTeam(pick.pickNumber, cfg.size);
+            if (!player || player.drafted || !teamRosters[team]) {
+                unmatched++;
+                return;
+            }
+            const placedSlot = findPlacementSlot(team, player, cfg);
+            if (!placedSlot) {
+                unmatched++;
+                return;
+            }
+            teamRosters[team][placedSlot].push(
+                (placedSlot === "FX" || placedSlot === "BN") ? player.name + " (" + player.pos + ")" : player.name
+            );
+            player.drafted = true;
+            player.draftPick = pick.pickNumber;
+            player.draftedByTeam = team;
+            player.placedSlot = placedSlot;
+            draftHistory.push({ pick: pick.pickNumber, playerObj: player, team, slot: placedSlot, source: "espn" });
+            applied++;
+        });
+        currentPick = sorted[sorted.length - 1].pickNumber + 1;
+        espnLastSignature = signature;
+        recalculateEngine();
+        saveState();
+        return { applied, unmatched, unchanged: false };
+    }
+
+    window.addEventListener("message", event => {
+        if (event.source !== window) return;
+        const message = event.data || {};
+        if (message.source !== "espn-draft-companion") return;
+
+        if (message.type === "ESPN_COMPANION_STATUS") {
+            setEspnStatus(message.message || "Connected", message.connected !== false);
+            return;
+        }
+
+        if (message.type === "ESPN_DRAFT_SNAPSHOT") {
+            setEspnStatus("Connected · processing ESPN draft board", true);
+            if (currentDraftPlatform() !== "espn") return;
+            const result = applyEspnPicks(message.picks);
+            const count = Array.isArray(message.picks) ? message.picks.length : 0;
+            const label = count
+                ? "Connected · " + result.applied + " picks synced" + (result.unmatched ? " · " + result.unmatched + " unmatched" : "")
+                : "Connected · waiting for ESPN picks";
+            setEspnStatus(label, true);
+        }
+    });
+
     async function syncSleeperDraft(options) {
         options = options || {};
         const id = sleeperDraftIdFromInput();
@@ -456,7 +618,7 @@
         if (sleeperPollTimer) clearInterval(sleeperPollTimer);
         sleeperPollTimer = null;
         const auto = document.getElementById("sleeperAutoSync");
-        if (sleeperDraftInfo && auto && auto.checked) {
+        if (currentDraftPlatform() === "sleeper" && sleeperDraftInfo && auto && auto.checked) {
             sleeperPollTimer = setInterval(() => syncSleeperDraft({ silent: true }), 15000);
         }
     };
@@ -470,7 +632,9 @@
             const auto = document.getElementById("sleeperAutoSync");
             if (input) input.value = config.draftId || "";
             if (auto) auto.checked = config.autoSync !== false;
-            if (config.connected && config.draftId) syncSleeperDraft({ silent: true });
+            if (currentDraftPlatform() === "sleeper" && config.connected && config.draftId) {
+                syncSleeperDraft({ silent: true });
+            }
         } catch (e) {}
     }
 
@@ -506,6 +670,11 @@
             comparisonPlayerIds = Array.isArray(savedComparison) ? savedComparison.slice(0, 3) : [];
         } catch (e) {}
         renderAllNewFeatures();
+        let platform = "manual";
+        try { platform = localStorage.getItem(DRAFT_PLATFORM_KEY) || "manual"; } catch (e) {}
+        const select = document.getElementById("draftPlatform");
+        if (select) select.value = platform;
+        switchDraftPlatform(platform);
         restoreSleeperConfig();
     }
 
