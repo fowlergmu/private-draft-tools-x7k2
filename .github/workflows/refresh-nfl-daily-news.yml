@@ -1,0 +1,40 @@
+name: Refresh NFL Daily News injuries
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-nfl-daily-news
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Search NFL Daily News
+        run: python scripts/update_nfl_daily_news.py --days 7
+
+      - name: Commit updated injury snapshot
+        run: |
+          if git diff --quiet -- "Data/Current Injuries.csv"; then
+            echo "No injury snapshot changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "Data/Current Injuries.csv"
+          git commit -m "Refresh current NFL injuries"
+          git push origin HEAD:main

@@ -821,6 +821,11 @@
 
     <div class="panel" id="newsInjuriesPanel">
         <div class="panel-title"><span>News &amp; Current Injuries</span><span id="injurySummary" style="font-size:11px;color:var(--text-muted);font-weight:400;"></span></div>
+        <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:-3px 0 12px;">
+            <a class="btn btn-secondary" style="width:auto;text-decoration:none;font-size:11px;padding:6px 9px;" href="https://github.com/fowlergmu/private-draft-tools-x7k2/actions/workflows/refresh-nfl-daily-news.yml" target="_blank" rel="noopener">Search NFL Daily News ↗</a>
+            <button type="button" id="refreshCurrentInjuriesBtn" class="btn btn-sync" style="width:auto;font-size:11px;padding:6px 9px;" onclick="refreshCurrentInjuriesFromGithub()">Refresh Display</button>
+            <span id="injuryRefreshStatus" style="font-size:10px;color:var(--text-muted);">Run the search on GitHub, then refresh the display.</span>
+        </div>
         <div id="currentInjuriesDashboard" class="news-grid"></div>
     </div>
     <div class="dashboard-grid draft-layout">
@@ -2860,6 +2865,34 @@
                 throw new Error("Got HTML instead of CSV (URL may be wrong)");
             }
             return text;
+        }
+
+        async function refreshCurrentInjuriesFromGithub() {
+            const button = document.getElementById("refreshCurrentInjuriesBtn");
+            const status = document.getElementById("injuryRefreshStatus");
+            const url = githubUrls.currentInjuries || DEFAULT_GITHUB_URLS.currentInjuries;
+            if (!url) {
+                if (status) status.textContent = "No current-injuries CSV URL is configured.";
+                return;
+            }
+            if (button) button.disabled = true;
+            if (status) status.textContent = "Checking GitHub for the latest injury snapshot…";
+            try {
+                const separator = url.includes("?") ? "&" : "?";
+                const text = await fetchCsvFromUrl(url + separator + "refresh=" + Date.now());
+                const result = parseCurrentInjuriesCsvText(text, { silent: true });
+                recalculateEngine();
+                saveState();
+                const currentCount = activePlayers.filter(player => player.currentStatus).length;
+                if (status) {
+                    status.textContent = "Updated · " + currentCount + " current injuries" +
+                        (result.unmatched.length ? " · " + result.unmatched.length + " unmatched" : "");
+                }
+            } catch (error) {
+                if (status) status.textContent = "Refresh failed: " + error.message;
+            } finally {
+                if (button) button.disabled = false;
+            }
         }
 
         // The main sync entry point. Fetches whichever of the three URLs are
