@@ -2846,12 +2846,16 @@
 
         // Fetch a CSV from a URL with sensible error handling. Resolves to the
         // text on success, throws on any failure (bad URL, non-200, network error).
-        async function fetchCsvFromUrl(url) {
+        async function fetchCsvFromUrl(url, options) {
+            options = options || {};
             // Light validation — has to look like a URL
             if (!/^https?:\/\//.test(url)) {
                 throw new Error("Not a valid URL");
             }
-            const response = await fetch(url, { cache: "no-store" });
+            const response = await fetch(url, {
+                cache: "no-store",
+                headers: options.headers || {}
+            });
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status} ${response.statusText}`);
             }
@@ -2878,8 +2882,13 @@
             if (button) button.disabled = true;
             if (status) status.textContent = "Checking GitHub for the latest injury snapshot…";
             try {
-                const separator = url.includes("?") ? "&" : "?";
-                const text = await fetchCsvFromUrl(url + separator + "refresh=" + Date.now());
+                const usesDefaultRepository = url.includes("raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/");
+                const refreshUrl = usesDefaultRepository
+                    ? "https://api.github.com/repos/fowlergmu/private-draft-tools-x7k2/contents/Data/Current%20Injuries.csv?ref=main&refresh=" + Date.now()
+                    : url + (url.includes("?") ? "&" : "?") + "refresh=" + Date.now();
+                const text = await fetchCsvFromUrl(refreshUrl, {
+                    headers: usesDefaultRepository ? { Accept: "application/vnd.github.raw+json" } : {}
+                });
                 const result = parseCurrentInjuriesCsvText(text, { silent: true });
                 recalculateEngine();
                 saveState();
