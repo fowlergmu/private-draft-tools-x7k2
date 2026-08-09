@@ -693,6 +693,61 @@
             pointer-events: none;
         }
 
+        .header-actions { display:flex; gap:8px; align-items:center; }
+        .source-meta-bar { display:flex; flex-wrap:wrap; gap:8px; margin:-8px 0 16px; }
+        .source-chip { padding:5px 9px; border:1px solid var(--border-color); border-radius:999px; background:var(--bg-secondary); color:var(--text-muted); font-size:11px; }
+        .source-chip strong { color:var(--text-main); }
+        .draft-command-bar { display:grid; grid-template-columns:minmax(260px,1fr) auto; gap:10px; align-items:center; margin-bottom:15px; }
+        .quick-draft-controls { display:flex; gap:6px; min-width:0; }
+        .quick-draft-controls .form-control { min-width:0; }
+        .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; }
+        .news-card { border:1px solid var(--border-color); border-left:4px solid var(--accent-amber); border-radius:6px; background:var(--bg-primary); padding:9px 10px; }
+        .news-card.out { border-left-color:var(--accent-rose); }
+        .news-card.ir { border-left-color:var(--accent-magenta); }
+        .news-card a { color:var(--accent-blue); font-size:10px; }
+        .warning-list { display:grid; gap:6px; }
+        .warning-item { padding:7px 8px; background:var(--bg-primary); border-radius:5px; border-left:3px solid var(--accent-amber); font-size:11px; }
+        .warning-item.good { border-left-color:var(--accent-green); }
+        .comparison-grid { display:grid; gap:6px; }
+        .comparison-card { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:6px; padding:8px; font-size:11px; }
+        .compare-toggle { padding:3px 6px; width:auto; font-size:10px; }
+        .compare-toggle.active { background:var(--accent-amber); color:var(--bg-primary); }
+        .report-grid { display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:center; }
+        .draft-grade { display:flex; width:92px; height:92px; border-radius:50%; align-items:center; justify-content:center; flex-direction:column; border:6px solid var(--accent-green); background:var(--bg-primary); }
+        .draft-grade strong { font-size:28px; line-height:1; }
+        .sleeper-status { font-size:11px; color:var(--text-muted); margin-top:7px; }
+        .modeled-label { font-size:9px; color:var(--text-muted); display:block; font-weight:400; }
+        body.compact-mode .run-risk-panel,
+        body.compact-mode .tuning-compact,
+        body.compact-mode .draft-board-panel,
+        body.compact-mode .glossary-panel { display:none; }
+        body.compact-mode .dashboard-grid.draft-layout { grid-template-columns:minmax(0,1fr) 340px; }
+        body.compact-mode .player-table th:nth-child(6),
+        body.compact-mode .player-table td:nth-child(6),
+        body.compact-mode .player-table th:nth-child(7),
+        body.compact-mode .player-table td:nth-child(7),
+        body.compact-mode .player-table th:nth-child(8),
+        body.compact-mode .player-table td:nth-child(8) { display:none; }
+        @media (max-width: 760px) {
+            body { padding:10px; }
+            header { align-items:flex-start; flex-wrap:wrap; }
+            header h1 { font-size:19px; }
+            .header-actions { width:100%; }
+            .header-actions .theme-toggle { flex:1; justify-content:center; }
+            .draft-command-bar { grid-template-columns:1fr; }
+            .quick-draft-controls { flex-wrap:wrap; }
+            .quick-draft-controls .btn { flex:1; }
+            .panel { padding:12px; }
+            .settings-grid { grid-template-columns:1fr; }
+            .report-grid { grid-template-columns:1fr; }
+            body.compact-mode .dashboard-grid.draft-layout { grid-template-columns:1fr; }
+            .player-table th:nth-child(5), .player-table td:nth-child(5),
+            .player-table th:nth-child(6), .player-table td:nth-child(6),
+            .player-table th:nth-child(7), .player-table td:nth-child(7),
+            .player-table th:nth-child(8), .player-table td:nth-child(8),
+            .player-table th:nth-child(10), .player-table td:nth-child(10) { display:none; }
+        }
+
         /* When the tooltip would overflow the right edge, anchor it to the right */
         .help-tip.tip-right[data-tip]:hover::after,
         .help-tip.tip-right[data-tip]:focus::after {
@@ -738,10 +793,13 @@
             <p>FantasyPros Consensus Tier Matrix & Dynamic VOB Engine</p>
         </div>
         <span id="dataFreshness" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-left: auto; max-width: 280px;"></span>
-        <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light or dark theme">
-            <span id="themeToggleIcon">☀</span>
-            <span id="themeToggleLabel">Light</span>
-        </button>
+        <div class="header-actions">
+            <button type="button" id="compactModeToggle" class="theme-toggle" onclick="toggleCompactMode()" aria-pressed="false">⚡ Draft Focus</button>
+            <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light or dark theme">
+                <span id="themeToggleIcon">☀</span>
+                <span id="themeToggleLabel">Light</span>
+            </button>
+        </div>
     </header>
 
     <div class="main-tabs" role="tablist" aria-label="Main navigation">
@@ -749,7 +807,22 @@
         <button type="button" id="mainTab-settings" class="main-tab" role="tab" aria-selected="false" aria-controls="tabPanel-settings" onclick="switchMainTab('settings')">Settings</button>
     </div>
 
+    <div id="sourceMetaBar" class="source-meta-bar" aria-label="Data source status"></div>
+
     <div id="tabPanel-draft" class="tab-panel active" role="tabpanel" aria-labelledby="mainTab-draft">
+    <div class="draft-command-bar panel">
+        <div class="quick-draft-controls">
+            <input id="quickDraftInput" class="form-control" list="quickDraftPlayers" placeholder="Mark the next drafted player…" aria-label="Player drafted next" onkeydown="if(event.key==='Enter') quickDraftPlayer()">
+            <datalist id="quickDraftPlayers"></datalist>
+            <button class="btn" style="width:auto; white-space:nowrap;" onclick="quickDraftPlayer()">Mark Drafted</button>
+        </div>
+        <span id="sleeperLiveBadge" class="source-chip"><strong>Sleeper:</strong> not connected</span>
+    </div>
+
+    <div class="panel" id="newsInjuriesPanel">
+        <div class="panel-title"><span>News &amp; Current Injuries</span><span id="injurySummary" style="font-size:11px;color:var(--text-muted);font-weight:400;"></span></div>
+        <div id="currentInjuriesDashboard" class="news-grid"></div>
+    </div>
     <div class="dashboard-grid draft-layout">
         
         <!-- LEFT: INPUTS & AUTOMATION -->
@@ -761,7 +834,7 @@
                 <div id="bestAvailableContainer"></div>
             </div>
 
-            <div class="panel" style="margin-bottom: 15px;">
+            <div class="panel run-risk-panel" style="margin-bottom: 15px;">
                 <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) teams picking between now and your next turn, (b) those teams' positional needs, (c) elite-tier players remaining. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The 'Xn / Ye' line means X teams still need this position and Y elite-tier players remain.">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
             </div>
@@ -790,8 +863,8 @@
                                 <th title="Average Draft Position">ADP</th>
                                 <th title="Pick value vs ADP. Negative = reaching, positive = value">vs ADP</th>
                                 <th>VOB</th>
-                                <th>Floor</th>
-                                <th>Ceiling</th>
+                                <th>Floor<span class="modeled-label">modeled*</span></th>
+                                <th>Ceiling<span class="modeled-label">modeled*</span></th>
                                 <th>Risk</th>
                                 <th>Run Risk</th>
                                 <th>Action</th>
@@ -811,11 +884,21 @@
             </div>
 
             <div class="panel">
+                <div class="panel-title">Roster Alerts</div>
+                <div id="rosterWarnings" class="warning-list"></div>
+            </div>
+
+            <div class="panel">
                 <div class="panel-title">
                     <span style="color: var(--accent-amber);">★ Watch List<span class="help-tip tip-right" tabindex="0" data-tip="Players you've starred in the Available Player Matrix. Grouped by position. Drafted favorites are grayed out with a note showing who drafted them — useful for tracking who took 'your guys'. The list persists across sessions with your draft state.">?</span></span>
                     <span id="watchListCount" style="font-size: 11px; color: var(--text-muted); font-weight: normal;"></span>
                 </div>
                 <div id="watchListContent"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title"><span>Player Comparison</span><span id="comparisonCount" style="font-size:11px;color:var(--text-muted);font-weight:400;"></span></div>
+                <div id="playerComparison" class="comparison-grid"></div>
             </div>
 
             <div class="panel tuning-compact">
@@ -885,6 +968,11 @@
                     <tbody id="matrixTableBody"></tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="panel" id="draftReportPanel">
+            <div class="panel-title"><span>Draft Report</span><span id="draftReportStatus" style="font-size:11px;color:var(--text-muted);font-weight:400;"></span></div>
+            <div id="draftReportContent"></div>
         </div>
 
     </div>  <!-- end Draft tab panel -->
@@ -1007,6 +1095,31 @@
             </div>
 
             <div class="panel">
+                <div class="panel-title">Sleeper Live Draft Sync</div>
+                <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Paste a Sleeper draft ID to mirror completed picks automatically. Sleeper's public read-only API requires no login.</p>
+                <p style="font-size:10px;margin:-3px 0 8px;"><a href="https://docs.sleeper.com/" target="_blank" rel="noopener" style="color:var(--accent-blue);">Sleeper API documentation ↗</a></p>
+                <div class="form-group">
+                    <label for="sleeperDraftId">Sleeper Draft ID</label>
+                    <input id="sleeperDraftId" class="form-control" placeholder="e.g. 123456789012345678" inputmode="numeric">
+                </div>
+                <div class="row-2col">
+                    <button class="btn btn-sync" onclick="connectSleeperDraft()">Connect &amp; Sync</button>
+                    <button class="btn btn-secondary" onclick="disconnectSleeperDraft()">Disconnect</button>
+                </div>
+                <label style="display:flex;gap:7px;align-items:center;font-size:11px;color:var(--text-muted);margin-top:9px;"><input type="checkbox" id="sleeperAutoSync" checked onchange="configureSleeperPolling()"> Refresh picks every 15 seconds</label>
+                <div id="sleeperSettingsStatus" class="sleeper-status">Not connected.</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Projection Data</div>
+                <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">The default floor and ceiling are modeled from tiers. Optionally merge real projections using <code>name,projected_points</code> with optional <code>floor</code> and <code>ceiling</code> columns.</p>
+                <input type="file" id="projectionFileInput" accept=".csv,text/csv" class="form-control" style="padding:4px;" onchange="handleProjectionFile(this.files[0])">
+                <textarea id="projectionPasteArea" class="form-control" rows="5" placeholder="name,projected_points,floor,ceiling" style="margin-top:6px;font-family:monospace;font-size:11px;"></textarea>
+                <button class="btn btn-sync" style="margin-top:6px;" onclick="mergeProjectionCsv(document.getElementById('projectionPasteArea').value)">Merge Projections</button>
+                <div id="projectionStatus" class="sleeper-status">Using tier-modeled estimates.</div>
+            </div>
+
+            <div class="panel">
                 <div class="panel-title">Profile Configuration<span class="help-tip tip-right" tabindex="0" data-tip="League-level settings: number of teams, your draft slot (1-indexed from left), scoring format (Standard / Half PPR / Full PPR), and the two engine-wide knobs. Rookie Late-Season Boost increases EV for rookies as a hedge against early-season uncertainty. ADP Market Adherence Weight controls how confident the engine is that other teams will draft near their ADP — lower = more uncertainty in run-risk forecasts.">?</span></div>
                 <div class="row-2col">
                     <div class="form-group">
@@ -1101,7 +1214,7 @@
     </div>  <!-- end Settings tab panel -->
 
 
-    <div class="panel" style="margin-top: 20px;">
+    <div class="panel glossary-panel" style="margin-top: 20px;">
         <div class="panel-title" style="cursor: pointer;" onclick="toggleGlossary()">
             <span>Glossary & Acronym Reference</span>
             <span id="glossaryToggle" style="font-size: 12px; color: var(--text-muted); font-weight: normal;">▼ Show</span>
@@ -1226,6 +1339,10 @@
         let playerSearchQuery = "";
         let teamRosters = {};
         let draftHistory = [];
+        let comparisonPlayerIds = [];
+        let sleeperPollTimer = null;
+        let sleeperDraftInfo = null;
+        let projectionSourceLabel = "Tier-modeled estimates";
         // League mate names indexed by team number (1-based). Defaults populated on demand.
         let leagueNames = {};
         // Cached raw injury CSV text. When present, re-applied automatically after
@@ -1281,6 +1398,9 @@
         const GITHUB_URLS_KEY = "fantasyDraftEngine_githubUrls";
         const ROOKIES_CACHE_KEY = "fantasyDraftEngine_rookiesCache";
         const LAST_SYNC_KEY = "fantasyDraftEngine_lastSync";
+        const SLEEPER_CONFIG_KEY = "fantasyDraftEngine_sleeperConfig";
+        const COMPACT_MODE_KEY = "fantasyDraftEngine_compactMode";
+        const PROJECTION_SOURCE_KEY = "fantasyDraftEngine_projectionSource";
 
         function saveState() {
             try {
@@ -1631,6 +1751,7 @@
             const nameIdx = idx("player name");
             const posIdx = idx("pos");
             const teamIdx = idx("team");
+            const byeIdx = idx("bye week");
 
             const pool = [];
             const errors = [];
@@ -1684,8 +1805,11 @@
 
                 pool.push({
                     id: id++, name, pos, tier, adp,
+                    nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
+                    bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : "",
                     floor: Math.max(2.0, floorScore),
                     ceiling: Math.max(5.0, ceilingScore),
+                    projectionType: "modeled",
                     injury: "Low",
                     rookie: KNOWN_ROOKIES.has(name.toLowerCase())
                 });
@@ -1726,6 +1850,9 @@
             const ceilingIdx = idx("ceiling");
             const rookieIdx = idx("rookie");
             const injuryIdx = idx("injury");
+            const teamIdx = idx("team");
+            const byeIdx = idx("bye") !== -1 ? idx("bye") : idx("bye week");
+            const projectedIdx = idx("projected_points") !== -1 ? idx("projected_points") : idx("projection");
 
             if (nameIdx === -1 || posIdx === -1) {
                 alert(`CSV must include "name" and "pos" columns. Found: ${headers.join(", ")}\n\nNote: For FantasyPros exports, the parser auto-detects their format (RK, TIERS, PLAYER NAME, POS columns).`);
@@ -1759,8 +1886,12 @@
 
                 pool.push({
                     id: id++, name, pos, tier, adp,
+                    nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
+                    bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : "",
+                    projectedPoints: projectedIdx !== -1 ? parseFloat(cells[projectedIdx]) || null : null,
                     floor: Math.max(2.0, floorScore),
                     ceiling: Math.max(5.0, ceilingScore),
+                    projectionType: (floorIdx !== -1 || ceilingIdx !== -1 || projectedIdx !== -1) ? "imported" : "modeled",
                     injury, rookie
                 });
             }
@@ -3125,6 +3256,12 @@
             const flexShare = { RB: cfg.flexRBPct, WR: Math.max(0, 1 - cfg.flexRBPct - 0.2), TE: 0.2 };
 
             activePlayers.forEach(p => {
+                if (p.projectionType === "imported" && Number.isFinite(Number(p.projectedPoints))) {
+                    p.adjFloor = Number.isFinite(Number(p.floor)) ? Number(p.floor) : Number(p.projectedPoints) * 0.9;
+                    p.adjCeiling = Number.isFinite(Number(p.ceiling)) ? Number(p.ceiling) : Number(p.projectedPoints) * 1.1;
+                    p.ev = Number(p.projectedPoints) * (p.rookie ? (1 + cfg.rBoost) : 1);
+                    return;
+                }
                 let adjustment = 0;
                 if (cfg.scoring === "Half PPR") {
                     if (p.pos === "WR" || p.pos === "TE") adjustment = 2.5;
@@ -3480,7 +3617,10 @@
                     <td class="text-muted">${p.adjCeiling.toFixed(1)}</td>
                     <td>${riskBadge}</td>
                     <td><span style="color:${runRiskColor}; font-weight:600;" title="${escapeHtml(runRiskTip)}" aria-label="Run risk ${p.runRisk} percent">${p.runRisk}%</span></td>
-                    <td><button class="btn" style="padding:3px 6px; font-size:11px;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button></td>
+                    <td><div style="display:flex;gap:4px;align-items:center;">
+                        <button class="btn" style="padding:3px 6px; font-size:11px; width:auto;" onclick="executePlayerDraft(${p.id})" aria-label="Draft ${escapeHtml(p.name)}">Draft</button>
+                        <button class="btn btn-secondary compare-toggle ${comparisonPlayerIds.includes(p.id) ? 'active' : ''}" onclick="toggleComparison(${p.id})" aria-label="Compare ${escapeHtml(p.name)}" title="Add to player comparison">⇄</button>
+                    </div></td>
                 `;
                 body.appendChild(tr);
             });
@@ -4081,5 +4221,6 @@
             container.innerHTML = sections.join("");
         }
     </script>
+    <script src="features.js"></script>
 </body>
 </html>
