@@ -929,7 +929,7 @@
             </div>
 
             <div class="panel run-risk-panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) teams picking between now and your next turn, (b) those teams' positional needs, (c) elite-tier players remaining. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The lines beneath each position show how many teams still need that position and how many elite-tier players remain.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) the distinct teams picking between now and your next turn, (b) those teams' positional needs, and (c) elite-tier players remaining. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The lines beneath each position show league-wide need, how many of those teams pick before you, and elite-tier players remaining.">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
             </div>
 
@@ -3597,17 +3597,29 @@
                 activeTeam = getActivePickingTeam(checkPick, cfg.size);
                 loopLimit++;
             }
+            // A team may appear twice near a snake-draft turn. Run risk measures
+            // distinct competing rosters, so count each team only once.
+            const interveningTeamIds = [...new Set(interveningTeams)];
 
             const posList = ["QB", "RB", "WR", "TE", "DEF"];
             let positionalGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
+            let leagueGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
 
-            interveningTeams.forEach(tNum => {
+            interveningTeamIds.forEach(tNum => {
                 posList.forEach(pos => {
                     let maxReq = cfg.req[pos === "DEF" ? "DEF" : pos];
                     let filled = teamRosters[tNum][pos] ? teamRosters[tNum][pos].length : 0;
                     if (filled < maxReq) { positionalGapsCount[pos]++; }
                 });
             });
+
+            for (let tNum = 1; tNum <= cfg.size; tNum++) {
+                posList.forEach(pos => {
+                    let maxReq = cfg.req[pos === "DEF" ? "DEF" : pos];
+                    let filled = teamRosters[tNum][pos] ? teamRosters[tNum][pos].length : 0;
+                    if (filled < maxReq) { leagueGapsCount[pos]++; }
+                });
+            }
 
             const runContainer = document.getElementById("runAnalysisContainer");
             runContainer.innerHTML = "";
@@ -3620,6 +3632,7 @@
                 let eliteRemaining = topTier !== null ? available.filter(p => p.tier === topTier).length : 0;
 
                 let gapDemand = positionalGapsCount[pos];
+                let leagueDemand = leagueGapsCount[pos];
 
                 // Scarcity risk: 0-100. Demand exceeding supply at the elite tier drives this up.
                 let scarcityRisk = 0;
@@ -3641,12 +3654,13 @@
                 if (blendedRisk > 40) { colorClass = "var(--accent-amber)"; riskLabel = "medium"; }
                 if (blendedRisk > 75) { colorClass = "var(--accent-rose)"; riskLabel = "high"; }
 
-                const teamsNeedText = gapDemand === 1 ? "1 team needs this" : `${gapDemand} teams need this`;
+                const leagueNeedText = leagueDemand === 1 ? `1 team needs ${pos} league-wide` : `${leagueDemand} teams need ${pos} league-wide`;
+                const beforeYouText = gapDemand === 1 ? `1 team that needs ${pos} picks before you` : `${gapDemand} teams that need ${pos} pick before you`;
                 const eliteRemainText = eliteRemaining === 1 ? "1 elite player remains" : `${eliteRemaining} elite players remain`;
 
                 let div = document.createElement("div");
                 div.setAttribute("role", "group");
-                div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${gapDemand} teams need ${pos}, ${eliteRemaining} elite remaining.`);
+                div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${leagueNeedText}; ${beforeYouText}; ${eliteRemainText}.`);
                 div.style.cssText = "display:flex; flex-direction:column; gap:2px; padding:6px 4px; border-radius:4px; background-color:var(--row-stripe);";
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:baseline; gap:6px;">
@@ -3657,7 +3671,8 @@
                         <div class="risk-bar" style="width: ${blendedRisk}%; background-color: ${colorClass};"></div>
                     </div>
                     <div style="font-size: 9px; line-height:1.35; color: var(--text-muted); text-align:center;">
-                        <div>${teamsNeedText}</div>
+                        <div>${leagueNeedText}</div>
+                        <div>${beforeYouText}</div>
                         <div>${eliteRemainText}</div>
                     </div>
                 `;
