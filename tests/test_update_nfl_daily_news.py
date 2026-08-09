@@ -124,6 +124,75 @@ class InjuryUpdaterTests(unittest.TestCase):
         )
         self.assertEqual(rows, [])
 
+    def test_sleeper_adds_structured_injury(self):
+        sleeper = {
+            "999": {
+                "player_id": "999",
+                "full_name": "Zay Flowers",
+                "injury_status": "Questionable",
+                "injury_body_part": "Quadriceps",
+                "practice_participation": "Limited Practice",
+                "news_updated": 1786219200000,
+            }
+        }
+        rows = updater.build_snapshot([], self.players, {}, date(2026, 8, 9), 7, sleeper)
+        self.assertEqual(rows[0]["name"], "Zay Flowers")
+        self.assertEqual(rows[0]["status"], "Questionable")
+        self.assertEqual(rows[0]["injury"], "Quadriceps")
+        self.assertEqual(rows[0]["provider"], "Sleeper")
+
+    def test_newer_news_resolution_beats_sleeper(self):
+        sleeper = {
+            "999": {
+                "full_name": "Zay Flowers",
+                "injury_status": "Questionable",
+                "injury_body_part": "Quadriceps",
+                "news_updated": 1786132800000,
+            }
+        }
+        rows = updater.build_snapshot(
+            [feed_item("Zay Flowers cleared to play with no limitations.", "2026-08-09T12:00:00Z")],
+            self.players,
+            {},
+            date(2026, 8, 9),
+            7,
+            sleeper,
+        )
+        self.assertEqual(rows, [])
+
+    def test_sleeper_status_keeps_news_context(self):
+        sleeper = {
+            "999": {
+                "full_name": "Zay Flowers",
+                "injury_status": "Questionable",
+                "injury_body_part": "Quadriceps",
+                "news_updated": 1786296630739,
+            }
+        }
+        rows = updater.build_snapshot(
+            [feed_item("Zay Flowers considered day-to-day with quad contusion.", "2026-08-08T17:00:00Z")],
+            self.players,
+            {},
+            date(2026, 8, 9),
+            7,
+            sleeper,
+        )
+        self.assertEqual(rows[0]["status"], "Questionable")
+        self.assertEqual(rows[0]["provider"], "Sleeper + NFL Daily News")
+        self.assertTrue(rows[0]["source"].startswith("https://bsky.app/"))
+
+    def test_stale_sleeper_questionable_is_ignored(self):
+        sleeper = {
+            "999": {
+                "full_name": "Zay Flowers",
+                "injury_status": "Questionable",
+                "injury_body_part": "Quadriceps",
+                "news_updated": 1779926400000,
+            }
+        }
+        rows = updater.build_snapshot([], self.players, {}, date(2026, 8, 9), 7, sleeper)
+        self.assertEqual(rows, [])
+
 
 if __name__ == "__main__":
     unittest.main()

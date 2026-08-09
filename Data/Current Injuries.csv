@@ -1,18 +1,58 @@
-name,pos,status,injury,updated,source,notes
-DeVonta Smith,WR,Monitor,Hamstring,2026-08-04,https://bsky.app/profile/insidenflnews.bsky.social/post/3msb7myos4s2f,Makai Lemon and DeVonta Smith aren't practicing Tuesday due to hamstring injuries. Neither injury is considered long-term.
-Zay Flowers,WR,Day-to-day,Quad contusion,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3mslklyddmc2f,"Zay Flowers considered day-to-day with quad contusion, per HC Minter."
-Jaylen Waddle,WR,Day-to-day,Leg,2026-08-06,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgohulb422a,HC Sean Payton said Jaylen Waddle (leg) has a strain and expects him to be back in the next 4-5 days.
-Luther Burden III,WR,Monitor,Undisclosed,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3mslc4bdcx22w,Luther Burden limped off practice field with a trainer Saturday after landing awkwardly during a 1-on-1.
-Mike Evans,WR,Questionable,Quadriceps,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6yn53wak2u,"Mike Evans (quad strain), Kaelon Black (adductor) not participating in practice Monday."
-Cam Skattebo,RB,Day-to-day,Leg,2026-08-07,https://bsky.app/profile/insidenflnews.bsky.social/post/3msjerugy7c25,"Harbaugh: Cam Skattebo (leg) just part of working back from last year's injury and is ""ok."""
-Tucker Kraft,TE,Monitor,Knee,2026-08-05,https://bsky.app/profile/insidenflnews.bsky.social/post/3msdvg3tprk2v,"OC Stenavich said he's hopeful Tucker Kraft (knee) will be ready to play Week 1, per Ryan Wood."
-Makai Lemon,WR,Questionable,Hamstring,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3msl6zlm3a22q,Makai Lemon (hamstring) misses 4th straight practice.
-Patrick Mahomes II,QB,Monitor,Knee,2026-08-07,https://bsky.app/profile/insidenflnews.bsky.social/post/3msiyjrtau22r,"Reid: Chiefs ""leaning against"" playing Patrick Mahomes (knee) in preseason opener, via Sam McDowell."
-Kyle Monangai,RB,Day-to-day,Undisclosed,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6jr56b3c2g,"Johnson: Kyle Monangai considered ""day-to-day"" with soft tissue injury. Doesn't sound like it'll be long term."
-Xavier Worthy,WR,Monitor,Shoulder,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6uyhwz7s24,Reid: Xavier Worthy expected to practice later this week after suffering sprained shoulder. Cyrus Allen (shin) also expected to return.
-KC Concepcion,WR,Day-to-day,Shoulder,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms7dfilna22u,"Schultz: KC Concepcion's shoulder injury isn't ""serious"" and Browns expect him to be fine."
-Jalen McMillan,WR,Monitor,Knee,2026-08-06,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgbbn6fd22m,Bowles: Jalen McMillan (knee) without timeline for return. LT Tristan Wirfs (hamstring) expected to return during preseason.
-Kenyon Sadiq,TE,Out,Undisclosed,2026-08-06,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgbx2xbnk2m,"Kenyon Sadiq (hernia) expected to be ready for Week 1 but will miss ""a couple weeks."""
-Trey Benson,RB,Monitor,Knee,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms7i4pmais2b,HC LaFleur: Trey Benson dealing with discomfort in left knee; not expected to be a multi-week issue.
-Kaelon Black,RB,Questionable,Adductor,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6yn53wak2u,"Mike Evans (quad strain), Kaelon Black (adductor) not participating in practice Monday."
-Cyrus Allen,WR,Monitor,Shin,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6uyhwz7s24,Reid: Xavier Worthy expected to practice later this week after suffering sprained shoulder. Cyrus Allen (shin) also expected to return.
+name,pos,status,injury,updated,source,provider,notes
+Jahmyr Gibbs,RB,Questionable,Back,2026-08-06,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jahmyr Gibbs as Questionable.
+DeVonta Smith,WR,Questionable,Hamstring,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3msb7myos4s2f,Sleeper + NFL Daily News,Makai Lemon and DeVonta Smith aren't practicing Tuesday due to hamstring injuries. Neither injury is considered long-term.
+Zay Flowers,WR,Questionable,Quadriceps,2026-08-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3mslklyddmc2f,Sleeper + NFL Daily News,"Zay Flowers considered day-to-day with quad contusion, per HC Minter."
+Malik Nabers,WR,Questionable,Knee - ACL,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Malik Nabers as Questionable.
+Jaylen Waddle,WR,Questionable,Undisclosed,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgohulb422a,Sleeper + NFL Daily News,HC Sean Payton said Jaylen Waddle (leg) has a strain and expects him to be back in the next 4-5 days.
+Josh Jacobs,RB,Questionable,Groin,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Josh Jacobs as Questionable.
+Luther Burden III,WR,Questionable,Lower Body,2026-08-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3mslc4bdcx22w,Sleeper + NFL Daily News,Luther Burden limped off practice field with a trainer Saturday after landing awkwardly during a 1-on-1.
+Mike Evans,WR,Questionable,Quadriceps,2026-08-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6yn53wak2u,Sleeper + NFL Daily News,"Mike Evans (quad strain), Kaelon Black (adductor) not participating in practice Monday."
+Cam Skattebo,RB,Day-to-day,Leg,2026-08-07,https://bsky.app/profile/insidenflnews.bsky.social/post/3msjerugy7c25,NFL Daily News,"Harbaugh: Cam Skattebo (leg) just part of working back from last year's injury and is ""ok."""
+Tucker Kraft,TE,Questionable,Knee - ACL,2026-08-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3msdvg3tprk2v,Sleeper + NFL Daily News,"OC Stenavich said he's hopeful Tucker Kraft (knee) will be ready to play Week 1, per Ryan Wood."
+Jadarian Price,RB,Questionable,Lower Body,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jadarian Price as Questionable.
+Alec Pierce,WR,PUP,Ankle,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Alec Pierce as PUP.
+Josh Downs,WR,Questionable,Groin,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Josh Downs as Questionable.
+Makai Lemon,WR,Questionable,Undisclosed,2026-08-08,https://bsky.app/profile/insidenflnews.bsky.social/post/3msl6zlm3a22q,Sleeper + NFL Daily News,Makai Lemon (hamstring) misses 4th straight practice.
+Patrick Mahomes II,QB,Questionable,Knee - ACL,2026-08-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3msiyjrtau22r,Sleeper + NFL Daily News,"Reid: Chiefs ""leaning against"" playing Patrick Mahomes (knee) in preseason opener, via Sam McDowell."
+Kyle Monangai,RB,Day-to-day,Undisclosed,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6jr56b3c2g,NFL Daily News,"Johnson: Kyle Monangai considered ""day-to-day"" with soft tissue injury. Doesn't sound like it'll be long term."
+George Kittle,TE,PUP,Achilles,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists George Kittle as PUP.
+Jordan Addison,WR,Questionable,Thumb,2026-08-05,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jordan Addison as Questionable.
+Jayden Reed,WR,Questionable,Ankle,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jayden Reed as Questionable.
+Xavier Worthy,WR,Questionable,Shoulder,2026-08-07,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6uyhwz7s24,Sleeper + NFL Daily News,Reid: Xavier Worthy expected to practice later this week after suffering sprained shoulder. Cyrus Allen (shin) also expected to return.
+KC Concepcion,WR,Day-to-day,Shoulder,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms7dfilna22u,NFL Daily News,"Schultz: KC Concepcion's shoulder injury isn't ""serious"" and Browns expect him to be fine."
+Matthew Golden,WR,Questionable,Toe,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Matthew Golden as Questionable.
+Tyjae Spears,RB,Questionable,Undisclosed,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyjae Spears as Questionable.
+Zach Charbonnet,RB,PUP,Knee - ACL,2026-07-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Zach Charbonnet as PUP.
+Jalen McMillan,WR,Questionable,Calf,2026-08-06,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgbbn6fd22m,Sleeper + NFL Daily News,Bowles: Jalen McMillan (knee) without timeline for return. LT Tristan Wirfs (hamstring) expected to return during preseason.
+James Conner,RB,Questionable,Foot,2026-07-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists James Conner as Questionable.
+Kenyon Sadiq,TE,Questionable,Abdomen,2026-08-06,https://bsky.app/profile/insidenflnews.bsky.social/post/3msgbx2xbnk2m,Sleeper + NFL Daily News,"Kenyon Sadiq (hernia) expected to be ready for Week 1 but will miss ""a couple weeks."""
+Tank Dell,WR,Questionable,Knee - ACL + MCL,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tank Dell as Questionable.
+Greg Dulcich,TE,Questionable,Undisclosed,2026-08-06,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Greg Dulcich as Questionable.
+Tua Tagovailoa,QB,Questionable,Back,2026-08-04,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tua Tagovailoa as Questionable.
+Isaiah Davis,RB,Questionable,Knee,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Isaiah Davis as Questionable.
+Chris Bell,WR,PUP,Knee - ACL,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Chris Bell as PUP.
+Ty Johnson,RB,Questionable,Knee,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Ty Johnson as Questionable.
+Christian Kirk,WR,Questionable,Undisclosed,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Christian Kirk as Questionable.
+Jordan James,RB,Questionable,Ribs,2026-07-31,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jordan James as Questionable.
+DJ Giddens,RB,Questionable,Hamstring,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists DJ Giddens as Questionable.
+Marvin Mims Jr.,WR,Questionable,Undisclosed,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Marvin Mims Jr. as Questionable.
+Trey Benson,RB,Monitor,Knee,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms7i4pmais2b,NFL Daily News,HC LaFleur: Trey Benson dealing with discomfort in left knee; not expected to be a multi-week issue.
+Michael Penix Jr.,QB,Questionable,Knee - ACL,2026-07-31,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Penix Jr. as Questionable.
+Kaelon Black,RB,Questionable,Thigh,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6yn53wak2u,Sleeper + NFL Daily News,"Mike Evans (quad strain), Kaelon Black (adductor) not participating in practice Monday."
+Kendre Miller,RB,Questionable,Back,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kendre Miller as Questionable.
+Tyreek Hill,WR,Questionable,Knee - ACL,2026-08-08,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyreek Hill as Questionable.
+Najee Harris,RB,Questionable,Achilles,2026-07-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Najee Harris as Questionable.
+Isaac Guerendo,RB,PUP,Pectoral,2026-08-02,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Isaac Guerendo as PUP.
+Chris Brazzell II,WR,IR,Knee,2026-08-01,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Chris Brazzell II as IR.
+Cyrus Allen,WR,Monitor,Shin,2026-08-03,https://bsky.app/profile/insidenflnews.bsky.social/post/3ms6uyhwz7s24,NFL Daily News,Reid: Xavier Worthy expected to practice later this week after suffering sprained shoulder. Cyrus Allen (shin) also expected to return.
+Tez Johnson,WR,Questionable,Groin,2026-08-05,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tez Johnson as Questionable.
+Joe Mixon,RB,Questionable,Foot,2026-07-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Joe Mixon as Questionable.
+Dont'e Thornton Jr.,WR,Questionable,Undisclosed,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Dont'e Thornton Jr. as Questionable.
+Jawhar Jordan,RB,Questionable,Hip,2026-08-09,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jawhar Jordan as Questionable.
+Kevin Coleman Jr.,WR,Questionable,Undisclosed,2026-08-07,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kevin Coleman Jr. as Questionable.
+Luke Musgrave,TE,PUP,Undisclosed,2026-07-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Luke Musgrave as PUP.
+Kyle Juszczyk,RB,Questionable,Finger,2026-08-05,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kyle Juszczyk as Questionable.
+John Bates,TE,Questionable,Hamstring,2026-08-02,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists John Bates as Questionable.
+Sione Vaki,RB,Questionable,Eye,2026-08-04,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Sione Vaki as Questionable.
+Jake Bobo,WR,Questionable,Leg,2026-08-06,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jake Bobo as Questionable.
+Jacob Cowing,WR,Questionable,Hip,2026-08-06,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jacob Cowing as Questionable.
