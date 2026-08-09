@@ -929,7 +929,7 @@
             </div>
 
             <div class="panel run-risk-panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) teams picking between now and your next turn, (b) those teams' positional needs, (c) elite-tier players remaining. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The 'Xn / Ye' line means X teams still need this position and Y elite-tier players remain.">?</span></div>
+                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Per-position risk that elite players will be drafted before your next pick. Computed from (a) teams picking between now and your next turn, (b) those teams' positional needs, (c) elite-tier players remaining. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent). The lines beneath each position show how many teams still need that position and how many elite-tier players remain.">?</span></div>
                 <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
             </div>
 
@@ -3641,6 +3641,9 @@
                 if (blendedRisk > 40) { colorClass = "var(--accent-amber)"; riskLabel = "medium"; }
                 if (blendedRisk > 75) { colorClass = "var(--accent-rose)"; riskLabel = "high"; }
 
+                const teamsNeedText = gapDemand === 1 ? "1 team needs this" : `${gapDemand} teams need this`;
+                const eliteRemainText = eliteRemaining === 1 ? "1 elite player remains" : `${eliteRemaining} elite players remain`;
+
                 let div = document.createElement("div");
                 div.setAttribute("role", "group");
                 div.setAttribute("aria-label", `${pos} run risk: ${blendedRisk} percent, ${riskLabel}. ${gapDemand} teams need ${pos}, ${eliteRemaining} elite remaining.`);
@@ -3653,7 +3656,10 @@
                     <div class="risk-bar-container" role="progressbar" aria-valuenow="${blendedRisk}" aria-valuemin="0" aria-valuemax="100" aria-label="${pos} run risk ${blendedRisk} percent" style="height:4px;">
                         <div class="risk-bar" style="width: ${blendedRisk}%; background-color: ${colorClass};"></div>
                     </div>
-                    <div style="font-size: 9px; color: var(--text-muted); text-align:center;">${gapDemand}n / ${eliteRemaining}e</div>
+                    <div style="font-size: 9px; line-height:1.35; color: var(--text-muted); text-align:center;">
+                        <div>${teamsNeedText}</div>
+                        <div>${eliteRemainText}</div>
+                    </div>
                 `;
                 runContainer.appendChild(div);
 
