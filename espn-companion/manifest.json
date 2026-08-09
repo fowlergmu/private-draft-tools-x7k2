@@ -1,14 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Draft Tool ESPN Companion",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Mirrors visible ESPN fantasy football draft picks into Private Draft Tools.",
+  "minimum_chrome_version": "121",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "espn-companion@private-draft-tools",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
   "permissions": ["tabs"],
   "host_permissions": [
     "https://fantasy.espn.com/*",
     "https://fowlergmu.github.io/*"
   ],
   "background": {
+    "scripts": ["background.js"],
     "service_worker": "background.js"
   },
   "content_scripts": [
