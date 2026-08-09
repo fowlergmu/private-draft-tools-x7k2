@@ -50,12 +50,17 @@
         }
         container.innerHTML = injured.map(p => {
             const className = ["Out", "Doubtful"].includes(p.currentStatus) ? " out" : (["IR", "PUP", "NFI"].includes(p.currentStatus) ? " ir" : "");
+            const adpValue = Number(p.adp);
+            const adpLabel = Number.isFinite(adpValue) && adpValue > 0
+                ? adpValue.toFixed(1).replace(/\.0$/, "")
+                : "—";
             const source = p.currentInjurySource
                 ? "<a href='" + escapeHtml(p.currentInjurySource) + "' target='_blank' rel='noopener'>Open source ↗</a>"
                 : "";
             return "<article class='news-card" + className + "'>" +
                 "<div style='display:flex;justify-content:space-between;gap:8px;align-items:flex-start;'>" +
-                "<div><strong>" + escapeHtml(p.name) + "</strong> <span style='color:var(--text-muted);font-size:10px;'>" + escapeHtml(p.pos) + "</span></div>" +
+                "<div><strong>" + escapeHtml(p.name) + "</strong> <span style='color:var(--text-muted);font-size:10px;'>" +
+                escapeHtml(p.pos) + " · ADP " + escapeHtml(adpLabel) + "</span></div>" +
                 "<span class='status-badge badge-current-monitor'>" + escapeHtml(p.currentStatus) + "</span></div>" +
                 "<div style='font-size:12px;margin-top:5px;'>" + escapeHtml(p.currentInjury || "Status update") + "</div>" +
                 "<div style='font-size:10px;color:var(--text-muted);margin:4px 0;'>" +
