@@ -986,7 +986,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Next Pick (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="matrix-controls">
                     <div class="filter-tabs">
                         <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
@@ -1023,7 +1023,7 @@
                                 <th>Ceiling<span class="modeled-label">modeled*</span></th>
                                 <th>Risk</th>
                                 <th>Run Risk</th>
-                                <th title="Estimated chance this player remains available at your next pick">Next Pick</th>
+                                <th title="Estimated chance this player remains available at your next pick">Avail. Next</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -1480,7 +1480,7 @@
                         <dt style="font-weight: 600; margin-top: 8px;">Run Risk</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate that the best remaining tier at a position is meaningfully depleted before your next pick. It combines FantasyPros market ADP timing, the distinct teams picking before you, their remaining starter needs, elite-tier supply, lineup requirements, and the ADP Market Adherence setting.</dd>
 
-                        <dt style="font-weight: 600; margin-top: 8px;">Next Pick %</dt>
+                        <dt style="font-weight: 600; margin-top: 8px;">Avail. Next %</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Estimated chance an individual player is still available at your next turn. It uses that player's ADP, your pick window, competing-team positional needs, lineup requirements, and ADP Market Adherence. This is a draft-market estimate, not a guarantee.</dd>
 
                         <dt style="font-weight: 600; margin-top: 8px;">Tier Cliff</dt>
@@ -4090,7 +4090,7 @@
                     ? `No next-pick survival estimate is available for ${p.name} because market ADP is missing.`
                     : `${survival.percentage}% estimated chance ${p.name} is still available at your next pick · ${survival.label}. Based on ADP ${adpDisplay}, your draft window, competing-team ${p.pos} needs, and ADP Market Adherence.`;
                 const survivalBadge = `<span class="survival-badge ${survival.cssClass}" title="${escapeHtml(survivalTip)}" aria-label="${escapeHtml(survivalTip)}">${survivalPercentage}</span>`;
-                const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Next pick ${survivalPercentage}</span>`;
+                const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Avail. next: ${survivalPercentage}</span>`;
 
                 tr.innerHTML = `
                     <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}</td>
