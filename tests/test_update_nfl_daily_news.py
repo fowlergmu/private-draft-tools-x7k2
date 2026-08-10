@@ -193,6 +193,103 @@ class InjuryUpdaterTests(unittest.TestCase):
         rows = updater.build_snapshot([], self.players, {}, date(2026, 8, 9), 7, sleeper)
         self.assertEqual(rows, [])
 
+    def test_fantasypros_injury_report_wins_same_day_conflict(self):
+        sleeper = {
+            "999": {
+                "full_name": "Zay Flowers",
+                "injury_status": "Questionable",
+                "injury_body_part": "Quadriceps",
+                "news_updated": 1786296630739,
+            }
+        }
+        fantasypros = {
+            "injuries": [{
+                "player_id": 123,
+                "name": "Zay Flowers",
+                "position_id": "WR",
+                "injury_type": "Hamstring",
+                "injury_update_date": "2026-08-09",
+                "status": "Out",
+                "practice_1": "DNP",
+                "comment": "Flowers has been ruled out.",
+            }]
+        }
+        rows = updater.build_snapshot(
+            [], self.players, {}, date(2026, 8, 9), 7, sleeper, fantasypros, {}
+        )
+        self.assertEqual(rows[0]["status"], "Out")
+        self.assertEqual(rows[0]["injury"], "Hamstring")
+        self.assertEqual(rows[0]["provider"], "FantasyPros Injury Report")
+        self.assertIn("Practice reports: DNP", rows[0]["notes"])
+
+    def test_newer_fantasypros_news_can_resolve_injury(self):
+        fantasypros = {
+            "injuries": [{
+                "player_id": 123,
+                "name": "Zay Flowers",
+                "position_id": "WR",
+                "injury_type": "Quadriceps",
+                "injury_update_date": "2026-08-08",
+                "status": "Questionable",
+            }]
+        }
+        news = {
+            "items": [{
+                "player_id": 123,
+                "created": "2026-08-08 12:00:00",
+                "title": "Zay Flowers returns",
+                "desc": "Zay Flowers returned to practice as a full participant.",
+                "link": "https://www.fantasypros.com/nfl/news/123/zay-flowers-returns.php",
+            }]
+        }
+        rows = updater.build_snapshot(
+            [], self.players, {}, date(2026, 8, 9), 7, {}, fantasypros, news
+        )
+        self.assertEqual(rows, [])
+
+    def test_fantasypros_report_wins_same_day_breaking_news(self):
+        fantasypros = {
+            "injuries": [{
+                "player_id": 123,
+                "name": "Zay Flowers",
+                "position_id": "WR",
+                "injury_type": "Quadriceps",
+                "injury_update_date": "2026-08-09",
+                "status": "Out",
+            }]
+        }
+        rows = updater.build_snapshot(
+            [feed_item(
+                "Zay Flowers considered day-to-day with a quad contusion.",
+                "2026-08-09T18:00:00Z",
+            )],
+            self.players,
+            {},
+            date(2026, 8, 9),
+            7,
+            {},
+            fantasypros,
+            {},
+        )
+        self.assertEqual(rows[0]["status"], "Out")
+        self.assertTrue(rows[0]["provider"].startswith("FantasyPros Injury Report"))
+
+    def test_fantasypros_ignores_players_outside_ranked_pool(self):
+        fantasypros = {
+            "injuries": [{
+                "player_id": 456,
+                "name": "Unranked Defender",
+                "position_id": "LB",
+                "injury_type": "Knee",
+                "injury_update_date": "2026-08-09",
+                "status": "Out",
+            }]
+        }
+        rows = updater.build_snapshot(
+            [], self.players, {}, date(2026, 8, 9), 7, {}, fantasypros, {}
+        )
+        self.assertEqual(rows, [])
+
 
 if __name__ == "__main__":
     unittest.main()

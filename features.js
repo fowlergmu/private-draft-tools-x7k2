@@ -24,10 +24,16 @@
         if (!bar) return;
         const currentCount = activePlayers.filter(p => p.currentStatus).length;
         const projectionText = projectionSourceLabel || "Tier-modeled estimates";
+        const hasFantasyProsInjuries = activePlayers.some(p =>
+            p.currentStatus && String(p.currentInjuryProvider || "").includes("FantasyPros")
+        );
+        const injurySourceText = hasFantasyProsInjuries
+            ? "FantasyPros + Sleeper + NFL Daily News"
+            : "Sleeper + NFL Daily News";
         bar.innerHTML =
             "<span class='source-chip'><strong>Rankings:</strong> FantasyPros Full PPR · " +
             activePlayers.length + " players · checked " + escapeHtml(formatSourceTime("rankings")) + "</span>" +
-            "<span class='source-chip'><strong>Injuries:</strong> Sleeper + NFL Daily News · " +
+            "<span class='source-chip'><strong>Injuries:</strong> " + escapeHtml(injurySourceText) + " · " +
             currentCount + " current · checked " + escapeHtml(formatSourceTime("currentInjuries")) + "</span>" +
             "<span class='source-chip'><strong>Projections:</strong> " + escapeHtml(projectionText) + "</span>";
     }

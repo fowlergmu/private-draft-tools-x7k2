@@ -26,7 +26,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Refresh Sleeper and NFL Daily News
+      - name: Test injury-source merge rules
+        run: python -m unittest discover -s tests -v
+
+      - name: Refresh FantasyPros and fallback injury sources
+        env:
+          FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
         run: python scripts/update_nfl_daily_news.py --days 7
 
       - name: Commit updated injury snapshot
