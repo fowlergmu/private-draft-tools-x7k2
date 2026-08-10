@@ -1026,8 +1026,8 @@
             </div>
 
             <div class="panel run-risk-panel" style="margin-bottom: 15px;">
-                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Estimated chance that the current elite tier at a position is meaningfully depleted before your next pick. The model uses each elite player's FantasyPros market ADP, the number of picks before you, the distinct teams that still need the position, remaining elite supply, and your ADP Market Adherence setting. RB and WR naturally carry more early-round pressure because their elite players have earlier ADPs and leagues start more of them; QB, TE, and DEF rise only when their market window approaches. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent).">?</span></div>
-                <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;"></div>
+                <div class="panel-title" style="color: var(--accent-amber);">Positional Run Risk<span class="help-tip" tabindex="0" data-tip="Estimated chance that the current elite tier at a position is meaningfully depleted before your next pick. The model uses each elite player's market ADP, the number of picks before you, the distinct teams that still need the position, remaining elite supply, and your ADP Market Adherence setting. RB and WR naturally carry more early-round pressure; QB, TE, K, and DEF rise only when their market window approaches. A team is counted only once even if it has two picks before you. Color: green &lt; 40% (calm), amber 40-75% (urgent), red &gt; 75% (run imminent).">?</span></div>
+                <div id="runAnalysisContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; text-align: center;"></div>
                 <div class="tier-cliff-heading">Tier-Cliff Alerts</div>
                 <div id="tierCliffAlerts" class="tier-cliff-grid" aria-label="Tier-cliff alerts by position"></div>
             </div>
@@ -1041,6 +1041,7 @@
                         <button type="button" class="tab" onclick="filterPosition('RB', this)">RB <span class="tab-count" id="tabCount-RB"></span></button>
                         <button type="button" class="tab" onclick="filterPosition('WR', this)">WR <span class="tab-count" id="tabCount-WR"></span></button>
                         <button type="button" class="tab" onclick="filterPosition('TE', this)">TE <span class="tab-count" id="tabCount-TE"></span></button>
+                        <button type="button" class="tab" onclick="filterPosition('K', this)">K <span class="tab-count" id="tabCount-K"></span></button>
                         <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
                     </div>
                     <div class="matrix-sort-control">
@@ -1059,7 +1060,7 @@
                     <table class="player-table" id="playerTable">
                         <thead>
                             <tr>
-                                <th class="player-rank-col" title="FantasyPros overall consensus rank. Arrows show movement since the prior rankings update; colored arrows mark a significant move of 10 or more spots.">Rank</th>
+                                <th class="player-rank-col" title="FantasyPros overall consensus rank; kickers show their positional K rank. Arrows show movement since the prior overall-rankings update, with colored arrows for moves of 10 or more spots.">Rank</th>
                                 <th>Player</th>
                                 <th>Pos</th>
                                 <th>Tier</th>
@@ -1153,12 +1154,12 @@
 
         <!-- Full-width Draft Board sits below the dashboard grid so it can stretch
              across the entire Draft tab width. With one column per roster slot
-             (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...BN6 for a typical 12-team
+             (QB, RB1, RB2, WR1, WR2, TE, FX, K, DF, BN1...BN6 for a typical 12-team
              half PPR), a 12-team draft needs ~14 columns of player-name cells —
              far more than the old right-column slot allowed. -->
         <div class="panel draft-board-panel">
             <div class="panel-title">
-                <span>Draft Board & Team Roster Matrix<span class="help-tip" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. One column per roster slot (QB, RB1, RB2, WR1, WR2, TE, FX, DF, BN1...). Slot columns are generated dynamically from your Roster Requirements settings. Scroll horizontally if the board exceeds your screen width. Mock drafting: Sim to My Pick makes ADP-based CPU picks for every other team until it's your turn — CPU randomness follows your ADP Market Adherence setting. The sim never picks for you. Undo reverses the last pick (yours or a CPU's). Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
+                <span>Draft Board & Team Roster Matrix<span class="help-tip" tabindex="0" data-tip="Live snapshot of every team's roster. Current picking team is highlighted with a blue border; your team is highlighted in green. One column per roster slot (QB, RB1, RB2, WR1, WR2, TE, FX, K, DF, BN1...). Slot columns are generated dynamically from your Roster Requirements settings. Scroll horizontally if the board exceeds your screen width. Mock drafting: Sim to My Pick makes ADP-based CPU picks for every other team until it's your turn — CPU randomness follows your ADP Market Adherence setting. The sim never picks for you. Undo reverses the last pick (yours or a CPU's). Reset Draft clears all picks but keeps your player pool and settings.">?</span></span>
                 <span id="currentPickIndicator" style="font-size: 12px; color: var(--text-muted); font-weight: normal;"></span>
             </div>
             <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -1200,7 +1201,7 @@
 
                 <div id="importTab-csv" class="import-tab-pane">
                     <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">
-                        Two CSV formats supported, auto-detected: the engine's native format (<code>name, pos, tier, adp</code>, rookie/injury optional) or <strong>FantasyPros draft rankings export</strong> as-is (<code>RK, TIERS, PLAYER NAME, POS, ECR VS. ADP, ...</code>). Kickers and any unrecognized positions are skipped.
+                        Two CSV formats supported, auto-detected: the engine's native format (<code>name, pos, tier, adp</code>, rookie/injury optional) or <strong>FantasyPros draft rankings export</strong> as-is (<code>RK, TIERS, PLAYER NAME, POS, ECR VS. ADP, ...</code>). QB, RB, WR, TE, K, and DEF are supported; IDP and other positions are skipped.
                     </p>
                     <div style="background:var(--bg-tertiary); border-radius:4px; padding:6px 8px; margin-bottom:8px; font-size:11px; display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
                         <span id="rankingsCacheStatus"><span style="color:var(--text-muted);">○</span> No rankings saved</span>
@@ -1279,6 +1280,10 @@
                 <div class="form-group">
                     <label for="ghUrlRankings">Rankings CSV URL</label>
                     <input type="url" id="ghUrlRankings" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
+                </div>
+                <div class="form-group">
+                    <label for="ghUrlKickers">Kicker Rankings CSV URL</label>
+                    <input type="url" id="ghUrlKickers" class="form-control" placeholder="https://raw.githubusercontent.com/..." style="font-size: 11px;" onchange="saveGithubUrls()">
                 </div>
                 <div class="form-group">
                     <label for="ghUrlInjury">Injury CSV URL</label>
@@ -1418,15 +1423,21 @@
                         <input type="number" id="reqFlex" class="form-control" value="1" min="0" onchange="recalculateEngine()">
                     </div>
                     <div class="form-group">
-                        <label for="reqDEF">DEF Starters</label>
-                        <input type="number" id="reqDEF" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                        <label for="reqK">K Starters</label>
+                        <input type="number" id="reqK" class="form-control" value="1" min="0" onchange="recalculateEngine()">
                     </div>
                 </div>
                 <div class="row-2col">
                     <div class="form-group">
+                        <label for="reqDEF">DEF Starters</label>
+                        <input type="number" id="reqDEF" class="form-control" value="1" min="0" onchange="recalculateEngine()">
+                    </div>
+                    <div class="form-group">
                         <label for="reqBench">Bench Slots</label>
                         <input type="number" id="reqBench" class="form-control" value="6" min="0" max="15" onchange="recalculateEngine()">
                     </div>
+                </div>
+                <div class="row-2col">
                     <div class="form-group">
                         <label for="flexAlloc" title="Assumed share of flex slots that get filled by RBs across the league. Affects baseline calculation for VOB. Higher = engine assumes more RB-heavy flex usage. Default 40% is reasonable for most leagues. Lower it for PPR leagues that favor WR flexes.">Flex RB% <span style="color:var(--text-muted); font-size:10px;">ⓘ</span></label>
                         <input type="number" id="flexAlloc" class="form-control" value="40" min="0" max="100" onchange="recalculateEngine()">
@@ -1499,6 +1510,9 @@
                         <dt style="font-weight: 600; margin-top: 8px;">DEF / DST / D/ST</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Team Defense / Special Teams. You draft a whole team's defensive unit, not individual defenders. Three different abbreviations for the same thing.</dd>
 
+                        <dt style="font-weight: 600; margin-top: 8px;">K — Kicker</dt>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Usually one starter and best selected in the final rounds. The recommendation engine deliberately suppresses kickers until late in the draft.</dd>
+
                         <dt style="font-weight: 600; margin-top: 8px;">BN (Bench)</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Non-starting roster slots. Players here don't score but can be moved into starting slots week-to-week.</dd>
                     </dl>
@@ -1570,6 +1584,7 @@
         const KNOWN_ROOKIES = new Set([
             // Add lowercase names here, e.g. "marvin harrison jr."
         ]);
+        const SUPPORTED_POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF"];
 
         let currentPick = 1;
         let selectedPositionFilter = "ALL";
@@ -1609,6 +1624,9 @@
         // Cached raw rookies CSV. Same auto-remerge pattern as injuries: applied
         // after every rankings import (and on demand via the rookies tab button).
         let cachedRookiesCsv = null;
+        // Kicker rankings live in their own small file because FantasyPros' main
+        // overall PPR export omits the position entirely.
+        let cachedKickersCsv = null;
 
         // ─── GitHub Sync URL configuration ─────────────────────────────────
         //
@@ -1626,6 +1644,7 @@
             // them. Note the %20 encoding — two of the repo filenames contain
             // spaces ("Injury Risk.csv", "Rookie Tiers.csv").
             rankings: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv",
+            kickers: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Kickers.csv",
             injury: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv",
             currentInjuries: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Current%20Injuries.csv",
             rookies: "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv"
@@ -1636,7 +1655,7 @@
 
         // Runtime URLs — populated at load time from DEFAULT_GITHUB_URLS unless
         // localStorage has device-specific overrides.
-        let githubUrls = { rankings: "", injury: "", currentInjuries: "", rookies: "" };
+        let githubUrls = { rankings: "", kickers: "", injury: "", currentInjuries: "", rookies: "" };
         // Tracks whether we've already attempted an auto-fetch on this page load.
         // Prevents double-fetching if the user navigates state changes that re-run init.
         let autoFetchAttempted = false;
@@ -1645,6 +1664,7 @@
         const INJURY_CACHE_KEY = "fantasyDraftEngine_injuryCache";
         const CURRENT_INJURIES_CACHE_KEY = "fantasyDraftEngine_currentInjuriesCache";
         const RANKINGS_CACHE_KEY = "fantasyDraftEngine_rankingsCache";
+        const KICKERS_CACHE_KEY = "fantasyDraftEngine_kickersCache";
         const GITHUB_URLS_KEY = "fantasyDraftEngine_githubUrls";
         const ROOKIES_CACHE_KEY = "fantasyDraftEngine_rookiesCache";
         const LAST_SYNC_KEY = "fantasyDraftEngine_lastSync";
@@ -1691,7 +1711,7 @@
             try {
                 const settingIds = ["leagueSize", "draftOrder", "scoringFormat",
                     "rookieBoost", "adpVariance", "reqQB", "reqRB", "reqWR", "reqTE",
-                    "reqFlex", "reqDEF", "reqBench", "flexAlloc",
+                    "reqFlex", "reqK", "reqDEF", "reqBench", "flexAlloc",
                     "tuningPreset", "tierWeight", "needWeight", "scarcityWeight", "adpValueWeight", "vobWeight"];
                 const settings = {};
                 settingIds.forEach(id => {
@@ -1751,6 +1771,9 @@
                 applyCachedRankingMetadata();
                 currentPick = payload.currentPick;
                 teamRosters = payload.teamRosters;
+                Object.values(teamRosters || {}).forEach(roster => {
+                    if (!Array.isArray(roster.K)) roster.K = [];
+                });
                 leagueNames = payload.leagueNames || {};
                 draftHistory = (payload.draftHistory || []).map(h => ({
                     pick: h.pick, team: h.team, slot: h.slot,
@@ -1787,6 +1810,7 @@
             loadCachedInjuryCsv();
             loadCachedCurrentInjuriesCsv();
             loadCachedRookiesCsv();
+            loadCachedKickersCsv();
             loadCachedRankingsCsv();
             loadGithubUrls();
             restoreScoringPreference();
@@ -1861,7 +1885,7 @@
 
             const regexTier = /Tier\s+(\d+)/i;
             // Catch pattern variations like: "1. Christian McCaffrey (SF - RB)" or "Christian McCaffrey SF"
-            const regexPositionMatch = /\b(QB|RB|WR|TE|DST|DEF)\b/i;
+            const regexPositionMatch = /\b(QB|RB|WR|TE|K|DST|DEF)\b/i;
 
             lines.forEach(line => {
                 const trimmed = line.trim();
@@ -1892,7 +1916,7 @@
 
                     for (let i = 0; i < tokens.length; i++) {
                         let tokenClean = tokens[i].replace(/[^a-zA-Z]/g, '').toUpperCase();
-                        if (["QB", "RB", "WR", "TE", "DST", "DEF"].includes(tokenClean)) {
+                        if (["QB", "RB", "WR", "TE", "K", "DST", "DEF"].includes(tokenClean)) {
                             extractedPos = tokenClean === "DST" ? "DEF" : tokenClean;
                             break;
                         }
@@ -1907,7 +1931,7 @@
                     let nameArray = [];
                     for (let i = 0; i < tokens.length; i++) {
                         let tokenClean = tokens[i].replace(/[^a-zA-Z]/g, '').toUpperCase();
-                        if (tokens[i].includes("(") || ["QB", "RB", "WR", "TE", "DST", "DEF"].includes(tokenClean)) break;
+                        if (tokens[i].includes("(") || ["QB", "RB", "WR", "TE", "K", "DST", "DEF"].includes(tokenClean)) break;
                         if (/^[A-Z]{2,3}$/.test(tokens[i]) && i > 0) break;
                         nameArray.push(tokens[i]);
                     }
@@ -1924,6 +1948,7 @@
 
                     if (extractedPos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
                     if (extractedPos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (extractedPos === "K") { floorScore -= 5.5; ceilingScore -= 10.0; }
                     if (extractedPos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
 
                     parsedPool.push({
@@ -1962,6 +1987,7 @@
                     uniqueMap[item.name + "_" + item.pos] = item;
                 });
                 activePlayers = Object.values(uniqueMap);
+                reapplyCachedKickersData();
                 reapplyCachedInjuryData();
                 reapplyCachedCurrentInjuriesData();
                 reapplyCachedRookiesData();
@@ -2081,6 +2107,10 @@
         }
 
         function rankMovementFor(player) {
+            // Kicker ranks come from a separate positional board and are mapped
+            // into late-round overall values, so they are not comparable to the
+            // historical overall rankings file used by weekly-mover arrows.
+            if (player && player.pos === "K") return 0;
             const currentRank = Number(player && player.rank);
             const previousRank = previousRankingMap.get(normalizeNameForMatch(player && player.name));
             if (!Number.isFinite(currentRank) || !Number.isFinite(previousRank)) return 0;
@@ -2142,7 +2172,6 @@
 
             const pool = [];
             const errors = [];
-            const skippedKickers = [];
             let id = 1;
 
             for (let i = 1; i < lines.length; i++) {
@@ -2160,13 +2189,7 @@
                 let pos = posMatch ? posMatch[1] : posRaw;
                 if (pos === "DST") pos = "DEF";
 
-                // Engine doesn't handle kickers — skip silently but track for reporting
-                if (pos === "K") {
-                    skippedKickers.push(name);
-                    continue;
-                }
-
-                if (!["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                if (!SUPPORTED_POSITIONS.includes(pos)) {
                     errors.push(`Row ${i + 1}: unknown position "${posRaw}"`);
                     continue;
                 }
@@ -2186,6 +2209,7 @@
                 let ceilingScore = 21.5 - tier * 1.4;
                 if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
                 if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                if (pos === "K") { floorScore -= 5.5; ceilingScore -= 10.0; }
                 if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
 
                 pool.push({
@@ -2206,13 +2230,13 @@
             }
 
             activePlayers = pool;
+            reapplyCachedKickersData();
             reapplyCachedInjuryData();
             reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
             if (!options.silent) {
                 const parts = [`Imported ${pool.length} players from FantasyPros CSV.`];
-                if (skippedKickers.length > 0) parts.push(`Skipped ${skippedKickers.length} kicker(s) — engine doesn't support K position.`);
                 if (errors.length > 0) parts.push(`${errors.length} row(s) had errors and were skipped.`);
                 alert(parts.join("\n"));
                 document.getElementById("csvPasteArea").value = "";
@@ -2253,7 +2277,7 @@
                 const name = cells[nameIdx];
                 let pos = (cells[posIdx] || "").toUpperCase().trim();
                 if (pos === "DST") pos = "DEF";
-                if (!name || !["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                if (!name || !SUPPORTED_POSITIONS.includes(pos)) {
                     errors.push(`Row ${i + 1}: ${lines[i].slice(0, 60)}`);
                     continue;
                 }
@@ -2265,6 +2289,7 @@
                 if (floorIdx === -1) {
                     if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
                     if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (pos === "K") { floorScore -= 5.5; ceilingScore -= 10.0; }
                     if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
                 }
                 const rookieRaw = rookieIdx !== -1 ? (cells[rookieIdx] || "").toLowerCase() : "";
@@ -2289,6 +2314,7 @@
             }
 
             activePlayers = pool;
+            reapplyCachedKickersData();
             reapplyCachedInjuryData();
             reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
@@ -2308,7 +2334,8 @@
             const template = "name,pos,tier,adp,floor,ceiling,rookie,injury\n" +
                 "Christian McCaffrey,RB,1,2.1,16.5,24.0,false,High\n" +
                 "CeeDee Lamb,WR,1,1.8,15.8,23.5,false,Low\n" +
-                "Josh Allen,QB,1,28.5,18.2,25.8,false,Low\n";
+                "Josh Allen,QB,1,28.5,18.2,25.8,false,Low\n" +
+                "Brandon Aubrey,K,1,181,8.0,11.0,false,Low\n";
             const blob = new Blob([template], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -2344,7 +2371,7 @@
             parsed.forEach((p, i) => {
                 let pos = (p.pos || p.position || "").toUpperCase();
                 if (pos === "DST") pos = "DEF";
-                if (!p.name || !["QB", "RB", "WR", "TE", "DEF"].includes(pos)) {
+                if (!p.name || !SUPPORTED_POSITIONS.includes(pos)) {
                     errors.push(`Item ${i}: missing name or invalid position`);
                     return;
                 }
@@ -2354,6 +2381,7 @@
                 if (p.floor === undefined) {
                     if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
                     if (pos === "TE") { floorScore -= 3.5; ceilingScore -= 4.0; }
+                    if (pos === "K") { floorScore -= 5.5; ceilingScore -= 10.0; }
                     if (pos === "DEF") { floorScore -= 6.0; ceilingScore -= 8.0; }
                 }
                 pool.push({
@@ -2374,6 +2402,7 @@
                 return;
             }
             activePlayers = pool;
+            reapplyCachedKickersData();
             reapplyCachedInjuryData();
             reapplyCachedCurrentInjuriesData();
             reapplyCachedRookiesData();
@@ -2472,7 +2501,7 @@
         // Format: "<Name with spaces> <TEAM> <POS> <PosRank>"
         // Walk from the right: numeric rank, then position token, then team token,
         // then everything before that is the name. Returns null on bad shape.
-        const DS_OFFENSIVE_POS = new Set(["QB", "RB", "WR", "TE", "DST", "DEF"]);
+        const DS_OFFENSIVE_POS = new Set(["QB", "RB", "WR", "TE", "K", "DST", "DEF"]);
         const DS_IDP_POS = new Set(["DE", "DT", "LB", "CB", "S", "OLB", "ILB", "SS", "FS", "NT", "EDGE"]);
         function parseDraftSharksPlayerCell(cell) {
             const tokens = String(cell || "").trim().split(/\s+/);
@@ -3086,9 +3115,82 @@
             }
         }
 
+        // Kicker rankings are merged rather than replacing the main player pool.
+        // Their stored rank/ADP values are intentionally late-round overall values,
+        // while sourceRank preserves the FantasyPros positional order.
+        function parseKickersCsvText(text, options) {
+            options = options || {};
+            if (!text || !text.trim()) return { merged: 0 };
+            const lines = text.split(/\r?\n/).filter(line => line.trim());
+            if (lines.length < 2) return { merged: 0 };
+            const headers = parseCsvLine(lines[0]).map(header => header.toLowerCase().trim());
+            const idx = name => headers.indexOf(name);
+            const nameIdx = idx("name") !== -1 ? idx("name") : idx("player name");
+            const posIdx = idx("pos");
+            const tierIdx = idx("tier");
+            const rankIdx = idx("rank") !== -1 ? idx("rank") : idx("rk");
+            const adpIdx = idx("adp");
+            const teamIdx = idx("team");
+            const byeIdx = idx("bye") !== -1 ? idx("bye") : idx("bye week");
+            const floorIdx = idx("floor");
+            const ceilingIdx = idx("ceiling");
+            const sourceRankIdx = idx("source_rank");
+            if (nameIdx === -1) return { merged: 0 };
+
+            const oldKickers = new Map(activePlayers
+                .filter(player => player.pos === "K")
+                .map(player => [normalizeNameForMatch(player.name), player]));
+            activePlayers = activePlayers.filter(player => player.pos !== "K");
+            let nextId = activePlayers.reduce((max, player) => Math.max(max, Number(player.id) || 0), 0) + 1;
+            const kickers = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cells = parseCsvLine(lines[i]);
+                const name = (cells[nameIdx] || "").trim();
+                const pos = posIdx === -1 ? "K" : (cells[posIdx] || "").toUpperCase().trim();
+                if (!name || pos !== "K") continue;
+                const prior = oldKickers.get(normalizeNameForMatch(name));
+                const tier = tierIdx !== -1 ? parseInt(cells[tierIdx]) || 3 : 3;
+                kickers.push({
+                    id: nextId++,
+                    rank: rankIdx !== -1 ? parseInt(cells[rankIdx]) || 180 + i : 180 + i,
+                    name,
+                    pos: "K",
+                    tier,
+                    adp: adpIdx !== -1 ? parseFloat(cells[adpIdx]) || 180 + i : 180 + i,
+                    nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
+                    bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : "",
+                    floor: floorIdx !== -1 ? parseFloat(cells[floorIdx]) || 7 : 7,
+                    ceiling: ceilingIdx !== -1 ? parseFloat(cells[ceilingIdx]) || 10 : 10,
+                    sourceRank: sourceRankIdx !== -1 ? parseInt(cells[sourceRankIdx]) || i : i,
+                    projectionType: "modeled",
+                    injury: "Low",
+                    rookie: false,
+                    favorite: !!(prior && prior.favorite)
+                });
+            }
+            activePlayers.push(...kickers);
+            if (!options.skipCache) {
+                cachedKickersCsv = text;
+                try { localStorage.setItem(KICKERS_CACHE_KEY, text); } catch (e) {}
+                touchLastSync(["kickers"]);
+            }
+            return { merged: kickers.length };
+        }
+
+        function reapplyCachedKickersData() {
+            if (cachedKickersCsv) parseKickersCsvText(cachedKickersCsv, { skipCache: true });
+        }
+
+        function loadCachedKickersCsv() {
+            try {
+                const cached = localStorage.getItem(KICKERS_CACHE_KEY);
+                if (cached) cachedKickersCsv = cached;
+            } catch (e) { /* storage unavailable */ }
+        }
+
         // ─── GitHub Sync ───────────────────────────────────────────────────
         //
-        // Fetches the three CSVs from configured raw.githubusercontent.com URLs.
+        // Fetches the configured CSVs from raw.githubusercontent.com URLs.
         // Designed for a personal-use public repo: URLs are saved separately from
         // cached CSV data so they survive cache clears and can be edited without
         // re-uploading files.
@@ -3104,6 +3206,7 @@
         function loadGithubUrls() {
             // Start from defaults embedded in the HTML
             githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Tiers.csv";
+            githubUrls.kickers = DEFAULT_GITHUB_URLS.kickers || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Kickers.csv";
             githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Injury%20Risk.csv";
             githubUrls.currentInjuries = DEFAULT_GITHUB_URLS.currentInjuries || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Current%20Injuries.csv";
             githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "https://raw.githubusercontent.com/fowlergmu/private-draft-tools-x7k2/refs/heads/main/Data/Rookie%20Tiers.csv";
@@ -3115,6 +3218,7 @@
                     const parsed = JSON.parse(raw);
                     if (parsed && typeof parsed === "object") {
                         if (typeof parsed.rankings === "string") githubUrls.rankings = parsed.rankings;
+                        if (typeof parsed.kickers === "string") githubUrls.kickers = parsed.kickers;
                         if (typeof parsed.injury === "string") githubUrls.injury = parsed.injury;
                         if (typeof parsed.currentInjuries === "string") githubUrls.currentInjuries = parsed.currentInjuries;
                         if (typeof parsed.rookies === "string") githubUrls.rookies = parsed.rookies;
@@ -3125,10 +3229,12 @@
             }
             // Reflect into inputs
             const r = document.getElementById("ghUrlRankings");
+            const kr = document.getElementById("ghUrlKickers");
             const i = document.getElementById("ghUrlInjury");
             const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             if (r) r.value = githubUrls.rankings;
+            if (kr) kr.value = githubUrls.kickers;
             if (i) i.value = githubUrls.injury;
             if (c) c.value = githubUrls.currentInjuries;
             if (k) k.value = githubUrls.rookies;
@@ -3136,11 +3242,13 @@
 
         function saveGithubUrls() {
             const r = document.getElementById("ghUrlRankings");
+            const kr = document.getElementById("ghUrlKickers");
             const i = document.getElementById("ghUrlInjury");
             const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             // Trim to handle accidental whitespace from paste
             githubUrls.rankings = r ? r.value.trim() : "";
+            githubUrls.kickers = kr ? kr.value.trim() : "";
             githubUrls.injury = i ? i.value.trim() : "";
             githubUrls.currentInjuries = c ? c.value.trim() : "";
             githubUrls.rookies = k ? k.value.trim() : "";
@@ -3149,6 +3257,7 @@
             // localStorage falls back to the HTML defaults automatically.
             const overrides = {};
             if (githubUrls.rankings !== (DEFAULT_GITHUB_URLS.rankings || "")) overrides.rankings = githubUrls.rankings;
+            if (githubUrls.kickers !== (DEFAULT_GITHUB_URLS.kickers || "")) overrides.kickers = githubUrls.kickers;
             if (githubUrls.injury !== (DEFAULT_GITHUB_URLS.injury || "")) overrides.injury = githubUrls.injury;
             if (githubUrls.currentInjuries !== (DEFAULT_GITHUB_URLS.currentInjuries || "")) overrides.currentInjuries = githubUrls.currentInjuries;
             if (githubUrls.rookies !== (DEFAULT_GITHUB_URLS.rookies || "")) overrides.rookies = githubUrls.rookies;
@@ -3164,7 +3273,7 @@
         }
 
         function resetGithubUrls() {
-            const hasDefaults = !!(DEFAULT_GITHUB_URLS.rankings || DEFAULT_GITHUB_URLS.injury || DEFAULT_GITHUB_URLS.currentInjuries || DEFAULT_GITHUB_URLS.rookies);
+            const hasDefaults = !!(DEFAULT_GITHUB_URLS.rankings || DEFAULT_GITHUB_URLS.kickers || DEFAULT_GITHUB_URLS.injury || DEFAULT_GITHUB_URLS.currentInjuries || DEFAULT_GITHUB_URLS.rookies);
             const msg = hasDefaults
                 ? "Reset URLs to the defaults embedded in this app (from GitHub)? Any device-specific overrides will be cleared."
                 : "No default URLs are configured in this build. Clear the URLs on this device anyway?";
@@ -3172,14 +3281,17 @@
             try { localStorage.removeItem(GITHUB_URLS_KEY); } catch (e) {}
             // Reload from defaults
             githubUrls.rankings = DEFAULT_GITHUB_URLS.rankings || "";
+            githubUrls.kickers = DEFAULT_GITHUB_URLS.kickers || "";
             githubUrls.injury = DEFAULT_GITHUB_URLS.injury || "";
             githubUrls.currentInjuries = DEFAULT_GITHUB_URLS.currentInjuries || "";
             githubUrls.rookies = DEFAULT_GITHUB_URLS.rookies || "";
             const r = document.getElementById("ghUrlRankings");
+            const kr = document.getElementById("ghUrlKickers");
             const i = document.getElementById("ghUrlInjury");
             const c = document.getElementById("ghUrlCurrentInjuries");
             const k = document.getElementById("ghUrlRookies");
             if (r) r.value = githubUrls.rankings;
+            if (kr) kr.value = githubUrls.kickers;
             if (i) i.value = githubUrls.injury;
             if (c) c.value = githubUrls.currentInjuries;
             if (k) k.value = githubUrls.rookies;
@@ -3262,9 +3374,8 @@
             }
         }
 
-        // The main sync entry point. Fetches whichever of the three URLs are
-        // configured, sequentially (so rankings is applied first, then injury
-        // and rookies merge on top of the new pool). Reports per-file status.
+        // The main sync entry point. Fetches configured URLs sequentially so the
+        // main rankings load first, then kickers, injuries, and rookies merge on top.
         async function syncFromGithub(options) {
             options = options || {};
             const silent = !!options.silent;
@@ -3272,19 +3383,20 @@
 
             const configured = {
                 rankings: !!githubUrls.rankings,
+                kickers: !!githubUrls.kickers,
                 injury: !!githubUrls.injury,
                 currentInjuries: !!githubUrls.currentInjuries,
                 rookies: !!githubUrls.rookies
             };
-            const anyConfigured = configured.rankings || configured.injury || configured.currentInjuries || configured.rookies;
+            const anyConfigured = configured.rankings || configured.kickers || configured.injury || configured.currentInjuries || configured.rookies;
             if (!anyConfigured) {
                 if (!silent) alert("No GitHub URLs configured. Paste at least one raw.githubusercontent.com URL above.");
-                return { rankings: false, injury: false, currentInjuries: false, rookies: false };
+                return { rankings: false, kickers: false, injury: false, currentInjuries: false, rookies: false };
             }
 
             setGhSyncStatus("Fetching from GitHub...", "loading");
 
-            const result = { rankings: false, injury: false, currentInjuries: false, rookies: false };
+            const result = { rankings: false, kickers: false, injury: false, currentInjuries: false, rookies: false };
             const errors = [];
 
             // Rankings first — applying it later would overwrite injury/rookies merges.
@@ -3298,6 +3410,17 @@
                     else errors.push("Rankings: CSV parsed but contained no valid players");
                 } catch (e) {
                     errors.push(`Rankings: ${e.message}`);
+                }
+            }
+
+            if (configured.kickers) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.kickers);
+                    const kickerResult = parseKickersCsvText(text);
+                    if (kickerResult.merged > 0) result.kickers = true;
+                    else errors.push("Kickers: CSV parsed but contained no valid kickers");
+                } catch (e) {
+                    errors.push(`Kickers: ${e.message}`);
                 }
             }
 
@@ -3336,9 +3459,10 @@
             saveState();
 
             // Report
-            const successCount = [result.rankings, result.injury, result.currentInjuries, result.rookies].filter(Boolean).length;
+            const successCount = [result.rankings, result.kickers, result.injury, result.currentInjuries, result.rookies].filter(Boolean).length;
             const successLabels = [];
             if (result.rankings) successLabels.push("rankings");
+            if (result.kickers) successLabels.push("kickers");
             if (result.injury) successLabels.push("injury");
             if (result.currentInjuries) successLabels.push("current injuries");
             if (result.rookies) successLabels.push("rookies");
@@ -3379,7 +3503,7 @@
 
             setGhSyncStatus("First visit — fetching CSVs from GitHub...", "loading");
             await syncFromGithub({ silent: true });
-            touchLastSync(["rankings", "injury", "currentInjuries", "rookies"]);
+            touchLastSync(["rankings", "kickers", "injury", "currentInjuries", "rookies"]);
             setDataFreshness("Data synced from GitHub", "success");
             return true;
         }
@@ -3434,13 +3558,27 @@
         }
 
         async function checkForDataUpdates() {
-            const anyConfigured = githubUrls.rankings || githubUrls.injury || githubUrls.currentInjuries || githubUrls.rookies;
+            const anyConfigured = githubUrls.rankings || githubUrls.kickers || githubUrls.injury || githubUrls.currentInjuries || githubUrls.rookies;
             if (!anyConfigured) return;
 
             setDataFreshness("Checking for data updates…");
             const updated = [];
             const failed = [];
             let rankingsHeldBack = false;
+
+            if (githubUrls.kickers) {
+                try {
+                    const text = await fetchCsvFromUrl(githubUrls.kickers);
+                    if (text !== cachedKickersCsv) {
+                        const draftInProgress = draftHistory && draftHistory.length > 0;
+                        if (draftInProgress) rankingsHeldBack = true;
+                        else {
+                            parseKickersCsvText(text);
+                            updated.push("kickers");
+                        }
+                    }
+                } catch (e) { failed.push("kickers"); }
+            }
 
             // Injury and rookies first — additive, always safe. If rankings also
             // changed and get applied below, the fresh caches remerge automatically.
@@ -3509,7 +3647,7 @@
             } else if (updated.length > 0) {
                 setDataFreshness(`✓ Auto-updated from GitHub: ${updated.join(", ")}`, "success");
                 console.log(`[Auto-update] Applied fresh data: ${updated.join(", ")}`);
-            } else if (failed.length === (githubUrls.rankings ? 1 : 0) + (githubUrls.injury ? 1 : 0) + (githubUrls.currentInjuries ? 1 : 0) + (githubUrls.rookies ? 1 : 0) && failed.length > 0) {
+            } else if (failed.length === (githubUrls.rankings ? 1 : 0) + (githubUrls.kickers ? 1 : 0) + (githubUrls.injury ? 1 : 0) + (githubUrls.currentInjuries ? 1 : 0) + (githubUrls.rookies ? 1 : 0) && failed.length > 0) {
                 // Everything failed — probably offline. Cached data still works.
                 setDataFreshness("Offline — using cached data", "");
             } else {
@@ -3627,7 +3765,7 @@
             const size = parseInt(document.getElementById("leagueSize").value);
             teamRosters = {};
             for (let i = 1; i <= size; i++) {
-                teamRosters[i] = { QB: [], RB: [], WR: [], TE: [], FX: [], DF: [], BN: [] };
+                teamRosters[i] = { QB: [], RB: [], WR: [], TE: [], K: [], FX: [], DF: [], BN: [] };
             }
             recalculateEngine();
             saveState();
@@ -3653,6 +3791,7 @@
                     RB: parseInt(document.getElementById("reqRB").value),
                     WR: parseInt(document.getElementById("reqWR").value),
                     TE: parseInt(document.getElementById("reqTE").value),
+                    K: parseInt(document.getElementById("reqK").value),
                     DEF: parseInt(document.getElementById("reqDEF").value),
                     Flex: parseInt(document.getElementById("reqFlex").value),
                     Bench: parseInt(document.getElementById("reqBench").value)
@@ -3675,6 +3814,10 @@
             if (!el) return fallback;
             const n = parseFloat(el.value);
             return Number.isFinite(n) ? n : fallback;
+        }
+
+        function rosterKeyForPosition(pos) {
+            return pos === "DEF" ? "DF" : pos;
         }
 
         function recalculateEngine() {
@@ -3709,11 +3852,11 @@
                 p.ev = (p.adjFloor + p.adjCeiling) / 2;
             });
 
-            const positions = ["QB", "RB", "WR", "TE", "DEF"];
+            const positions = SUPPORTED_POSITIONS;
             let baselines = {};
 
             positions.forEach(pos => {
-                let numStarters = cfg.req[pos === "DEF" ? "DEF" : pos] || 0;
+                let numStarters = cfg.req[pos] || 0;
                 let flexAllocation = flexShare[pos] ? cfg.req.Flex * flexShare[pos] : 0;
                 const sizeForCalc = cfg.size > 0 ? cfg.size : 1;
 
@@ -3780,25 +3923,27 @@
             // distinct competing rosters, so count each team only once.
             const interveningTeamIds = [...new Set(interveningTeams)];
 
-            const posList = ["QB", "RB", "WR", "TE", "DEF"];
+            const posList = SUPPORTED_POSITIONS;
             const picksBeforeUser = interveningTeams.length;
             const lastThreatPick = currentPick + picksBeforeUser - 1;
             const totalStarterSlots = posList.reduce((sum, position) => sum + Math.max(0, cfg.req[position] || 0), 0);
-            let positionalGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
-            let leagueGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
+            let positionalGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DEF: 0 };
+            let leagueGapsCount = { QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DEF: 0 };
 
             interveningTeamIds.forEach(tNum => {
                 posList.forEach(pos => {
-                    let maxReq = cfg.req[pos === "DEF" ? "DEF" : pos];
-                    let filled = teamRosters[tNum][pos] ? teamRosters[tNum][pos].length : 0;
+                    let maxReq = cfg.req[pos];
+                    const rosterKey = rosterKeyForPosition(pos);
+                    let filled = teamRosters[tNum][rosterKey] ? teamRosters[tNum][rosterKey].length : 0;
                     if (filled < maxReq) { positionalGapsCount[pos]++; }
                 });
             });
 
             for (let tNum = 1; tNum <= cfg.size; tNum++) {
                 posList.forEach(pos => {
-                    let maxReq = cfg.req[pos === "DEF" ? "DEF" : pos];
-                    let filled = teamRosters[tNum][pos] ? teamRosters[tNum][pos].length : 0;
+                    let maxReq = cfg.req[pos];
+                    const rosterKey = rosterKeyForPosition(pos);
+                    let filled = teamRosters[tNum][rosterKey] ? teamRosters[tNum][rosterKey].length : 0;
                     if (filled < maxReq) { leagueGapsCount[pos]++; }
                 });
             }
@@ -3954,7 +4099,7 @@
             if (!container) return;
             container.innerHTML = "";
 
-            ["QB", "RB", "WR", "TE", "DEF"].forEach(pos => {
+            SUPPORTED_POSITIONS.forEach(pos => {
                 const available = activePlayers
                     .filter(p => p.pos === pos && !p.drafted)
                     .sort((a, b) => Number(a.rank || Infinity) - Number(b.rank || Infinity));
@@ -4018,7 +4163,7 @@
         // counts would be wrong after every draft, so we recompute fresh on each
         // call. With ~400 players this is negligible work.
         function updatePositionTabCounts() {
-            const counts = { ALL: 0, QB: 0, RB: 0, WR: 0, TE: 0, DEF: 0 };
+            const counts = { ALL: 0, QB: 0, RB: 0, WR: 0, TE: 0, K: 0, DEF: 0 };
             for (const p of activePlayers) {
                 if (p.drafted) continue;
                 counts.ALL++;
@@ -4186,9 +4331,15 @@
                 }
                 const adpDisplay = adpVal !== null ? adpVal.toFixed(1) : "—";
                 const storedRank = Number(p.rank);
-                const rankDisplay = Number.isFinite(storedRank) && storedRank > 0
-                    ? Math.round(storedRank)
-                    : activePlayers.indexOf(p) + 1;
+                const sourceKickerRank = Number(p.sourceRank);
+                const rankDisplay = p.pos === "K" && Number.isFinite(sourceKickerRank)
+                    ? `K${Math.round(sourceKickerRank)}`
+                    : (Number.isFinite(storedRank) && storedRank > 0
+                        ? Math.round(storedRank)
+                        : activePlayers.indexOf(p) + 1);
+                const rankCellTip = p.pos === "K"
+                    ? "FantasyPros kicker positional rank. Kicker sort order is mapped to the late rounds."
+                    : "FantasyPros overall consensus rank";
                 const rankMovement = rankMovementFor(p);
                 const movedUp = rankMovement > 0;
                 const significantMove = Math.abs(rankMovement) >= SIGNIFICANT_RANK_MOVE;
@@ -4220,7 +4371,7 @@
                 const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Avail. next: ${survivalPercentage}</span>`;
 
                 tr.innerHTML = `
-                    <td class="player-rank-col" title="FantasyPros overall consensus rank">${rankDisplay}${rankMoveMarkup}</td>
+                    <td class="player-rank-col" title="${rankCellTip}">${rankDisplay}${rankMoveMarkup}</td>
                     <td>
                         <strong>${escapeHtml(p.name)}</strong>${rookieBadge}${currentInjuryBadge}
                         <button type="button"
@@ -4273,6 +4424,7 @@
                 RB: Math.max(0, cfg.req.RB - userRoster.RB.length),
                 WR: Math.max(0, cfg.req.WR - userRoster.WR.length),
                 TE: Math.max(0, cfg.req.TE - userRoster.TE.length),
+                K: Math.max(0, cfg.req.K - userRoster.K.length),
                 DEF: Math.max(0, cfg.req.DEF - userRoster.DF.length)
             };
             // Flex eligible counts toward RB/WR/TE need indirectly: if all starter slots are full
@@ -4303,6 +4455,8 @@
             // match the original hardcoded values: tier=10, need=3, scarcity=2,
             // adp=1.5, vobWeight=0.5.
             const T = cfg.tuning;
+            const currentRound = Math.ceil(currentPick / Math.max(1, cfg.size));
+            const kickerTargetRound = Math.max(1, getTotalRosterSlots(cfg) - 2);
 
             const scored = undrafted.map(p => {
                 const positionNeed = needs[p.pos] || 0;
@@ -4323,8 +4477,15 @@
                 // regardless of tuning — it's structural, not a preference knob.
                 const positionSaturated = positionNeed === 0 &&
                     (!flexEligible || flexOpen === 0) &&
-                    userRoster[p.pos === "DEF" ? "DF" : p.pos].length >= cfg.req[p.pos === "DEF" ? "DEF" : p.pos];
+                    userRoster[rosterKeyForPosition(p.pos)].length >= cfg.req[p.pos];
                 const saturationPenalty = positionSaturated ? 4 : 0;
+
+                // Kicker scoring is volatile and replacement value is flat. Keep
+                // kickers out of early Best Available results, then release the
+                // penalty for the final three roster rounds when filling K is useful.
+                const kickerTimingPenalty = p.pos === "K"
+                    ? (cfg.req.K <= 0 ? 100 : (currentRound < kickerTargetRound ? 50 : 0))
+                    : 0;
 
                 // Scarcity: shift toward player if a run is imminent. Caps at scarcityCap.
                 const scarcityAdj = -Math.min(T.scarcityCap, (p.runRisk || 0) * T.scarcityCap / 100);
@@ -4336,7 +4497,7 @@
 
                 // Composite: lower raw score is better. Negate so higher = better for
                 // display and sort.
-                const rawScore = tierPenalty + needAdj + saturationPenalty + scarcityAdj + adpAdj - (p.vob * T.vobWeight);
+                const rawScore = tierPenalty + needAdj + saturationPenalty + kickerTimingPenalty + scarcityAdj + adpAdj - (p.vob * T.vobWeight);
                 const composite = -rawScore;
 
                 // Build reasoning string
@@ -4346,6 +4507,7 @@
                 if (positionNeed > 0) reasons.push(`fills ${p.pos} starter need (${positionNeed} open)`);
                 else if (flexOpen > 0 && flexEligible) reasons.push(`flex-eligible`);
                 else if (positionSaturated) reasons.push(`${p.pos} slots already full`);
+                if (p.pos === "K" && currentRound < kickerTargetRound) reasons.push(`best saved for late rounds`);
                 if (p.runRisk >= 60) reasons.push(`${p.pos} run risk ${p.runRisk}%`);
                 if (vsAdp >= 5) reasons.push(`value vs ADP (+${vsAdp.toFixed(0)})`);
 
@@ -4499,7 +4661,7 @@
         }
 
         // Where would this player land on this team's roster right now?
-        // Returns the slot key ("QB"/"RB"/"WR"/"TE"/"DF"/"FX"/"BN") or null if the
+        // Returns the slot key ("QB"/"RB"/"WR"/"TE"/"K"/"DF"/"FX"/"BN") or null if the
         // roster has no room. Shared by executePlayerDraft and the mock-draft
         // simulator so placement rules live in exactly one place.
         // NOTE: roster objects key defenses as "DF" while player.pos is "DEF" —
@@ -4508,8 +4670,8 @@
         function findPlacementSlot(teamNum, player, cfg) {
             const roster = teamRosters[teamNum];
             if (!roster) return null;
-            const slotKey = player.pos === "DEF" ? "DF" : player.pos;
-            const posMaxReq = cfg.req[player.pos === "DEF" ? "DEF" : player.pos];
+            const slotKey = rosterKeyForPosition(player.pos);
+            const posMaxReq = cfg.req[player.pos];
             const flexEligible = (player.pos === "RB" || player.pos === "WR" || player.pos === "TE");
 
             // Placement priority: starter slot → flex (if eligible) → bench.
@@ -4574,7 +4736,7 @@
 
         function getTotalRosterSlots(cfg) {
             return cfg.req.QB + cfg.req.RB + cfg.req.WR + cfg.req.TE +
-                   cfg.req.Flex + cfg.req.DEF + cfg.req.Bench;
+                   cfg.req.Flex + cfg.req.K + cfg.req.DEF + cfg.req.Bench;
         }
 
         function isDraftComplete(cfg) {
@@ -4592,13 +4754,16 @@
             let bestScore = Infinity;
             window_.forEach((p, i) => {
                 let score = i; // ADP order — lower index = better
-                const slotKey = p.pos === "DEF" ? "DF" : p.pos;
-                const req = cfg.req[p.pos === "DEF" ? "DEF" : p.pos];
+                const slotKey = rosterKeyForPosition(p.pos);
+                const req = cfg.req[p.pos];
                 const startersOpen = roster[slotKey].length < req;
                 if (startersOpen) score -= 1.5;
                 else score += 2;
                 if (p.pos === "DEF" && !startersOpen) score += 50; // never a 2nd defense
+                if (p.pos === "K" && !startersOpen) score += 50;   // never a 2nd kicker
                 if (p.pos === "QB" && !startersOpen) score += 6;   // rarely a 2nd QB (1-QB league)
+                const round = Math.ceil(currentPick / Math.max(1, cfg.size));
+                if (p.pos === "K" && round < getTotalRosterSlots(cfg) - 2) score += 100;
                 score += Math.random() * 6 * (1 - cfg.adpWeight);  // market chaos
                 if (score < bestScore) { bestScore = score; best = p; }
             });
@@ -4684,16 +4849,17 @@
             if (!head || !body) return;
 
             // Build the slot column spec dynamically from roster requirements so
-            // a 12-team half PPR (1 QB, 2 RB, 2 WR, 1 TE, 1 FX, 1 DF, 6 BN) gets
-            // 14 slot columns instead of jamming all 6 bench players into one cell.
+            // a typical 12-team league (1 QB, 2 RB, 2 WR, 1 TE, 1 FX, 1 K, 1 DF,
+            // 6 BN) gets one column per slot instead of one combined bench cell.
             // Headers: starters get numbered when there's more than one (RB1, RB2),
-            // singletons stay bare (QB, TE, FX, DF).
+            // singletons stay bare (QB, TE, FX, K, DF).
             const slotSpec = [
                 { key: "QB", label: "QB", count: cfg.req.QB },
                 { key: "RB", label: "RB", count: cfg.req.RB },
                 { key: "WR", label: "WR", count: cfg.req.WR },
                 { key: "TE", label: "TE", count: cfg.req.TE },
                 { key: "FX", label: "FX", count: cfg.req.Flex },
+                { key: "K", label: "K", count: cfg.req.K },
                 { key: "DF", label: "DF", count: cfg.req.DEF },
                 { key: "BN", label: "BN", count: cfg.req.Bench }
             ];
@@ -4745,6 +4911,7 @@
                 { key: "WR", label: "WR", max: cfg.req.WR },
                 { key: "TE", label: "TE", max: cfg.req.TE },
                 { key: "FX", label: "FLEX", max: cfg.req.Flex },
+                { key: "K", label: "K", max: cfg.req.K },
                 { key: "DF", label: "DEF", max: cfg.req.DEF },
                 { key: "BN", label: "BENCH", max: cfg.req.Bench }
             ];
@@ -4771,7 +4938,7 @@
 
         function findPlayerForRosterEntry(entry) {
             if (!entry) return null;
-            const cleanName = String(entry).replace(/\s+\((QB|RB|WR|TE|DEF)\)$/i, "").trim();
+            const cleanName = String(entry).replace(/\s+\((QB|RB|WR|TE|K|DEF)\)$/i, "").trim();
             const key = normalizeNameForMatch(cleanName);
             return activePlayers.find(player => normalizeNameForMatch(player.name) === key) || null;
         }
@@ -4785,7 +4952,7 @@
                 return;
             }
 
-            const starterKeys = ["QB", "RB", "WR", "TE", "FX", "DF"];
+            const starterKeys = ["QB", "RB", "WR", "TE", "FX", "K", "DF"];
             const starters = starterKeys.flatMap(key => (roster[key] || []).map(entry => findPlayerForRosterEntry(entry))).filter(Boolean);
             const byWeek = new Map();
             starters.forEach(player => {
@@ -4840,7 +5007,7 @@
             }
 
             // Group by position; order positions in standard fantasy importance.
-            const positionOrder = ["QB", "RB", "WR", "TE", "DEF"];
+            const positionOrder = ["QB", "RB", "WR", "TE", "K", "DEF"];
             const byPos = {};
             favorites.forEach(p => {
                 const k = p.pos || "OTHER";
@@ -4897,6 +5064,6 @@
             container.innerHTML = sections.join("");
         }
     </script>
-    <script src="features.js?v=20260809-ranking-movers-byes"></script>
+    <script src="features.js?v=20260809-kicker-support"></script>
 </body>
 </html>

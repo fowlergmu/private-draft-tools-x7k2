@@ -10,7 +10,7 @@
     let espnLastContact = 0;
 
     function playerForRosterEntry(entry) {
-        const clean = String(entry || "").replace(/\s+\((QB|RB|WR|TE|DEF)\)$/, "");
+        const clean = String(entry || "").replace(/\s+\((QB|RB|WR|TE|K|DEF)\)$/, "");
         return activePlayers.find(p => p.name === clean) || null;
     }
 
@@ -114,7 +114,7 @@
             return;
         }
         const warnings = [];
-        [["QB", "QB"], ["RB", "RB"], ["WR", "WR"], ["TE", "TE"], ["DF", "DEF"]].forEach(([key, label]) => {
+        [["QB", "QB"], ["RB", "RB"], ["WR", "WR"], ["TE", "TE"], ["K", "K"], ["DF", "DEF"]].forEach(([key, label]) => {
             const needed = cfg.req[label] || 0;
             const open = Math.max(0, needed - (roster[key] || []).length);
             if (open > 0) warnings.push("Need " + open + " more starting " + label + (open > 1 ? "s" : ""));
@@ -196,9 +196,9 @@
         const cfg = readConfig();
         const picks = draftHistory.filter(h => h.team === cfg.userPos).map(h => h.playerObj);
         if (!picks.length) return null;
-        const startersNeeded = cfg.req.QB + cfg.req.RB + cfg.req.WR + cfg.req.TE + cfg.req.Flex + cfg.req.DEF;
+        const startersNeeded = cfg.req.QB + cfg.req.RB + cfg.req.WR + cfg.req.TE + cfg.req.Flex + cfg.req.K + cfg.req.DEF;
         const roster = teamRosters[cfg.userPos];
-        const startersFilled = roster.QB.length + roster.RB.length + roster.WR.length + roster.TE.length + roster.FX.length + roster.DF.length;
+        const startersFilled = roster.QB.length + roster.RB.length + roster.WR.length + roster.TE.length + roster.FX.length + roster.K.length + roster.DF.length;
         const values = picks.map(p => Number(p.draftPick || 0) - Number(p.adp || p.draftPick || 0));
         const averageValue = values.reduce((a, b) => a + b, 0) / values.length;
         const risky = picks.filter(p => ["High", "Yikes"].includes(p.injury) || ["Out", "Doubtful", "IR", "PUP", "NFI"].includes(p.currentStatus)).length;
