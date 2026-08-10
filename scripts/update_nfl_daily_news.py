@@ -19,7 +19,7 @@ from pathlib import Path
 HANDLE = "insidenflnews.bsky.social"
 API_URL = "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed"
 SLEEPER_API_URL = "https://api.sleeper.app/v1/players/nfl?active=true"
-ACTIVE_POSITIONS = {"QB", "RB", "WR", "TE"}
+ACTIVE_POSITIONS = {"QB", "RB", "WR", "TE", "K"}
 RESOLUTION_TERMS = (
     "activated from", "activated off", "returned to practice", "returns to practice",
     "cleared to play", "cleared for", "full participant", "no limitations",
@@ -459,6 +459,7 @@ def write_snapshot(path: Path, rows: list[dict[str, str]], dry_run: bool) -> Non
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rankings", type=Path, default=Path("Data/Tiers.csv"))
+    parser.add_argument("--kickers", type=Path, default=Path("Data/Kickers.csv"))
     parser.add_argument("--output", type=Path, default=Path("Data/Current Injuries.csv"))
     parser.add_argument("--feed-file", type=Path)
     parser.add_argument("--sleeper-file", type=Path)
@@ -468,6 +469,8 @@ def main() -> int:
     args = parser.parse_args()
 
     players = load_players(args.rankings)
+    if args.kickers.exists():
+        players.extend(load_players(args.kickers))
     existing = load_existing(args.output)
     if args.feed_file:
         feed = json.loads(args.feed_file.read_text(encoding="utf-8")).get("feed", [])
