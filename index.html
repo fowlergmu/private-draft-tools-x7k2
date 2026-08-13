@@ -283,6 +283,17 @@
             border-radius: 2px;
         }
 
+        .player-team-abbr {
+            display: inline-block;
+            margin-left: 5px;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.35px;
+            vertical-align: 1px;
+            white-space: nowrap;
+        }
+
         /* Drafted favorites in the watch list — grayed out with a strikethrough. */
         .watch-row-drafted {
             opacity: 0.55;
@@ -1033,7 +1044,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Each player's NFL team abbreviation appears beside their name. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="matrix-controls">
                     <div class="filter-tabs">
                         <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
@@ -4369,11 +4380,15 @@
                     : `${survival.percentage}% estimated chance ${p.name} is still available at your next pick · ${survival.label}. Based on ADP ${adpDisplay}, your draft window, competing-team ${p.pos} needs, and ADP Market Adherence.`;
                 const survivalBadge = `<span class="survival-badge ${survival.cssClass}" title="${escapeHtml(survivalTip)}" aria-label="${escapeHtml(survivalTip)}">${survivalPercentage}</span>`;
                 const mobileSurvivalBadge = `<span class="survival-badge mobile-survival ${survival.cssClass}" title="${escapeHtml(survivalTip)}">Avail. next: ${survivalPercentage}</span>`;
+                const teamAbbreviation = String(p.nflTeam || "").trim().toUpperCase();
+                const teamMarkup = teamAbbreviation
+                    ? `<span class="player-team-abbr" title="NFL team">${escapeHtml(teamAbbreviation)}</span>`
+                    : "";
 
                 tr.innerHTML = `
                     <td class="player-rank-col" title="${rankCellTip}">${rankDisplay}${rankMoveMarkup}</td>
                     <td>
-                        <strong>${escapeHtml(p.name)}</strong>${rookieBadge}${currentInjuryBadge}
+                        <strong>${escapeHtml(p.name)}</strong>${teamMarkup}${rookieBadge}${currentInjuryBadge}
                         <button type="button"
                             class="favorite-toggle ${p.favorite ? 'is-favorite' : ''}"
                             onclick="toggleFavorite(${p.id})"
