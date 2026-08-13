@@ -2045,7 +2045,7 @@
         // Upgrade saved player pools created before Rank and market ADP were
         // stored separately. The cached FantasyPros CSV is already available
         // on returning visits, so this preserves the draft while refreshing
-        // only the two ranking fields.
+        // ranking fields plus NFL team and bye-week metadata.
         function applyCachedRankingMetadata() {
             if (!cachedRankingsCsv || !Array.isArray(activePlayers)) return;
             const lines = cachedRankingsCsv.split(/\r?\n/).filter(line => line.trim());
@@ -2054,6 +2054,8 @@
             const rkIdx = headers.indexOf("rk");
             const nameIdx = headers.indexOf("player name");
             const deltaIdx = headers.indexOf("ecr vs. adp");
+            const teamIdx = headers.indexOf("team");
+            const byeIdx = headers.indexOf("bye week");
             if (rkIdx === -1 || nameIdx === -1) return;
 
             const metadata = new Map();
@@ -2063,13 +2065,20 @@
                 const rank = parseInt(cells[rkIdx]);
                 if (!name || !Number.isFinite(rank)) continue;
                 const delta = deltaIdx !== -1 ? parseFloat(cells[deltaIdx]) || 0 : 0;
-                metadata.set(normalizeNameForMatch(name), { rank, adp: Math.max(1, rank + delta) });
+                metadata.set(normalizeNameForMatch(name), {
+                    rank,
+                    adp: Math.max(1, rank + delta),
+                    nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
+                    bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : ""
+                });
             }
             activePlayers.forEach(player => {
                 const values = metadata.get(normalizeNameForMatch(player.name));
                 if (!values) return;
                 player.rank = values.rank;
                 player.adp = values.adp;
+                player.nflTeam = values.nflTeam;
+                player.bye = values.bye;
             });
         }
 
