@@ -464,6 +464,12 @@
             gap: 6px;
             flex-shrink: 0;
         }
+        .matrix-select-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
         .matrix-sort-control label {
             color: var(--text-muted);
             font-size: 11px;
@@ -937,8 +943,9 @@
             .matrix-controls { display:grid; grid-template-columns:1fr; gap:8px; }
             .matrix-controls .filter-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; overflow:visible; }
             .matrix-controls .tab { justify-content:center; min-height:36px; }
-            .matrix-sort-control { justify-content:space-between; }
-            .matrix-sort-control .form-control { min-height:38px; min-width:150px; }
+            .matrix-select-controls { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+            .matrix-sort-control { display:grid; gap:4px; }
+            .matrix-sort-control .form-control { min-height:38px; min-width:0; width:100%; }
             .player-table-scroll { max-height:60vh !important; -webkit-overflow-scrolling:touch; }
             .player-table { font-size:11px; margin-top:6px; }
             .player-table th, .player-table td { padding:6px 4px; }
@@ -1052,7 +1059,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Each player's NFL team abbreviation and bye week appear beside their name. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. Use the position tabs and search box to narrow the list — both compose, so you can search within a position. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Each player's NFL team abbreviation and bye week appear beside their name. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. The position tabs, team menu, and search box work together to narrow the list. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="matrix-controls">
                     <div class="filter-tabs">
                         <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
@@ -1063,12 +1070,20 @@
                         <button type="button" class="tab" onclick="filterPosition('K', this)">K <span class="tab-count" id="tabCount-K"></span></button>
                         <button type="button" class="tab" onclick="filterPosition('DEF', this)">DEF <span class="tab-count" id="tabCount-DEF"></span></button>
                     </div>
-                    <div class="matrix-sort-control">
-                        <label for="playerSortOrder">Sort players by</label>
-                        <select id="playerSortOrder" class="form-control" onchange="setPlayerSort(this.value)">
-                            <option value="rank" selected>Rank</option>
-                            <option value="adp">ADP</option>
-                        </select>
+                    <div class="matrix-select-controls">
+                        <div class="matrix-sort-control">
+                            <label for="playerTeamFilter">Team</label>
+                            <select id="playerTeamFilter" class="form-control" onchange="setPlayerTeamFilter(this.value)">
+                                <option value="ALL" selected>All teams</option>
+                            </select>
+                        </div>
+                        <div class="matrix-sort-control">
+                            <label for="playerSortOrder">Sort</label>
+                            <select id="playerSortOrder" class="form-control" onchange="setPlayerSort(this.value)">
+                                <option value="rank" selected>Rank</option>
+                                <option value="adp">ADP</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="player-search">
@@ -1607,6 +1622,7 @@
 
         let currentPick = 1;
         let selectedPositionFilter = "ALL";
+        let selectedTeamFilter = "ALL";
         let selectedPlayerSort = "rank";
         // Search query for the Available Player Matrix — case-insensitive substring
         // match against player.name. Empty string = no search filter.
@@ -1692,6 +1708,7 @@
         const PROJECTION_SOURCE_KEY = "fantasyDraftEngine_projectionSource";
         const SCORING_PREFERENCE_KEY = "fantasyDraftEngine_scoringPreference";
         const PLAYER_SORT_KEY = "fantasyDraftEngine_playerSort";
+        const PLAYER_TEAM_FILTER_KEY = "fantasyDraftEngine_playerTeamFilter";
 
         function setScoringFormat(value) {
             if (!["Standard", "Half PPR", "Full PPR"].includes(value)) return;
@@ -1724,6 +1741,42 @@
             } catch (e) {}
             const select = document.getElementById("playerSortOrder");
             if (select) select.value = selectedPlayerSort;
+        }
+
+        function setPlayerTeamFilter(value) {
+            selectedTeamFilter = String(value || "ALL").trim().toUpperCase() || "ALL";
+            try { localStorage.setItem(PLAYER_TEAM_FILTER_KEY, selectedTeamFilter); } catch (e) {}
+            renderPlayerPool();
+        }
+
+        function restorePlayerTeamFilterPreference() {
+            try {
+                const value = localStorage.getItem(PLAYER_TEAM_FILTER_KEY);
+                if (value) selectedTeamFilter = String(value).trim().toUpperCase() || "ALL";
+            } catch (e) {}
+        }
+
+        function populatePlayerTeamFilter() {
+            const select = document.getElementById("playerTeamFilter");
+            if (!select) return;
+            const teams = Array.from(new Set(activePlayers
+                .map(player => String(player.nflTeam || "").trim().toUpperCase())
+                .filter(Boolean)))
+                .sort((a, b) => a.localeCompare(b));
+            const validSelection = selectedTeamFilter === "ALL" || teams.includes(selectedTeamFilter);
+            if (!validSelection) selectedTeamFilter = "ALL";
+            select.replaceChildren();
+            const allOption = document.createElement("option");
+            allOption.value = "ALL";
+            allOption.textContent = "All teams";
+            select.appendChild(allOption);
+            teams.forEach(team => {
+                const option = document.createElement("option");
+                option.value = team;
+                option.textContent = team;
+                select.appendChild(option);
+            });
+            select.value = selectedTeamFilter;
         }
 
         function saveState() {
@@ -1834,6 +1887,7 @@
             loadGithubUrls();
             restoreScoringPreference();
             restorePlayerSortPreference();
+            restorePlayerTeamFilterPreference();
             if (loadState()) {
                 recalculateEngine();
             } else {
@@ -2045,7 +2099,7 @@
         // Upgrade saved player pools created before Rank and market ADP were
         // stored separately. The cached FantasyPros CSV is already available
         // on returning visits, so this preserves the draft while refreshing
-        // only the two ranking fields.
+        // ranking fields plus NFL team and bye-week metadata.
         function applyCachedRankingMetadata() {
             if (!cachedRankingsCsv || !Array.isArray(activePlayers)) return;
             const lines = cachedRankingsCsv.split(/\r?\n/).filter(line => line.trim());
@@ -2054,6 +2108,8 @@
             const rkIdx = headers.indexOf("rk");
             const nameIdx = headers.indexOf("player name");
             const deltaIdx = headers.indexOf("ecr vs. adp");
+            const teamIdx = headers.indexOf("team");
+            const byeIdx = headers.indexOf("bye week");
             if (rkIdx === -1 || nameIdx === -1) return;
 
             const metadata = new Map();
@@ -2063,13 +2119,20 @@
                 const rank = parseInt(cells[rkIdx]);
                 if (!name || !Number.isFinite(rank)) continue;
                 const delta = deltaIdx !== -1 ? parseFloat(cells[deltaIdx]) || 0 : 0;
-                metadata.set(normalizeNameForMatch(name), { rank, adp: Math.max(1, rank + delta) });
+                metadata.set(normalizeNameForMatch(name), {
+                    rank,
+                    adp: Math.max(1, rank + delta),
+                    nflTeam: teamIdx !== -1 ? (cells[teamIdx] || "").trim() : "",
+                    bye: byeIdx !== -1 ? (cells[byeIdx] || "").trim() : ""
+                });
             }
             activePlayers.forEach(player => {
                 const values = metadata.get(normalizeNameForMatch(player.name));
                 if (!values) return;
                 player.rank = values.rank;
                 player.adp = values.adp;
+                player.nflTeam = values.nflTeam;
+                player.bye = values.bye;
             });
         }
 
@@ -4220,9 +4283,13 @@
             // the active position filter and search query — counts describe the
             // pool, not the current view.
             updatePositionTabCounts();
+            populatePlayerTeamFilter();
 
             let displayList = activePlayers.filter(p => !p.drafted);
             if (selectedPositionFilter !== "ALL") { displayList = displayList.filter(p => p.pos === selectedPositionFilter); }
+            if (selectedTeamFilter !== "ALL") {
+                displayList = displayList.filter(p => String(p.nflTeam || "").trim().toUpperCase() === selectedTeamFilter);
+            }
 
             // Search filter composes with position filter — case-insensitive substring on name.
             if (playerSearchQuery) {
@@ -4247,8 +4314,15 @@
                 td.style.cssText = "text-align: center; padding: 20px; color: var(--text-muted); font-style: italic;";
                 if (playerSearchQuery) {
                     td.innerText = `No players match "${playerSearchQuery}"` +
-                        (selectedPositionFilter !== "ALL" ? ` at position ${selectedPositionFilter}.` : ".") +
+                        (selectedPositionFilter !== "ALL" ? ` at position ${selectedPositionFilter}` : "") +
+                        (selectedTeamFilter !== "ALL" ? ` on ${selectedTeamFilter}` : "") + "." +
                         " Try a different search or clear it.";
+                } else if (selectedPositionFilter !== "ALL" || selectedTeamFilter !== "ALL") {
+                    const filters = [
+                        selectedPositionFilter !== "ALL" ? selectedPositionFilter : "",
+                        selectedTeamFilter !== "ALL" ? selectedTeamFilter : ""
+                    ].filter(Boolean).join(" · ");
+                    td.innerText = `No undrafted players match ${filters}. Try a different filter.`;
                 } else {
                     td.innerText = "No undrafted players to show. Import a rankings CSV or reset the draft.";
                 }
