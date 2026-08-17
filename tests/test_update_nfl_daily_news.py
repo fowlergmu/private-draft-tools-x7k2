@@ -290,6 +290,33 @@ class InjuryUpdaterTests(unittest.TestCase):
         )
         self.assertEqual(rows, [])
 
+    def test_fantasypros_news_ignores_contextual_player_mention(self):
+        players = [
+            updater.Player("DJ Moore", "WR", 1),
+            updater.Player("Josh Allen", "QB", 2),
+        ]
+        news = {
+            "items": [{
+                "created": "2026-08-16 12:00:00",
+                "title": "DJ Moore avoids serious ankle injury Saturday",
+                "desc": (
+                    "Bills coach Joe Brady said DJ Moore was good to go after suffering "
+                    "an ankle injury in Saturday's preseason game against the Panthers. "
+                    "Moore appeared to have his ankle rolled up on after a catch and run. "
+                    "He hauled in 3-of-4 targets for 61 yards in his first official game "
+                    "with the Bills and Josh Allen."
+                ),
+                "link": (
+                    "https://www.fantasypros.com/nfl/news/602568/"
+                    "dj-moore-avoids-serious-ankle-injury-saturday.php"
+                ),
+            }]
+        }
+        rows = updater.build_snapshot(
+            [], players, {}, date(2026, 8, 17), 7, {}, {}, news
+        )
+        self.assertEqual([row["name"] for row in rows], ["DJ Moore"])
+
 
 if __name__ == "__main__":
     unittest.main()
