@@ -1,5 +1,22 @@
 # private-draft-tools-x7k2
 
+## Draft rankings
+
+`Data/Tiers.csv` is generated from Boris Chen's public Full-PPR draft tiers at
+<https://www.borischen.co/p/ppr-draft-tiers.html>. The updater reads the three
+public overall-tier files, preserves team, bye-week, and market-ADP metadata
+from the prior validated CSV, and adds Boris Chen's full DST tiers so every
+league has enough defenses to draft. `Data/Kickers.csv` follows Boris Chen's
+separate kicker tiers.
+
+The **Refresh Boris Chen rankings** GitHub Action runs every Monday and can also
+be started manually. It fails without changing either CSV if tiers are missing,
+players are duplicated, metadata cannot be matched, or the supported-position
+pool is incomplete. Boris Chen's model clusters FantasyPros expert-consensus
+data into natural tiers; the site consumes Boris Chen's published output rather
+than scraping FantasyPros rankings directly. Source code for the model is at
+<https://github.com/borisachen/fftiers>.
+
 ## Current injury feed
 
 `Data/Current Injuries.csv` is a short-term availability snapshot maintained
