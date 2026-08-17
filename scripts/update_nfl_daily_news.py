@@ -262,16 +262,23 @@ def is_injury_post(text: str) -> bool:
 
 
 def player_is_subject(text: str, player: Player) -> bool:
-    lowered = normalized(text)
     aliases = [normalized(player.name), re.sub(r"\s+(jr|sr|ii|iii|iv)$", "", normalized(player.name))]
-    for alias in aliases:
-        match = re.search(r"(?:^| )" + re.escape(alias) + r"(?: |$)", lowered)
-        if not match:
-            continue
-        tail = lowered[match.end():].strip()
-        if re.match(r"^(said|says|told|discussed)\b", tail):
-            return False
-        return True
+    segments = re.split(r"(?<=[.!?])\s+|\s*[|\u2022]\s*", clean_text(text))
+    for segment in segments:
+        lowered = normalized(segment)
+        for alias in aliases:
+            for match in re.finditer(r"(?:^| )" + re.escape(alias) + r"(?: |$)", lowered):
+                before = lowered[:match.start()].strip()
+                after = lowered[match.end():].strip()
+                if re.match(r"^(said|says|told|discussed)\b", after):
+                    continue
+                if is_injury_post(after[:180]):
+                    return True
+                if (
+                    is_injury_post(before[-120:])
+                    and not re.search(r"\b(and|with|against|from|by|to|for|of)$", before)
+                ):
+                    return True
     return False
 
 
