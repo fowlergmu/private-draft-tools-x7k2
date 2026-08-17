@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Predictive Fantasy Football Draft Engine (FantasyPros Edition)</title>
+    <title>Predictive Fantasy Football Draft Engine (Boris Chen Tiers)</title>
     <style>
         :root {
             --bg-primary: #0f172a;
@@ -1002,7 +1002,7 @@
     <header>
         <div>
             <h1>Predictive Fantasy Football Draft Engine</h1>
-            <p>FantasyPros Consensus Tier Matrix & Dynamic VOB Engine</p>
+            <p>Boris Chen Full-PPR Tier Matrix &amp; Dynamic VOB Engine</p>
         </div>
         <span id="dataFreshness" style="font-size: 11px; color: var(--text-muted); text-align: right; margin-left: auto; max-width: 280px;"></span>
         <div class="header-actions">
@@ -1059,7 +1059,7 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Each player's NFL team abbreviation and bye week appear beside their name. Columns: Rank (FantasyPros overall consensus rank), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the experts value differently from the draft market. The position tabs, team menu, and search box work together to narrow the list. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
+                <div class="panel-title">Available Player Matrix<span class="help-tip" tabindex="0" data-tip="All undrafted players, sorted by your Rank or ADP selection. Each player's NFL team abbreviation and bye week appear beside their name. Columns: Rank (Boris Chen Full-PPR overall order), Tier (lower = better), ADP (Average Draft Position), vs ADP (positive = value, negative = reach at current pick), VOB (Value Over Baseline at this position — within-position only, don't cross-compare), Floor/Ceiling (PPR-adjusted), Risk (injury — Low/Med/High/YIKES where YIKES is Draft Sharks 'Very High Risk'), Run Risk (positional), and Avail. Next (estimated chance the individual player remains available at your next turn). Use Rank beside ADP to spot players the tier model values differently from the draft market. The position tabs, team menu, and search box work together to narrow the list. The ★ next to a name toggles it on your Watch List. Column headers stay pinned to the top as you scroll.">?</span></div>
                 <div class="matrix-controls">
                     <div class="filter-tabs">
                         <button type="button" class="tab active" onclick="filterPosition('ALL', this)">ALL <span class="tab-count" id="tabCount-ALL"></span></button>
@@ -1094,7 +1094,7 @@
                     <table class="player-table" id="playerTable">
                         <thead>
                             <tr>
-                                <th class="player-rank-col" title="FantasyPros overall consensus rank; kickers show their positional K rank. Arrows show movement since the prior overall-rankings update, with colored arrows for moves of 10 or more spots.">Rank</th>
+                                <th class="player-rank-col" title="Boris Chen Full-PPR overall order; kickers show their Boris Chen positional K rank. Arrows show movement since the prior overall-rankings update, with colored arrows for moves of 10 or more spots.">Rank</th>
                                 <th>Player</th>
                                 <th>Pos</th>
                                 <th>Tier</th>
@@ -1222,7 +1222,7 @@
             <div class="panel">
                 <div class="panel-title" style="color: var(--accent-amber);">Player Data Import<span class="help-tip tip-right" tabindex="0" data-tip="Imports the pool of draftable players. Five tabs: CSV (rankings; auto-detects engine native vs FantasyPros export), Pasted Text (FantasyPros cheat sheet heuristic), JSON (script your own source), Injury (merges Draft Sharks injury data by name), and Rookies (merges FantasyPros rookies export by name). The Injury and Rookies caches auto-apply to your pool whenever you re-import rankings; the rankings cache can be reloaded explicitly. Players need at minimum a name, position, and tier; everything else is optional.">?</span></div>
                 <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
-                    FantasyPros's API requires a paid partner key, so direct auto-sync isn't possible from a standalone page. CSV is the most reliable for rankings; use the Injury tab to merge a separate injury-data CSV on top of your imported pool.
+                    The default rankings sync weekly from Boris Chen's public Full-PPR tiers. You can still import a compatible CSV or paste a FantasyPros cheat sheet manually; use the Injury tab to merge separate injury-risk data on top of your player pool.
                 </p>
 
                 <div class="filter-tabs" style="margin-bottom: 10px;">
@@ -1574,7 +1574,7 @@
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">A group of players considered roughly equivalent in expected value. Tier breaks reflect real talent gaps — you'd rather have any tier 2 RB than the best tier 3 RB.</dd>
 
                         <dt style="font-weight: 600; margin-top: 8px;">Run Risk</dt>
-                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate that the best remaining tier at a position is meaningfully depleted before your next pick. It combines FantasyPros market ADP timing, the distinct teams picking before you, their remaining starter needs, elite-tier supply, lineup requirements, and the ADP Market Adherence setting.</dd>
+                        <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Engine's estimate that the best remaining tier at a position is meaningfully depleted before your next pick. It combines Boris Chen tiers, market ADP timing, the distinct teams picking before you, their remaining starter needs, elite-tier supply, lineup requirements, and the ADP Market Adherence setting.</dd>
 
                         <dt style="font-weight: 600; margin-top: 8px;">Avail. Next %</dt>
                         <dd style="color: var(--text-muted); margin-left: 12px; margin-bottom: 4px;">Estimated chance an individual player is still available at your next turn. It uses that player's ADP, your pick window, competing-team positional needs, lineup requirements, and ADP Market Adherence. This is a draft-market estimate, not a guarantee.</dd>
@@ -1592,7 +1592,7 @@
 
             </div>
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-                Sources used in this app: <strong>Sleeper API</strong> for player data (free, no auth required). <strong>FantasyPros</strong> reference for ECR methodology (their format is the basis for this engine's tier-based approach). Player data import also supports CSV and JSON for any source you prefer.
+                Sources used in this app: <strong>Boris Chen</strong> for Full-PPR draft tiers and positional kicker/defense tiers; his model clusters FantasyPros expert-consensus data. <strong>Sleeper API</strong> supplies player and injury metadata. Player data import also supports CSV and JSON for any source you prefer. <a href="https://www.borischen.co/p/ppr-draft-tiers.html" target="_blank" rel="noopener">Boris Chen tiers ↗</a> · <a href="https://github.com/borisachen/fftiers" target="_blank" rel="noopener">Model source ↗</a>
             </p>
         </div>
     </div>
@@ -1659,8 +1659,8 @@
         // Cached raw rookies CSV. Same auto-remerge pattern as injuries: applied
         // after every rankings import (and on demand via the rookies tab button).
         let cachedRookiesCsv = null;
-        // Kicker rankings live in their own small file because FantasyPros' main
-        // overall PPR export omits the position entirely.
+        // Kicker rankings live in their own small file because the main rankings
+        // CSV keeps kickers separate from the overall player pool.
         let cachedKickersCsv = null;
 
         // ─── GitHub Sync URL configuration ─────────────────────────────────
@@ -2226,7 +2226,7 @@
 
             const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase().trim());
 
-            // Format detection: FantasyPros draft rankings export has these distinctive columns.
+            // Format detection: the source-compatible tier CSV has these distinctive columns.
             // Their POS field combines position and positional rank (e.g. "WR1", "RB18"), they
             // include a TIERS column, and "ECR VS. ADP" gives the rank-vs-ADP difference.
             const isFantasyPros = headers.includes("rk") &&
@@ -2239,7 +2239,7 @@
             return parseGenericCsv(lines, headers, text, options);
         }
 
-        // Parser for the FantasyPros draft rankings CSV export format.
+        // Parser for the source-compatible tier rankings CSV format.
         // Columns: RK, TIERS, PLAYER NAME, TEAM, POS, BYE WEEK, UPSIDE, BUST, SOS SEASON, ECR VS. ADP
         function parseFantasyProsCsv(lines, headers, rawText, options) {
             options = options || {};
@@ -2276,8 +2276,9 @@
                     continue;
                 }
 
-                // RK is FantasyPros' overall Expert Consensus Rank. ECR VS. ADP
-                // is positive when ECR is that many slots ahead of market ADP,
+                // RK is the source's overall rank. ECR VS. ADP is retained as the
+                // compatible rank-vs-market field and is positive when rank is
+                // that many slots ahead of market ADP,
                 // so market ADP = RK + delta (for example RK 1 and +2 => ADP 3).
                 const rk = parseInt(cells[rkIdx]) || i;
                 const ecrVsAdp = ecrVsAdpIdx !== -1 ? parseFloat(cells[ecrVsAdpIdx]) || 0 : 0;
@@ -2286,7 +2287,7 @@
                 const tier = parseInt(cells[tierIdx]) || 10;
 
                 // Floor/ceiling derived from tier with positional adjustments — same model
-                // as the text parser. FantasyPros doesn't publish projections in this export.
+                // as the text parser. The source CSV doesn't publish projections.
                 let floorScore = 14.5 - tier * 1.1;
                 let ceilingScore = 21.5 - tier * 1.4;
                 if (pos === "QB") { floorScore += 4.0; ceilingScore += 5.0; }
@@ -2307,7 +2308,7 @@
             }
 
             if (pool.length === 0) {
-                if (!options.silent) alert("No valid players found in FantasyPros CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
+                if (!options.silent) alert("No valid players found in the tier rankings CSV.\n\nFirst few errors:\n" + errors.slice(0, 5).join("\n"));
                 return false;
             }
 
@@ -2318,7 +2319,7 @@
             reapplyCachedRookiesData();
             cacheRankingsCsv(rawText);
             if (!options.silent) {
-                const parts = [`Imported ${pool.length} players from FantasyPros CSV.`];
+                const parts = [`Imported ${pool.length} players from tier rankings CSV.`];
                 if (errors.length > 0) parts.push(`${errors.length} row(s) had errors and were skipped.`);
                 alert(parts.join("\n"));
                 document.getElementById("csvPasteArea").value = "";
@@ -3199,7 +3200,7 @@
 
         // Kicker rankings are merged rather than replacing the main player pool.
         // Their stored rank/ADP values are intentionally late-round overall values,
-        // while sourceRank preserves the FantasyPros positional order.
+        // while sourceRank preserves the Boris Chen positional order.
         function parseKickersCsvText(text, options) {
             options = options || {};
             if (!text || !text.trim()) return { merged: 0 };
@@ -4431,8 +4432,8 @@
                         ? Math.round(storedRank)
                         : activePlayers.indexOf(p) + 1);
                 const rankCellTip = p.pos === "K"
-                    ? "FantasyPros kicker positional rank. Kicker sort order is mapped to the late rounds."
-                    : "FantasyPros overall consensus rank";
+                    ? "Boris Chen kicker positional rank. Kicker sort order is mapped to the late rounds."
+                    : "Boris Chen Full-PPR overall order";
                 const rankMovement = rankMovementFor(p);
                 const movedUp = rankMovement > 0;
                 const significantMove = Math.abs(rankMovement) >= SIGNIFICANT_RANK_MOVE;
@@ -4450,7 +4451,7 @@
                 const vobTip = p.vob >= 0
                     ? `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player's projected output above the replacement-level player at ${p.pos}. Positive = above the position's replacement; the higher, the better the value. Note: only compare VOB within the same position — RB and WR baselines differ.`
                     : `VOB (Value Over Baseline): ${vobSign}${p.vob.toFixed(1)}. This player projects below the replacement-level ${p.pos}, meaning a freely-available waiver/late-round player at this position is expected to outperform them.`;
-                let runRiskTip = `Run Risk: ${p.runRisk}%. Estimated elite-tier depletion before your next pick, using FantasyPros market ADP timing, competing-team needs, lineup requirements, and remaining tier supply.`;
+                let runRiskTip = `Run Risk: ${p.runRisk}%. Estimated elite-tier depletion before your next pick, using Boris Chen tiers, market ADP timing, competing-team needs, lineup requirements, and remaining tier supply.`;
                 if (p.runRisk > 75) runRiskTip += " High urgency — if you want one, take one now.";
                 else if (p.runRisk > 40) runRiskTip += " Moderate urgency — the position is thinning.";
                 else runRiskTip += " Calm — you can wait.";

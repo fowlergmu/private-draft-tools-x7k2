@@ -1,0 +1,45 @@
+name: Refresh Boris Chen rankings
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 13 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-borischen-rankings
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Test Boris Chen ranking parser
+        run: python -m unittest discover -s tests -v
+
+      - name: Refresh Full-PPR rankings
+        run: python scripts/update_borischen_rankings.py
+
+      - name: Commit updated rankings
+        run: |
+          if git diff --quiet -- "Data/Tiers.csv" "Data/Kickers.csv"; then
+            echo "No ranking changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "Data/Tiers.csv" "Data/Kickers.csv"
+          git commit -m "Refresh Boris Chen rankings"
+          git push origin HEAD:main

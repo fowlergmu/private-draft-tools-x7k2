@@ -31,7 +31,7 @@
             ? "FantasyPros + Sleeper + NFL Daily News"
             : "Sleeper + NFL Daily News";
         bar.innerHTML =
-            "<span class='source-chip'><strong>Rankings:</strong> FantasyPros Full PPR · " +
+            "<span class='source-chip'><strong>Rankings:</strong> Boris Chen Full PPR · " +
             activePlayers.length + " players · checked " + escapeHtml(formatSourceTime("rankings")) + "</span>" +
             "<span class='source-chip'><strong>Injuries:</strong> " + escapeHtml(injurySourceText) + " · " +
             currentCount + " current · checked " + escapeHtml(formatSourceTime("currentInjuries")) + "</span>" +
