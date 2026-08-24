@@ -1,9 +1,10 @@
 name,pos,status,injury,updated,source,provider,notes
 Puka Nacua,WR,Questionable,Undisclosed,2026-08-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Puka Nacua as Questionable.
-Christian McCaffrey,RB,Questionable,Undisclosed,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Christian McCaffrey as Questionable.
+Christian McCaffrey,RB,Questionable,Undisclosed,2026-08-24,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Christian McCaffrey as Questionable.
+Ashton Jeanty,RB,Questionable,Knee,2026-08-24,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Ashton Jeanty as Questionable.
 Chris Olave,WR,Monitor,Undisclosed,2026-08-18,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtfbslv6a22o,NFL Daily News,Chris Olave headed to medical tent during Tuesday's practice. Walked off with trainers.
 DeVonta Smith,WR,Questionable,Hamstring,2026-08-20,https://bsky.app/profile/insidenflnews.bsky.social/post/3msxvkyqkg22c,Sleeper + NFL Daily News,Eagles DNPs on Thursday: Makai Lemon (hamstring) DeVonta Smith (hamstring) Cooper DeJean (groin) Quinyon Mitchell (glute)
-Malik Nabers,WR,Questionable,Knee - ACL,2026-08-20,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Malik Nabers as Questionable.
+Malik Nabers,WR,Questionable,Knee - ACL,2026-08-24,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Malik Nabers as Questionable.
 Jaylen Waddle,WR,Questionable,Undisclosed,2026-08-18,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jaylen Waddle as Questionable.
 Emeka Egbuka,WR,Questionable,Undisclosed,2026-08-21,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtbw23xxtc2s,Sleeper + NFL Daily News,Emeka Egbuka (toe) considered day-to-day.
 Jeremiyah Love,RB,Monitor,Ankle,2026-08-18,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtemmehins2q,NFL Daily News,Mike LaFleur confirmed Jeremiyah Love (ankle) won't need surgery.
@@ -11,10 +12,10 @@ Breece Hall,RB,Questionable,Thigh,2026-08-18,https://bsky.app/profile/insidenfln
 Josh Jacobs,RB,Questionable,Groin,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Josh Jacobs as Questionable.
 Luther Burden III,WR,Questionable,Lower Body,2026-08-21,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Luther Burden III as Questionable.
 Tyler Warren,TE,Monitor,Adductor,2026-08-20,https://bsky.app/profile/insidenflnews.bsky.social/post/3mti3ut6jy22s,NFL Daily News,Schultz: Tyler Warren expected to return next week after suffering strained adductor.
-Mike Evans,WR,Questionable,Foot,2026-08-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Mike Evans as Questionable.
+Mike Evans,WR,Questionable,Foot,2026-08-24,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Mike Evans as Questionable.
 DJ Moore,WR,Questionable,Lower Body,2026-08-18,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists DJ Moore as Questionable.
 Quinshon Judkins,RB,Questionable,Undisclosed,2026-08-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtjyudvge22j,Sleeper + NFL Daily News,"Monken: Quinshon Judkins held out of practice Thursday due to ""nagging injury,"" via Scott Petrak."
-Parker Washington,WR,Monitor,Undisclosed,2026-08-21,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtluqmm3ms2o,NFL Daily News,Schefter: Parker Washington expected to return to practice next week after being sidelined with an undisclosed injury.
+Parker Washington,WR,Questionable,Undisclosed,2026-08-23,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtluqmm3ms2o,Sleeper + NFL Daily News,Schefter: Parker Washington expected to return to practice next week after being sidelined with an undisclosed injury.
 Tucker Kraft,TE,Questionable,Knee - ACL,2026-08-19,https://bsky.app/profile/insidenflnews.bsky.social/post/3msdvg3tprk2v,Sleeper + NFL Daily News,"OC Stenavich said he's hopeful Tucker Kraft (knee) will be ready to play Week 1, per Ryan Wood."
 Jadarian Price,RB,Questionable,Lower Body,2026-08-14,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jadarian Price as Questionable.
 DK Metcalf,WR,Questionable,Undisclosed,2026-08-19,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists DK Metcalf as Questionable.
@@ -24,24 +25,23 @@ Josh Downs,WR,Questionable,Groin,2026-08-16,https://api.sleeper.app/v1/players/n
 Michael Pittman Jr.,WR,Questionable,Leg,2026-08-19,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Pittman Jr. as Questionable.
 Jordyn Tyson,WR,Doubtful,Hamstring,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jordyn Tyson as Doubtful.
 Chuba Hubbard,RB,Questionable,Hamstring,2026-08-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3msxx6h5r6c2c,Sleeper + NFL Daily News,Chuba Hubbard considered week-to-week with hamstring injury.
-Alec Pierce,WR,PUP,Undisclosed,2026-08-23,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Alec Pierce as PUP.
+Alec Pierce,WR,PUP,Undisclosed,2026-08-24,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Alec Pierce as PUP.
 Patrick Mahomes II,QB,Questionable,Knee - ACL,2026-08-23,https://bsky.app/profile/insidenflnews.bsky.social/post/3msxymgdpcs2c,Sleeper + NFL Daily News,Patrick Mahomes (knee) officially won't play preseason Week 1.
 J.K. Dobbins,RB,Questionable,Undisclosed,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists J.K. Dobbins as Questionable.
 Quentin Johnston,WR,Questionable,Lower Body,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Quentin Johnston as Questionable.
-George Kittle,TE,PUP,Undisclosed,2026-08-23,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists George Kittle as PUP.
-Jakobi Meyers,WR,Questionable,Hand,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jakobi Meyers as Questionable.
+Jakobi Meyers,WR,Questionable,Hand,2026-08-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jakobi Meyers as Questionable.
 Makai Lemon,WR,Questionable,Undisclosed,2026-08-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3msxvkyqkg22c,Sleeper + NFL Daily News,Eagles DNPs on Thursday: Makai Lemon (hamstring) DeVonta Smith (hamstring) Cooper DeJean (groin) Quinyon Mitchell (glute)
 Rachaad White,RB,Questionable,Undisclosed,2026-08-20,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Rachaad White as Questionable.
 Kyle Monangai,RB,Questionable,Knee,2026-08-18,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtaahxqxxc2z,Sleeper + NFL Daily News,Schefter: Kyle Monangai (knee) believed to be “fine;” will undergo MRI.
 Jacory Croskey-Merritt,RB,Questionable,Undisclosed,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jacory Croskey-Merritt as Questionable.
 Khalil Shakir,WR,Questionable,Undisclosed,2026-08-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtjq7hzse22t,Sleeper + NFL Daily News,Brady: Khalil Shakir and DT Ed Oliver are both dealing with injuries.
-Jayden Higgins,WR,IR,Knee,2026-08-21,https://www.fantasypros.com/nfl/news/603621/jayden-higgins-knee-officially-placed-on-season-ending-ir.php,FantasyPros News,"Jayden Higgins (knee) officially placed on season-ending IR The Houston Texans officially placed Jayden Higgins on the season-ending injured reserve with a torn ACL. This was expected after Higgins was announced to have torn his ACL in a joint practice with the Raiders on Tuesday. Nico Collins is now likely the only Houston receiver on the fantasy radar, with Tank Dell still working back to full h"
+Jayden Higgins,WR,IR,Knee - ACL,2026-08-21,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jayden Higgins as IR.
 Xavier Worthy,WR,Questionable,Shoulder,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Xavier Worthy as Questionable.
 Tyler Allgeier,RB,Monitor,Undisclosed,2026-08-15,https://www.fantasypros.com/nfl/news/602507/jeremiyah-love-to-miss-this-week-with-ankle-injury.php,FantasyPros,Jeremiyah Love to miss this week with ankle injury Cardinals coach Mike LaFleur said RB Jeremiyah Love will be out this week as he deals with a sore ankle. LaFleur said the Cardinals will revisit Love's status after this week. There should be an update on his status by next weekend. Tyler Allgeier will figure to see the first-team reps in the meantime.
-Zach Charbonnet,RB,PUP,Undisclosed,2026-08-21,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Zach Charbonnet as PUP.
+Zach Charbonnet,RB,PUP,Knee - ACL,2026-08-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Zach Charbonnet as PUP.
 Alvin Kamara,RB,Out,Knee,2026-08-19,https://bsky.app/profile/insidenflnews.bsky.social/post/3mtfroqvfpk22,NFL Daily News,Underhill: Alvin Kamara (knee) will miss a few weeks but avoided major injury.
 Isiah Pacheco,RB,Questionable,Knee - MCL,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Isiah Pacheco as Questionable.
-De'Zhaun Stribling,WR,Day-to-day,Shoulder,2026-08-23,https://www.fantasypros.com/nfl/news/603848/dezhaun-stribling-shoulder-day-to-day.php,FantasyPros News,De'Zhaun Stribling (shoulder) day-to-day De'Zhaun Stribling is day-to-day with a shoulder injury. Stribling has shown out in the first two preseason games for San Francisco. The rookie has already established himself into what is expected to be an immediate role for the 49ers wide receiver room. The 49ers will likely be cautious with him heading into the regular season.
+De'Zhaun Stribling,WR,Questionable,Shoulder,2026-08-24,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists De'Zhaun Stribling as Questionable.
 Tank Bigsby,RB,Questionable,Toe,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tank Bigsby as Questionable.
 Jalen McMillan,WR,Questionable,Calf,2026-08-18,https://bsky.app/profile/insidenflnews.bsky.social/post/3msssmj54gk2j,Sleeper + NFL Daily News,"Jalen McMillan (knee) returned to participating in individual position drills at practice Tuesday, per Scott Smith."
 Tre' Harris,WR,Questionable,Undisclosed,2026-08-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tre' Harris as Questionable.
@@ -51,7 +51,6 @@ Kayshon Boutte,WR,Monitor,Undisclosed,2026-08-20,https://bsky.app/profile/inside
 Audric Estime,RB,Questionable,Leg,2026-08-16,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Audric Estime as Questionable.
 Bryce Lance,WR,Questionable,Undisclosed,2026-08-16,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Bryce Lance as Questionable.
 Carson Beck,QB,Questionable,Ribs,2026-08-16,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Carson Beck as Questionable.
-Cedric Tillman,WR,Questionable,Undisclosed,2026-08-13,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Cedric Tillman as Questionable.
 Chris Bell,WR,IR,Undisclosed,2026-08-17,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Chris Bell as IR.
 Chris Brazzell II,WR,IR,Undisclosed,2026-08-17,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Chris Brazzell II as IR.
 Christian Kirk,WR,Questionable,Undisclosed,2026-08-14,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Christian Kirk as Questionable.
@@ -72,7 +71,6 @@ Kendre Miller,RB,Questionable,Back,2026-08-15,https://api.sleeper.app/v1/players
 Keon Coleman,WR,Questionable,Lower Body,2026-08-16,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Keon Coleman as Questionable.
 Luke Musgrave,TE,PUP,Undisclosed,2026-08-17,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Luke Musgrave as PUP.
 Marcus Mariota,QB,Questionable,Knee,2026-08-16,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Marcus Mariota as Questionable.
-Marquez Valdes-Scantling,WR,Questionable,Undisclosed,2026-08-13,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Marquez Valdes-Scantling as Questionable.
 Marvin Mims Jr.,WR,Questionable,Undisclosed,2026-08-15,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Marvin Mims Jr. as Questionable.
 Michael Penix Jr.,QB,Questionable,Knee - ACL,2026-08-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Penix Jr. as Questionable.
 Michael Woods II,WR,IR,Undisclosed,2026-08-17,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Michael Woods II as IR.
@@ -84,5 +82,3 @@ Tank Dell,WR,Questionable,Knee - ACL + MCL,2026-08-16,https://api.sleeper.app/v1
 Terrell Jennings,RB,IR,Undisclosed,2026-08-17,https://www.fantasypros.com/nfl/news/602773/terrell-jennings-released-with-injury-settlement.php,FantasyPros News,Terrell Jennings released with injury settlement The Patriots released RB Terrell Jennings with an injury settlement. Jennings was previously placed on injured reserve by New England.
 Tez Johnson,WR,Questionable,Groin,2026-08-15,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tez Johnson as Questionable.
 Trey Benson,RB,Questionable,Knee,2026-08-15,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Trey Benson as Questionable.
-Ty Johnson,RB,Questionable,Knee,2026-08-13,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Ty Johnson as Questionable.
-Tyreek Hill,WR,Questionable,Knee - ACL,2026-08-13,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyreek Hill as Questionable.
