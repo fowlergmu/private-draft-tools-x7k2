@@ -1396,11 +1396,11 @@
                 <div class="row-2col">
                     <div class="form-group">
                         <label for="leagueSize">League Size</label>
-                        <input type="number" id="leagueSize" class="form-control" value="12" min="4" max="20" onchange="recalculateEngine(); renderTeamNameInputs();">
+                        <input type="number" id="leagueSize" class="form-control" value="12" min="4" max="20" onchange="handleLeagueSizeChange()">
                     </div>
                     <div class="form-group">
                         <label for="draftOrder">Your Draft Pick</label>
-                        <input type="number" id="draftOrder" class="form-control" value="3" min="1" max="20" onchange="recalculateEngine(); renderTeamNameInputs();">
+                        <input type="number" id="draftOrder" class="form-control" value="3" min="1" max="12" onchange="handleDraftOrderChange()">
                     </div>
                 </div>
                 <div class="form-group">
@@ -1889,7 +1889,10 @@
             restorePlayerSortPreference();
             restorePlayerTeamFilterPreference();
             if (loadState()) {
-                recalculateEngine();
+                // Older saved states could retain 12 roster objects after the
+                // league-size field was changed to 14. Repair that mismatch before
+                // the first render so returning browsers recover automatically.
+                if (!reconcileLeagueStateAfterLoad()) recalculateEngine();
             } else {
                 // No saved state — initialize from the static HTML defaults already
                 // present on each input (12-team Full PPR, etc.). resetDraftState
@@ -3786,6 +3789,86 @@
             }
         }
 
+        const MIN_LEAGUE_SIZE = 4;
+        const MAX_LEAGUE_SIZE = 20;
+
+        function normalizeLeagueInputs() {
+            const leagueInput = document.getElementById("leagueSize");
+            const draftOrderInput = document.getElementById("draftOrder");
+            const parsedSize = parseInt(leagueInput && leagueInput.value, 10);
+            const size = Math.max(MIN_LEAGUE_SIZE, Math.min(MAX_LEAGUE_SIZE,
+                Number.isFinite(parsedSize) ? parsedSize : 12));
+            if (leagueInput) leagueInput.value = String(size);
+
+            const parsedUserPos = parseInt(draftOrderInput && draftOrderInput.value, 10);
+            const userPos = Math.max(1, Math.min(size,
+                Number.isFinite(parsedUserPos) ? parsedUserPos : 1));
+            if (draftOrderInput) {
+                draftOrderInput.max = String(size);
+                draftOrderInput.value = String(userPos);
+            }
+            return { size, userPos };
+        }
+
+        function rosterTeamCount() {
+            return Object.keys(teamRosters || {}).filter(key => /^\d+$/.test(key)).length;
+        }
+
+        function handleLeagueSizeChange() {
+            const previousSize = rosterTeamCount();
+            const previousUserPos = parseInt(document.getElementById("draftOrder").value, 10);
+            const normalized = normalizeLeagueInputs();
+
+            if (draftHistory.length > 0 && previousSize > 0 && previousSize !== normalized.size) {
+                const shouldReset = confirm(
+                    `Changing from ${previousSize} to ${normalized.size} teams resets the current draft. Continue?`
+                );
+                if (!shouldReset) {
+                    document.getElementById("leagueSize").value = String(previousSize);
+                    document.getElementById("draftOrder").value = String(previousUserPos);
+                    normalizeLeagueInputs();
+                    renderTeamNameInputs();
+                    return;
+                }
+            }
+
+            // Team assignments in a snake draft depend on league size. Rebuild all
+            // rosters before recalculating so newly added teams always exist and a
+            // smaller league cannot retain orphaned teams or picks.
+            if (previousSize !== normalized.size) resetDraftState();
+            else {
+                recalculateEngine();
+                saveState();
+            }
+            renderTeamNameInputs();
+        }
+
+        function handleDraftOrderChange() {
+            normalizeLeagueInputs();
+            recalculateEngine();
+            renderTeamNameInputs();
+            saveState();
+        }
+
+        function reconcileLeagueStateAfterLoad() {
+            const normalized = normalizeLeagueInputs();
+            const savedRosterSize = rosterTeamCount();
+            if (savedRosterSize === normalized.size) return false;
+
+            if (draftHistory.length > 0 && savedRosterSize >= MIN_LEAGUE_SIZE && savedRosterSize <= MAX_LEAGUE_SIZE) {
+                // Preserve an in-progress legacy draft rather than silently
+                // clearing it. Its roster map is the authoritative original size.
+                document.getElementById("leagueSize").value = String(savedRosterSize);
+                normalizeLeagueInputs();
+                console.warn(`Restored league size to ${savedRosterSize} to preserve the saved draft.`);
+                saveState();
+                return false;
+            }
+
+            resetDraftState();
+            return true;
+        }
+
         // Tuning preset definitions. Each value maps directly to slider input value
         // (so adpValueWeight=15 displays as 1.5, vobWeight=5 displays as 0.5).
         const TUNING_PRESETS = {
@@ -3843,9 +3926,10 @@
                 p.drafted = false;
                 delete p.draftPick;
                 delete p.draftedByTeam;
+                delete p.placedSlot;
             });
 
-            const size = parseInt(document.getElementById("leagueSize").value);
+            const size = normalizeLeagueInputs().size;
             teamRosters = {};
             for (let i = 1; i <= size; i++) {
                 teamRosters[i] = { QB: [], RB: [], WR: [], TE: [], K: [], FX: [], DF: [], BN: [] };
