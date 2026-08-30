@@ -859,9 +859,28 @@
         .source-meta-bar { display:flex; flex-wrap:wrap; gap:8px; margin:-8px 0 16px; }
         .source-chip { padding:5px 9px; border:1px solid var(--border-color); border-radius:999px; background:var(--bg-secondary); color:var(--text-muted); font-size:11px; }
         .source-chip strong { color:var(--text-main); }
-        .draft-command-bar { display:grid; grid-template-columns:minmax(260px,1fr) auto; gap:10px; align-items:center; margin-bottom:15px; }
+        .draft-command-bar { display:grid; grid-template-columns:minmax(260px,1fr) minmax(190px,auto) auto; gap:10px; align-items:center; margin-bottom:15px; }
         .quick-draft-controls { display:flex; gap:6px; min-width:0; }
         .quick-draft-controls .form-control { min-width:0; }
+        .last-drafted-chip {
+            min-width: 190px;
+            padding: 6px 9px;
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-blue);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            line-height: 1.25;
+        }
+        .last-drafted-label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.45px;
+            text-transform: uppercase;
+        }
+        #lastDraftedPlayer { display:block; margin-top:2px; font-size:12px; font-weight:700; }
+        #lastDraftedMeta { display:block; margin-top:1px; color:var(--text-muted); font-size:10px; }
         .news-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; align-content:start; }
         .news-grid.is-scrollable {
             overflow-y:auto;
@@ -905,6 +924,7 @@
             .draft-command-bar { grid-template-columns:1fr; }
             .quick-draft-controls { flex-wrap:wrap; }
             .quick-draft-controls .btn { flex:1; }
+            .last-drafted-chip { min-width:0; width:100%; }
             .panel { padding:12px; }
             .settings-grid { grid-template-columns:1fr; }
             .report-grid { grid-template-columns:1fr; }
@@ -1034,6 +1054,11 @@
             <input id="quickDraftInput" class="form-control" list="quickDraftPlayers" placeholder="Mark the next drafted player…" aria-label="Player drafted next" onkeydown="if(event.key==='Enter') quickDraftPlayer()">
             <datalist id="quickDraftPlayers"></datalist>
             <button class="btn" style="width:auto; white-space:nowrap;" onclick="quickDraftPlayer()">Mark Drafted</button>
+        </div>
+        <div id="lastDraftedIndicator" class="last-drafted-chip" role="status" aria-live="polite" aria-atomic="true">
+            <span class="last-drafted-label">Last drafted</span>
+            <span id="lastDraftedPlayer">No picks yet</span>
+            <span id="lastDraftedMeta">The latest pick will appear here.</span>
         </div>
         <span id="draftPlatformBadge" class="source-chip"><strong>Draft sync:</strong> Manual</span>
     </div>
@@ -4053,6 +4078,7 @@
             renderMyTeamGrid(cfg);
             renderBestAvailable(cfg);
             renderWatchList(cfg);
+            renderLastDraftedIndicator();
 
             // Update header pick indicator
             const indicator = document.getElementById("currentPickIndicator");
@@ -4076,6 +4102,27 @@
                     indicator.style.color = team === cfg.userPos ? "var(--accent-green)" : "var(--text-muted)";
                 }
             }
+        }
+
+        function renderLastDraftedIndicator() {
+            const playerEl = document.getElementById("lastDraftedPlayer");
+            const metaEl = document.getElementById("lastDraftedMeta");
+            if (!playerEl || !metaEl) return;
+
+            const last = draftHistory.length ? draftHistory[draftHistory.length - 1] : null;
+            if (!last || !last.playerObj) {
+                playerEl.textContent = "No picks yet";
+                metaEl.textContent = "The latest pick will appear here.";
+                return;
+            }
+
+            const player = last.playerObj;
+            const position = player.pos ? ` · ${player.pos}` : "";
+            const pickNumber = Number(last.pick || player.draftPick);
+            const pickLabel = Number.isFinite(pickNumber) ? `Pick ${pickNumber}` : "Latest pick";
+            const teamLabel = last.team ? getTeamLabel(last.team) : "Unknown team";
+            playerEl.textContent = `${player.name || "Unknown player"}${position}`;
+            metaEl.textContent = `${pickLabel} · ${teamLabel}`;
         }
 
         function calculateSnakeRunProbabilities(cfg) {
