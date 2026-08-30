@@ -324,6 +324,13 @@
             margin-top: 8px;
         }
 
+        .player-table-scroll,
+        .news-grid.is-scrollable {
+            /* Dynamic data refreshes should not make Firefox choose a new scroll
+               anchor inside these independently scrolling regions. */
+            overflow-anchor: none;
+        }
+
         .player-table th, .player-table td {
             text-align: left;
             padding: 8px;
@@ -4361,6 +4368,8 @@
 
         function renderPlayerPool() {
             const body = document.getElementById("playerTableBody");
+            const scrollContainer = body.closest(".player-table-scroll");
+            const previousScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
             body.innerHTML = "";
             const cfg = readConfig();
 
@@ -4413,6 +4422,7 @@
                 }
                 tr.appendChild(td);
                 body.appendChild(tr);
+                if (scrollContainer) scrollContainer.scrollTop = 0;
                 return;
             }
 
@@ -4582,6 +4592,10 @@
                 `;
                 body.appendChild(tr);
             });
+            if (scrollContainer) {
+                const maxScrollTop = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+                scrollContainer.scrollTop = previousScrollTop <= maxScrollTop ? previousScrollTop : 0;
+            }
         }
 
         // ─── Best Available recommendation ──────────────────────────────────

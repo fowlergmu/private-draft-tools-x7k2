@@ -43,20 +43,29 @@
     }
 
     function limitInjuryDashboardToThreeRows(container) {
-        container.classList.remove("is-scrollable");
-        container.style.maxHeight = "";
         const cards = Array.from(container.querySelectorAll(".news-card"));
-        if (cards.length <= 3) return;
+        if (cards.length <= 3) {
+            container.classList.remove("is-scrollable");
+            container.style.maxHeight = "";
+            return;
+        }
+        const previousScrollTop = container.scrollTop;
         requestAnimationFrame(() => {
             if (!cards[0] || !cards[0].isConnected) return;
             const rowTops = Array.from(new Set(cards.map(card => card.offsetTop))).sort((a, b) => a - b);
-            if (rowTops.length <= 3) return;
+            if (rowTops.length <= 3) {
+                container.classList.remove("is-scrollable");
+                container.style.maxHeight = "";
+                return;
+            }
             const thirdRowTop = rowTops[2];
             const thirdRowBottom = Math.max(...cards
                 .filter(card => card.offsetTop === thirdRowTop)
                 .map(card => card.offsetTop + card.offsetHeight));
             container.style.maxHeight = Math.ceil(thirdRowBottom - rowTops[0]) + "px";
             container.classList.add("is-scrollable");
+            const maxScrollTop = container.scrollHeight - container.clientHeight;
+            container.scrollTop = previousScrollTop <= maxScrollTop ? previousScrollTop : 0;
         });
     }
 
@@ -720,7 +729,14 @@
     };
 
     let injuryResizeTimer = null;
+    let injuryLayoutWidth = Math.round(window.innerWidth);
     window.addEventListener("resize", () => {
+        const nextWidth = Math.round(window.innerWidth);
+        // Mobile browsers resize the visual viewport as their address bar hides
+        // and reappears during a vertical swipe. Card rows only need recalculating
+        // when the layout width changes, so ignore those height-only events.
+        if (nextWidth === injuryLayoutWidth) return;
+        injuryLayoutWidth = nextWidth;
         if (injuryResizeTimer) clearTimeout(injuryResizeTimer);
         injuryResizeTimer = setTimeout(() => {
             const container = document.getElementById("currentInjuriesDashboard");
