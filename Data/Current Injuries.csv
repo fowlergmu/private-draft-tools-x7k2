@@ -1,57 +1,53 @@
 name,pos,status,injury,updated,source,provider,notes
-Ja'Marr Chase,WR,Questionable,NIR,2026-10-29,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Ja'Marr Chase as Questionable. Practice reports: DNP.
-Jahmyr Gibbs,RB,Questionable,Shoulder,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jahmyr Gibbs as Questionable.
 Puka Nacua,WR,Questionable,Calf,2026-10-25,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Puka Nacua as Questionable.
-Amon-Ra St. Brown,WR,Questionable,Ankle,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Amon-Ra St. Brown as Questionable.
+Jaxon Smith-Njigba,WR,Questionable,NIR,2026-10-30,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Jaxon Smith-Njigba as Questionable. Practice reports: DNP.
 Justin Jefferson,WR,Monitor,Ankle,2026-10-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3myinmxqza227,NFL Daily News,Vikings who logged full practices on Thursday: Justin Jefferson (ankle) Jordan Addison (hamstring) TJ Hockenson (concussion) Jordan Mason (thumb)
 Christian McCaffrey,RB,Questionable,Calf,2026-10-27,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Christian McCaffrey as Questionable.
 Drake London,WR,Questionable,Head,2026-10-25,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Drake London as Questionable.
-A.J. Brown,WR,Monitor,Ankle,2026-10-29,https://www.fantasypros.com/nfl/news/616408/aj-brown-ankleknee-not-practice-thursday.php,FantasyPros News,A.J. Brown (ankle/knee) not at practice Thursday A.J. Brown was not seen at practice on Thursday. Brown was limited in practice to open the week on Wednesday. He'll need to be monitored in practice on Friday.
+A.J. Brown,WR,Questionable,Ankle,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists A.J. Brown as Questionable.
 Nico Collins,WR,Monitor,NIR,2026-10-22,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Nico Collins as Monitor. Practice reports: Limit.
-Brock Bowers,TE,Questionable,Calf,2026-10-28,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Brock Bowers as Questionable. Practice reports: Limit. Listed probability of playing: 86%.
-George Pickens,WR,Questionable,Shoulder,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists George Pickens as Questionable.
+George Pickens,WR,Questionable,Shoulder,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists George Pickens as Questionable.
 De'Von Achane,RB,IR,Knee - ACL,2026-09-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwjcqcjimk2m,Sleeper + NFL Daily News,Status alert: De'Von Achane (knee) questionable to return
 Rashee Rice,WR,Questionable,Hamstring,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykrm2j3y22b,Sleeper + NFL Daily News,"Chiefs WR Rashee Rice (hamstring, knee) has been ruled out for Week 7."
-DeVonta Smith,WR,Questionable,Hamstring,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists DeVonta Smith as Questionable.
-Saquon Barkley,RB,Monitor,Hamstring,2026-10-29,https://www.fantasypros.com/nfl/news/616403/saquon-barkley-hamstringback-not-seen-practice-thursday.php,FantasyPros News,Saquon Barkley (hamstring/back) not seen at practice Thursday Saquon Barkley was not seen at practice on Thursday. Barkley did not participate in Wednesday's walkthrough. He will need to be monitored in practice on Friday off a short week.
-Zay Flowers,WR,Monitor,toe,2026-10-19,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Zay Flowers as Monitor. Practice reports: -- / Limit / Limit. Listed probability of playing: 100%.
+DeVonta Smith,WR,Questionable,Hamstring,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists DeVonta Smith as Questionable.
+Saquon Barkley,RB,Questionable,Back,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Saquon Barkley as Questionable.
 Ladd McConkey,WR,Questionable,Concussion,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3myxi2cnw3c2u,Sleeper + NFL Daily News,Chargers WR Ladd McConkey (concussion) will practice Wednesday.
-Jaylen Waddle,WR,Questionable,Undisclosed,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3myqewapvic2s,Sleeper + NFL Daily News,Jaylen Waddle suffered a chest injury.
-Emeka Egbuka,WR,Questionable,Concussion,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykn6hyouc24,Sleeper + NFL Daily News,"Buccaneers WR Emeka Egbuka (concussion, foot) has been ruled out for Week 7."
-Jeremiyah Love,RB,Questionable,Ankle,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykqcdlox22b,Sleeper + NFL Daily News,Cardinals RB Jeremiyah Love (ankle) has been ruled out for Week 7.
-Breece Hall,RB,Questionable,Quadriceps,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykg4b3v3222,Sleeper + NFL Daily News,Jets RB Breece Hall (quad) will be questionable for Week 7.
-Terry McLaurin,WR,IR,Knee,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Terry McLaurin as IR.
+Jaylen Waddle,WR,Questionable,Undisclosed,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3myqewapvic2s,Sleeper + NFL Daily News,Jaylen Waddle suffered a chest injury.
+Emeka Egbuka,WR,Out,Foot,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykn6hyouc24,Sleeper + NFL Daily News,"Buccaneers WR Emeka Egbuka (concussion, foot) has been ruled out for Week 7."
+Jeremiyah Love,RB,Questionable,Ankle,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykqcdlox22b,Sleeper + NFL Daily News,Cardinals RB Jeremiyah Love (ankle) has been ruled out for Week 7.
+Breece Hall,RB,Questionable,Quadriceps,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykg4b3v3222,Sleeper + NFL Daily News,Jets RB Breece Hall (quad) will be questionable for Week 7.
+Terry McLaurin,WR,IR,Knee,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Terry McLaurin as IR.
 Travis Etienne Jr.,RB,IR,Hamstring,2026-10-01,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwtpd4h35s2p,Sleeper + NFL Daily News,Saints RB Travis Etienne (hamstring) has been placed on IR and will miss at least 4 games.
 Davante Adams,WR,IR,Hamstring,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3myayz2gp4k2j,Sleeper + NFL Daily News,Rams injuries from Week 6: DT Kobie Turner - IR DT Poona Ford - Out for season WR Davante Adams - 6-10 Weeks K Blake Grupe - IR
 Tyler Warren,TE,Questionable,Groin,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykmutuqck24,Sleeper + NFL Daily News,Colts TE Tyler Warren (groin) has been ruled out for Week 7.
 Mike Evans,WR,Out,Achilles,2026-10-27,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Mike Evans as Out.
-DJ Moore,WR,Questionable,Shoulder - AC Joint,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3mx2yrdv5bs2o,Sleeper + NFL Daily News,Status alert: DJ Moore headed to medical tent.
+DJ Moore,WR,Questionable,Shoulder,2026-10-30,https://www.fantasypros.com/nfl/news/616611/dj-moore-shoulder-listed-questionable-sunday.php,FantasyPros News,DJ Moore (shoulder) listed questionable Sunday DJ Moore was listed as questionable for Sunday's game against the Ravens. Moore has been limited in practice throughout the week. He should have a good chance of returning off the bye week. He'll be a WR2 play in a potential shootout.
 Cam Skattebo,RB,Questionable,Hamstring,2026-10-26,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Cam Skattebo as Questionable.
-Christian Watson,WR,Monitor,ankle,2026-10-26,https://www.fantasypros.com/nfl/players/injuries.php,FantasyPros Injury Report,FantasyPros lists Christian Watson as Monitor. Practice reports: Limit / Limit / Limit. Listed probability of playing: 100%.
+Christian Watson,WR,Questionable,Undisclosed,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mz2mdp6qx22h,NFL Daily News,🚨 Status alert: Christian Watson (chest) questionable to return Thursday.
 Jalen Hurts,QB,IR,Calf,2026-10-21,https://bsky.app/profile/insidenflnews.bsky.social/post/3my3utvikuc2q,Sleeper + NFL Daily News,Schefter: Jalen Hurts (calf) to be placed on IR; will miss at least 4 games.
 Quinshon Judkins,RB,Monitor,Ankle,2026-10-23,https://www.fantasypros.com/nfl/news/615522/quinshon-judkins-ankle-off-injury-report-week-7.php,FantasyPros News,"Quinshon Judkins (ankle) off injury report for Week 7 Quinshon Judkins (ankle) is off of the injury report for Week 7 for the Cleveland Browns according to Mary Kay Cabot. Judkins is good to go after increasing reps in practice throughout the week for head coach Todd Monken, setting the running back up to lead a Cleveland backfield that could be missing Dylan Sampson (knee) against the Titans Sund"
 David Montgomery,RB,Out,Groin,2026-10-23,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists David Montgomery as Out.
-TreVeyon Henderson,RB,Questionable,Ankle,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists TreVeyon Henderson as Questionable.
-Carnell Tate,WR,Questionable,Shoulder,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Carnell Tate as Questionable.
+TreVeyon Henderson,RB,Questionable,Ankle,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists TreVeyon Henderson as Questionable.
+Carnell Tate,WR,Questionable,Shoulder,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Carnell Tate as Questionable.
 Marvin Harrison Jr.,WR,Out,Coach's Decision,2026-10-11,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Marvin Harrison Jr. as Out.
-Jadarian Price,RB,IR,Chest,2026-10-26,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwyojqkjf22m,Sleeper + NFL Daily News,Schefter: Seahawks RB Jadarian Price (chest) will be placed on IR and will miss at least 4 games.
+Jadarian Price,RB,IR,Chest,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwyojqkjf22m,Sleeper + NFL Daily News,Schefter: Seahawks RB Jadarian Price (chest) will be placed on IR and will miss at least 4 games.
 Michael Pittman Jr.,WR,IR,Foot,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Pittman Jr. as IR.
 Jordyn Tyson,WR,IR,Hamstring,2026-10-26,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jordyn Tyson as IR.
 Rico Dowdle,RB,Questionable,Knee,2026-10-24,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwmdrmaig22y,Sleeper + NFL Daily News,Steelers RB Rico Dowdle (toe) was listed as a DNP Monday.
-Michael Wilson,WR,Questionable,Ribs,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Wilson as Questionable.
+Michael Wilson,WR,Questionable,Ribs,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Michael Wilson as Questionable.
+RJ Harvey,RB,Questionable,Knee,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists RJ Harvey as Questionable.
 Alec Pierce,WR,IR,Heel,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3my37oy7ogc2b,Sleeper + NFL Daily News,Pelissero: Alec Pierce (heel) continues to progress but is likely still a few weeks away from game action and isn't expected to return to practice when first eligible next week.
 Jaxson Dart,QB,IR,Knee - Meniscus,2026-10-10,https://bsky.app/profile/insidenflnews.bsky.social/post/3mw7apmnjjk2y,Sleeper + NFL Daily News,Rap: Jaxson Dart's surgery will address torn meniscus and torn MCL; damage to PCL won't be addressed surgically. This recovery would result in about 6 month recovery.
-Travis Kelce,TE,Monitor,Ankle,2026-10-23,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykw4bayxc2b,NFL Daily News,Chiefs TE Travis Kelce (ankle) is not listed on the injury report for Week 7.
+Travis Kelce,TE,Questionable,Ankle,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykw4bayxc2b,Sleeper + NFL Daily News,Chiefs TE Travis Kelce (ankle) is not listed on the injury report for Week 7.
 Jonathon Brooks,RB,IR,Abdomen,2026-10-27,https://bsky.app/profile/insidenflnews.bsky.social/post/3mw6xqg3htc26,Sleeper + NFL Daily News,Rap: Panthers RB Jonathon Brooks will miss at least six weeks after undergoing core muscle surgery.
-Kenny Gainwell,RB,Questionable,Hip,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kenny Gainwell as Questionable.
+Kenny Gainwell,RB,Questionable,Hip,2026-10-30,https://www.fantasypros.com/nfl/news/616618/kenny-gainwell-hip-listed-questionable-sunday.php,FantasyPros News,Kenny Gainwell (hip) listed questionable Sunday Kenny Gainwell is listed as questionable for Sunday's game against the Falcons. Gainwell returned to a limited practice on Thursday. He should be on the favorable side of questionable heading into Sunday.
 Jakobi Meyers,WR,Questionable,Hamstring,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jakobi Meyers as Questionable.
 Makai Lemon,WR,Questionable,Undisclosed,2026-10-20,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Makai Lemon as Questionable.
 Jordan Addison,WR,Monitor,Hamstring,2026-10-22,https://bsky.app/profile/insidenflnews.bsky.social/post/3myinmxqza227,NFL Daily News,Vikings who logged full practices on Thursday: Justin Jefferson (ankle) Jordan Addison (hamstring) TJ Hockenson (concussion) Jordan Mason (thumb)
-Kyle Monangai,RB,Questionable,Toe,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kyle Monangai as Questionable.
+Kyle Monangai,RB,Questionable,Toe,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Kyle Monangai as Questionable.
 Jayden Reed,WR,IR,Neck,2026-10-10,https://bsky.app/profile/insidenflnews.bsky.social/post/3mw2gq3o5ck2a,Sleeper + NFL Daily News,Schefter: Packers WR Jayden Reed injured his back Sunday. The team is still evaluating his recovery timeline.
 Stefon Diggs,WR,Questionable,Hand,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Stefon Diggs as Questionable.
-Aaron Jones Sr.,RB,Questionable,Undisclosed,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Aaron Jones Sr. as Questionable.
-Dalton Kincaid,TE,Questionable,Chest,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Dalton Kincaid as Questionable.
+Dalton Kincaid,TE,Questionable,Undisclosed,2026-10-30,https://www.fantasypros.com/nfl/news/616610/dalton-kincaid-chest-listed-questionable-sunday.php,FantasyPros News,Dalton Kincaid (chest) listed questionable Sunday Dalton Kincaid is listed as questionable for Sunday's game against the Ravens. Kincaid was limited in practice throughout the week. He should be on the favorable side of questionable heading into Sunday.
 Baker Mayfield,QB,Monitor,Hand,2026-10-23,https://bsky.app/profile/insidenflnews.bsky.social/post/3mykebpevl222,NFL Daily News,"Baker Mayfield will wear a custom glove for his injured right hand in Week 7. The glove was invented by Tampa Bay Rays home clubhouse attendant Nick Bond, who took a receiver’s glove and ripped off the thumb while inserting a support."
 Jordan Love,QB,Questionable,Back,2026-10-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Jordan Love as Questionable.
 Jordan Mason,RB,Day-to-day,Undisclosed,2026-10-26,https://www.fantasypros.com/nfl/news/616011/aaron-jones-sr-knee-day-to-day-with-knee-injury.php,FantasyPros News,"Aaron Jones Sr. (knee) day-to-day with knee injury Aaron Jones Sr. (knee) is labeled ""day-to-day"" with his knee injury that isn't seen as significant. Jones left the Vikings game against the Colts early due to the injury, leaving fresh off of IR Jordan Mason to handle the workload. Mason produced well in the win, and should be in line for more touches should Jones be out next week."
@@ -64,27 +60,28 @@ Romeo Doubs,WR,IR,Shoulder,2026-10-22,https://api.sleeper.app/v1/players/nfl?act
 Tyrone Tracy Jr.,RB,IR,Hamstring,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyrone Tracy Jr. as IR.
 Tyler Allgeier,RB,Questionable,Toe,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyler Allgeier as Questionable.
 Woody Marks,RB,Questionable,Leg,2026-10-26,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Woody Marks as Questionable.
-Tyjae Spears,RB,Questionable,Knee,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyjae Spears as Questionable.
-Zach Charbonnet,RB,Questionable,Knee - ACL,2026-10-26,https://bsky.app/profile/insidenflnews.bsky.social/post/3myl2aqbivs2b,Sleeper + NFL Daily News,Macdonald: Zach Charbonnet (knee) ruled out for Week 7.
+Tyjae Spears,RB,Questionable,Knee,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tyjae Spears as Questionable.
+Zach Charbonnet,RB,Questionable,Knee - ACL,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3myl2aqbivs2b,Sleeper + NFL Daily News,Macdonald: Zach Charbonnet (knee) ruled out for Week 7.
 Deebo Samuel Sr.,WR,Out,Hamstring,2026-10-27,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Deebo Samuel Sr. as Out.
 Alvin Kamara,RB,Questionable,Back,2026-10-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Alvin Kamara as Questionable.
 Dylan Sampson,RB,Questionable,Knee,2026-10-29,https://bsky.app/profile/insidenflnews.bsky.social/post/3myn4mlnc6226,Sleeper + NFL Daily News,Browns RB Dylan Sampson has no injury status and will play in Week 7.
-Rashid Shaheed,WR,Questionable,Knee,2026-10-26,https://bsky.app/profile/insidenflnews.bsky.social/post/3myqmz6keyc2f,NFL Daily News,Status alert: Rashid Shaheed (knee) questionable to return.
-Isiah Pacheco,RB,IR,Back,2026-09-14,https://bsky.app/profile/insidenflnews.bsky.social/post/3mvizthq7i22l,Sleeper + NFL Daily News,"Campbell: Isiah Pacheco (back) underwent surgery. ""It's going to be a while."""
+Rashid Shaheed,WR,Questionable,Knee,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3myqmz6keyc2f,Sleeper + NFL Daily News,Status alert: Rashid Shaheed (knee) questionable to return.
+Isiah Pacheco,RB,IR,Back,2026-10-30,https://bsky.app/profile/insidenflnews.bsky.social/post/3mvizthq7i22l,Sleeper + NFL Daily News,"Campbell: Isiah Pacheco (back) underwent surgery. ""It's going to be a while."""
 Denzel Boston,WR,Questionable,Foot,2026-10-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Denzel Boston as Questionable.
 De'Zhaun Stribling,WR,IR,Ankle,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3mvft77ckbc2p,Sleeper + NFL Daily News,"Rap: De'Zhaun Stribling will miss ""at least"" 1 month with deltoid sprain in ankle. Surgery not currently planned but still possible."
 Jonah Coleman,RB,Questionable,Ankle,2026-10-24,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwh5bh2dpk2j,Sleeper + NFL Daily News,Schefter: Broncos RB Jonah Coleman will be placed on IR with a high-ankle sprain and will miss at least the next four games.
 Tank Bigsby,RB,Out,Undisclosed,2026-10-09,https://bsky.app/profile/insidenflnews.bsky.social/post/3mxhrkxcj3c2p,NFL Daily News,Eagles ruled out in Week 5: Saquon Barkley DeVonta Smith Drew Kendall Tank Bigsby Hollywood Brown Marcus Epps
-Brian Robinson Jr.,RB,Questionable,Hamstring,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Brian Robinson Jr. as Questionable.
+Brian Robinson Jr.,RB,Out,Hamstring,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Brian Robinson Jr. as Out.
 Jalen McMillan,WR,IR,Knee - PCL,2026-10-11,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwqkpce32c2n,Sleeper + NFL Daily News,Buccaneers WR Jalen McMillan (knee) has been placed on IR and will miss at least 4 games.
 Adonai Mitchell,WR,Questionable,Finger,2026-10-23,https://bsky.app/profile/insidenflnews.bsky.social/post/3mwvmfwlojc2n,Sleeper + NFL Daily News,Jets players ruled out for Week 4: Breece Hall (quad) Adonai Mitchell (finger) Mason Taylor (thumb)
 Omar Cooper Jr.,WR,IR,Ankle,2026-10-17,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Omar Cooper Jr. as IR.
-Tre' Harris,WR,Questionable,Hamstring,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tre' Harris as Questionable.
+Tre' Harris,WR,Questionable,Hamstring,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Tre' Harris as Questionable.
 Dalton Schultz,TE,Questionable,Quadriceps,2026-10-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Dalton Schultz as Questionable.
 Braelon Allen,RB,Questionable,Ankle,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Braelon Allen as Questionable.
 T.J. Hockenson,TE,Questionable,Concussion,2026-10-22,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists T.J. Hockenson as Questionable.
-Dontayvion Wicks,WR,Questionable,Ankle,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Dontayvion Wicks as Questionable.
-Malik Washington,WR,Questionable,Knee,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Malik Washington as Questionable.
+Ray Davis,RB,Questionable,Illness,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Ray Davis as Questionable.
+Dontayvion Wicks,WR,Questionable,Ankle,2026-10-30,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Dontayvion Wicks as Questionable.
+Malik Washington,WR,Questionable,Knee,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Malik Washington as Questionable.
 Pat Bryant,WR,IR,Ankle,2026-10-28,https://bsky.app/profile/insidenflnews.bsky.social/post/3mxhqafswxs2g,Sleeper + NFL Daily News,Rap: Broncos WR Pat Bryant (ankle) will be placed on IR and will miss at least 4 games.
-Calvin Ridley,WR,Questionable,Hip,2026-10-28,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Calvin Ridley as Questionable.
+Calvin Ridley,WR,Questionable,Hip,2026-10-29,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists Calvin Ridley as Questionable.
 James Conner,RB,IR,Foot,2026-10-27,https://api.sleeper.app/v1/players/nfl?active=true,Sleeper,Sleeper lists James Conner as IR.
